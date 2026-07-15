@@ -1,3 +1,13 @@
+"""应用入口 — 组装前后端并启动工具箱。
+
+按架构分层：
+- core/di.Container 组装业务服务（外部适配器 → 服务，零 Qt）
+- ui/infra 提供 Qt 版 TaskRunner / EventEmitter（UI 层）
+- ui/viewmodels 是胶水层（持有 service，发射信号）
+- ui/views 仅负责渲染与事件绑定
+
+本文件属于 UI 层，负责生产环境的依赖装配，不编写任何业务规则。
+"""
 import os
 import sys
 import logging
@@ -5,16 +15,20 @@ import logging
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QStackedWidget,
     QHBoxLayout, QListWidgetItem, QFrame, QVBoxLayout,
-    QLabel, QWidget
+    QLabel, QWidget,
 )
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QPalette, QIcon
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from word_2_slide_tool import Quiz2SlideTool
-from similarity_checker import SimilarityCheckerTool
-from base_tool import BaseTool
+from core.di import Container
+from ui.infra.qt_task_runner import QtTaskRunner
+from ui.infra.qt_event_emitter import QtEventEmitter
+from ui.viewmodels.slide_viewmodel import SlideViewModel
+from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
+from ui.views.slide_view import SlideView
+from ui.views.similarity_view import SimilarityView
 from theme import Theme
 
 
@@ -26,6 +40,25 @@ class ToolboxApp(QMainWindow):
         self.setWindowTitle("ALL IN ONE TOOLBOX")
         self.resize(960, 660)
         self.setMinimumSize(800, 550)
+
+        # ── 依赖装配：core 服务图 + UI 层 TaskRunner / EventEmitter ──
+        self._task_runner = QtTaskRunner()
+        self._event_emitter = QtEventEmitter()
+        container = Container.build(
+            task_runner=self._task_runner,
+            event_emitter=self._event_emitter,
+        )
+        slide_vm = SlideViewModel(
+            container.resolve("extraction"),
+            container.resolve("pptx"),
+            self._task_runner,
+            self._event_emitter,
+        )
+        sim_vm = SimilarityViewModel(
+            container.resolve("similarity"),
+            self._task_runner,
+            self._event_emitter,
+        )
 
         self._tools = []
 
@@ -62,7 +95,7 @@ class ToolboxApp(QMainWindow):
         root.addWidget(self.sidebar)
         root.addWidget(self.stack, 1)
 
-        self._register_tools()
+        self._register_tools(slide_vm, sim_vm)
         self.nav_list.setCurrentRow(0)
         self._restyle_all()
         QApplication.instance().styleHints().colorSchemeChanged.connect(
@@ -108,13 +141,13 @@ class ToolboxApp(QMainWindow):
             "QStackedWidget { background: transparent; border: none; border-radius: 12px; }"
         )
 
-    def _register_tools(self):
-        """注册工具箱中的所有工具。"""
-        self._add_tool(Quiz2SlideTool())
-        self._add_tool(SimilarityCheckerTool())
+    def _register_tools(self, slide_vm, sim_vm):
+        """注册工具箱中的所有视图（持有对应 ViewModel）。"""
+        self._add_tool(SlideView(slide_vm))
+        self._add_tool(SimilarityView(sim_vm))
 
     def _add_tool(self, tool):
-        """将工具添加到导航栏和堆栈中。"""
+        """将视图添加到导航栏和堆栈中。"""
         self._tools.append(tool)
 
         item = QListWidgetItem(tool.get_name())
@@ -124,13 +157,13 @@ class ToolboxApp(QMainWindow):
         self.stack.addWidget(tool)
 
     def _on_nav_changed(self, index):
-        """导航栏切换时激活对应工具。"""
+        """导航栏切换时激活对应视图。"""
         if 0 <= index < len(self._tools):
             self.stack.setCurrentIndex(index)
             self._tools[index].on_activate()
 
     def closeEvent(self, event):
-        """窗口关闭时统一停止所有工具的后台线程，避免孤儿线程/资源泄漏。"""
+        """窗口关闭时统一取消所有视图的后台任务，避免孤儿线程/资源泄漏。"""
         for tool in self._tools:
             stop = getattr(tool, 'stop_worker', None)
             if callable(stop):

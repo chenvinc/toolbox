@@ -320,3 +320,38 @@ class DropZone(QFrame):
         if path:
             self.set_file(path)
             self.file_selected.emit(path)
+
+
+class MultiDropZone(DropZone):
+    """扩展 DropZone，支持同时选择和拖入多个文件，显示已选文件数量。
+
+    原定义在 legacy similarity_checker，阶段4 迁移至本通用 UI 组件库。
+    """
+
+    files_selected = Signal(list)
+
+    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None):
+        super().__init__(placeholder_text, file_filter, compact, theme)
+
+    def _open_dialog(self):
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "选择文件", "", self._file_filter,
+        )
+        if paths:
+            self._handle_files(paths)
+
+    def dropEvent(self, event):
+        self.setStyleSheet(self._normal_style)
+        urls = event.mimeData().urls()
+        if urls:
+            paths = [url.toLocalFile() for url in urls]
+            self._handle_files(paths)
+
+    def _handle_files(self, paths):
+        self._paths = paths
+        if len(paths) == 1:
+            self.set_file(paths[0])
+        else:
+            self.label.setText(f"已选择 {len(paths)} 个文件")
+            self._apply_style()
+        self.files_selected.emit(paths)

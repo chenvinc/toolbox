@@ -1,28 +1,20 @@
-"""P2 技术债修复的回归测试：日志替换 / 提取线程 / QSS 抽取等价性。"""
+"""P2 技术债修复的回归测试（阶段4 迁移版）：日志替换 / QSS 抽取等价性。
 
-import importlib.util
+- 全仓 core/ 与 ui/ 源码不得残留 print( 调用（业务日志统一走 logging）。
+- Theme.qss_* 产出的片段与约定字符串语义一致（theme.py 作为 UI 基础库保留）。
+
+原 P2 测试中的 ExtractWorker 断言已由 tests/integration/test_slide_viewmodel.py
+（FakeTaskRunner 转发）与 tests/integration/test_slide_e2e.py（真实适配器端到端）
+覆盖，此处不再重复。
+"""
 import os
 import pathlib
 import re
-import sys
 import unittest
-from unittest.mock import patch
-
-from PySide6.QtWidgets import QApplication
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-
-def _load(name, fn):
-    spec = importlib.util.spec_from_file_location(name, ROOT / fn)
-    mod = importlib.util.module_from_spec(spec)
-    sys.path.insert(0, str(ROOT))
-    spec.loader.exec_module(mod)
-    return mod
-
-
-_w2s = _load("word_2_slide_tool_p2", "word_2_slide_tool.py")
-_theme = _load("theme_p2", "theme.py")
+import theme
 
 
 def _norm(s):
@@ -30,58 +22,37 @@ def _norm(s):
     return re.sub(r"\s+", " ", s).strip()
 
 
+def _scan_sources_for_print():
+    """返回 core/ 与 ui/ 下所有 .py 源码中残留的 print( 行（忽略测试目录）。"""
+    hits = []
+    for pkg in ("core", "ui"):
+        base = ROOT / pkg
+        if not base.exists():
+            continue
+        for path in base.rglob("*.py"):
+            # 跳过测试代码本身
+            if "tests" in path.parts:
+                continue
+            src = path.read_text(encoding="utf-8")
+            for m in re.finditer(r"(?<![\w.])print\s*\(", src):
+                hits.append(str(path))
+    return hits
+
+
 class LoggingTests(unittest.TestCase):
-    def test_no_print_calls_remain(self):
-        src = (ROOT / "word_2_slide_tool.py").read_text(encoding="utf-8")
-        self.assertIsNone(
-            re.search(r"(?<![\w.])print\s*\(", src),
-            "word_2_slide_tool.py 中仍残留 print( 调用，应改用 logging",
+    def test_no_print_calls_remain_in_core_and_ui(self):
+        hits = _scan_sources_for_print()
+        self.assertEqual(
+            hits, [],
+            f"以下源码仍残留 print( 调用，应改用 logging: {hits}"
         )
-
-    def test_logger_is_configured(self):
-        import logging
-        self.assertTrue(hasattr(_w2s, "logger"))
-        self.assertIsInstance(_w2s.logger, logging.Logger)
-
-
-class ExtractWorkerTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        if QApplication.instance() is None:
-            QApplication([])
-
-    def test_emits_extracted_on_success(self):
-        fake = [["1. 题干", "A. a", "B. b"], ["2. 题干二", "A. a", "B. b"]]
-        with patch.object(_w2s, "extract_questions", lambda p, n, o: list(fake)):
-            w = _w2s.ExtractWorker("doc.docx", "1.", "A.")
-            got = []
-            errs = []
-            w.extracted.connect(got.append)
-            w.error.connect(errs.append)
-            w.run()  # 同步调用 run() 以验证逻辑（同线程直连信号）
-            self.assertEqual(got, [fake])
-            self.assertEqual(errs, [])
-
-    def test_emits_error_on_exception(self):
-        def boom(p, n, o):
-            raise RuntimeError("boom")
-
-        with patch.object(_w2s, "extract_questions", boom):
-            w = _w2s.ExtractWorker("doc.docx", "1.", "A.")
-            got = []
-            errs = []
-            w.extracted.connect(got.append)
-            w.error.connect(errs.append)
-            w.run()
-            self.assertEqual(got, [])
-            self.assertEqual(errs, ["boom"])
 
 
 class QssEquivalenceTests(unittest.TestCase):
-    """验证 Theme.qss_* 产出的片段与重构前的逐字内联字符串语义一致。"""
+    """验证 Theme.qss_* 产出的片段与约定字符串语义一致。"""
 
     def _theme_for(self, dark):
-        t = _theme.Theme()
+        t = theme.Theme()
         t._is_dark = dark
         t._set_colors()
         return t
