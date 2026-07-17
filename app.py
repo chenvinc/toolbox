@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QLabel, QWidget,
 )
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPalette, QIcon
+from PySide6.QtGui import QPalette, QIcon, QFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,8 +27,10 @@ from ui.infra.qt_task_runner import QtTaskRunner
 from ui.infra.qt_event_emitter import QtEventEmitter
 from ui.viewmodels.slide_viewmodel import SlideViewModel
 from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
+from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
 from ui.views.slide_view import SlideView
 from ui.views.similarity_view import SimilarityView
+from ui.views.json_exam_view import JsonExamView
 from theme import Theme
 
 
@@ -36,7 +38,20 @@ class ToolboxApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.theme = Theme()
+        self._apply_global_font()
         QApplication.setWindowIcon(QIcon("./assets/images/logo.png"))
+
+    def _apply_global_font(self):
+        """全局统一字体：微软雅黑（含跨平台回退），基准 12px。"""
+        font = QFont()
+        font.setFamilies([
+            "Microsoft YaHei", "PingFang SC", "Microsoft YaHei UI",
+            "SimHei", "Heiti SC", "sans-serif",
+        ])
+        font.setPointSize(12)
+        app = QApplication.instance()
+        if app is not None:
+            app.setFont(font)
         self.setWindowTitle("ALL IN ONE TOOLBOX")
         self.resize(960, 660)
         self.setMinimumSize(800, 550)
@@ -56,6 +71,11 @@ class ToolboxApp(QMainWindow):
         )
         sim_vm = SimilarityViewModel(
             container.resolve("similarity"),
+            self._task_runner,
+            self._event_emitter,
+        )
+        exam_vm = JsonExamViewModel(
+            container.resolve("exam"),
             self._task_runner,
             self._event_emitter,
         )
@@ -84,7 +104,7 @@ class ToolboxApp(QMainWindow):
 
         self.nav_list = QListWidget()
         self.nav_list.setIconSize(QSize(24, 24))
-        self.nav_list.setSpacing(4)
+        self.nav_list.setSpacing(2)
         self.nav_list.currentRowChanged.connect(self._on_nav_changed)
         sidebar_layout.addWidget(self.nav_list)
 
@@ -95,7 +115,7 @@ class ToolboxApp(QMainWindow):
         root.addWidget(self.sidebar)
         root.addWidget(self.stack, 1)
 
-        self._register_tools(slide_vm, sim_vm)
+        self._register_tools(slide_vm, sim_vm, exam_vm)
         self.nav_list.setCurrentRow(0)
         self._restyle_all()
         QApplication.instance().styleHints().colorSchemeChanged.connect(
@@ -124,34 +144,39 @@ class ToolboxApp(QMainWindow):
 
         self.sidebar_title.setStyleSheet(
             f"font-size: 16px; font-weight: bold; color: {t.text_primary}; "
-            "padding: 20px 0; background: transparent; border: none;"
+            f"padding: 24px 0 16px; background: transparent; "
+            f"border: none; border-bottom: 1px solid {t.sidebar_border};"
         )
 
         self.nav_list.setStyleSheet(
             "QListWidget { background: transparent; border: none; outline: none; }"
-            f"QListWidget::item {{ padding: 12px 20px; font-size: 14px; "
-            f"color: {t.nav_text}; border: none; border-radius: 6px; "
-            f"margin: 2px 8px; }}"
+            f"QListWidget::item {{ padding: 12px 16px; font-size: 13px; spacing: 4px; "
+            f"color: {t.nav_text}; border: none; border-left: 3px solid transparent; "
+            f"border-radius: 6px; margin: 4px 10px; }}"
             f"QListWidget::item:selected {{ background: {t.nav_selected_bg}; "
-            f"color: {t.nav_selected_text}; font-weight: bold; }}"
-            f"QListWidget::item:hover:!selected {{ background: {t.nav_hover_bg}; }}"
+            f"color: {t.nav_selected_text}; font-weight: bold; "
+            f"border-left: 3px solid {t.accent}; }}"
+            f"QListWidget::item:hover:!selected {{ background: "
+            f"qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {t.hover_blue}, "
+            f"stop:1 rgba(0,0,0,0)); }}"
         )
 
         self.stack.setStyleSheet(
             "QStackedWidget { background: transparent; border: none; border-radius: 12px; }"
         )
 
-    def _register_tools(self, slide_vm, sim_vm):
+    def _register_tools(self, slide_vm, sim_vm, exam_vm):
         """注册工具箱中的所有视图（持有对应 ViewModel）。"""
         self._add_tool(SlideView(slide_vm))
         self._add_tool(SimilarityView(sim_vm))
+        self._add_tool(JsonExamView(exam_vm))
 
     def _add_tool(self, tool):
         """将视图添加到导航栏和堆栈中。"""
         self._tools.append(tool)
 
-        item = QListWidgetItem(tool.get_name())
-        item.setToolTip(tool.get_description())
+        item = QListWidgetItem(tool.get_nav_title())
+        item.setToolTip(f"{tool.get_name()}\n{tool.get_description()}")
         self.nav_list.addItem(item)
 
         self.stack.addWidget(tool)

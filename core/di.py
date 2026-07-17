@@ -8,9 +8,11 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from core.adapters.docx_loader import DocxLoaderAdapter
+from core.adapters.docx_exam_writer import DocxExamWriterAdapter
 from core.adapters.pptx_writer import PptxWriterAdapter
 from core.ports.events import EventEmitter
 from core.ports.tasks import TaskRunner
+from core.services.json_to_word_service import JsonToWordServiceImpl
 from core.services.slide_builder import ExtractionServiceImpl, PptxServiceImpl
 from core.services.similarity_service import SimilarityServiceImpl
 
@@ -35,14 +37,17 @@ class Container:
         """
         loader = DocxLoaderAdapter()
         writer = PptxWriterAdapter()
+        exam_writer = DocxExamWriterAdapter()
         extraction = ExtractionServiceImpl(loader, event_emitter)
         pptx = PptxServiceImpl(writer, event_emitter)
         similarity = SimilarityServiceImpl(loader, event_emitter)
+        exam = JsonToWordServiceImpl(exam_writer, event_emitter)
 
         c = cls()
         c.register("extraction", extraction)
         c.register("pptx", pptx)
         c.register("similarity", similarity)
+        c.register("exam", exam)
         c.register("task_runner", task_runner)
         c.register("event_emitter", event_emitter)
         return c

@@ -30,3 +30,14 @@ class OutputOverwriteError(ToolboxError, ValueError):
 
 class PptxGenerationError(ToolboxError):
     """PPT 生成失败。"""
+
+
+class OutputWriteError(ToolboxError):
+    """试卷（题本 / 解析）写出失败（输出目录无写入权限、磁盘满等）。
+
+    UI 层据此弹出「重新选择输出目录」的弹窗，区别于普通业务异常。
+    """
+
+    def __init__(self, message: str, output_dir: str = "") -> None:
+        super().__init__(message)
+        self.output_dir = output_dir

@@ -6,7 +6,12 @@
 """
 from __future__ import annotations
 
-from typing import Callable, List, Protocol, runtime_checkable
+from typing import Callable, Dict, List, Optional, Protocol, TYPE_CHECKING, runtime_checkable
+
+from shared.contracts import GenerateExamRequest, GenerateExamResult
+
+if TYPE_CHECKING:
+    from core.models.exam_question import ExamQuestion
 
 
 @runtime_checkable
@@ -32,4 +37,22 @@ class PptxWriter(Protocol):
         on_progress: Callable[[int, int], None],
     ) -> int:
         """基于模板为每道题生成两页幻灯片并保存，返回生成的页数。"""
+        ...
+
+
+@runtime_checkable
+class ExamDocxWriter(Protocol):
+    """试卷（题本 + 解析）Word 文档写操作封装。"""
+    def build(
+        self,
+        request: GenerateExamRequest,
+        questions: List["ExamQuestion"],
+        on_progress: Callable[[int, int], None],
+        image_cache: Optional[Dict[str, Optional[bytes]]] = None,
+    ) -> GenerateExamResult:
+        """根据请求与题目数据生成题本与解析文档，返回输出路径。
+
+        ``image_cache`` 为服务层并发预下载好的 ``url -> bytes|None`` 缓存；
+        传入时适配器直接使用（不重复下载），否则走惰性回退下载。
+        """
         ...

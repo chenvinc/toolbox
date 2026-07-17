@@ -15,13 +15,13 @@ from docx import Document
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QDoubleSpinBox,
     QLineEdit, QFrame, QTextBrowser, QButtonGroup, QRadioButton,
-    QFileDialog, QApplication, QPushButton, QSizePolicy,
+    QFileDialog, QApplication, QPushButton, QSizePolicy, QScrollArea,
 )
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QPalette
 
 from theme import Theme
-from widgets import AppButton, AnimatedButton, AnimatedProgressBar, DropZone, MultiDropZone
+from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, MultiDropZone, StepperInput
 from shared.contracts import (
     SimilarityMode, SimilarityRequest, OneToManyResult, ManyToManyResult,
 )
@@ -36,6 +36,9 @@ class SimilarityView(BaseView):
 
     def get_name(self) -> str:
         return "Similarity Checker"
+
+    def get_nav_title(self) -> str:
+        return "🔍 试题查重"
 
     def get_description(self) -> str:
         return "检测主文档与多个副文档之间的题目重复率，支持精确/模糊匹配，导出查重报告。"
@@ -69,6 +72,7 @@ class SimilarityView(BaseView):
     # ── 命令转发（单向数据流：UI → core） ──
     def _on_check(self):
         self._log_browser.clear()
+        self._show_result_placeholder()
         self._check_btn.set_loading(True)
         self._export_btn.set_actionable(False, "请先完成检测后导出")
         self._progress_bar.setVisible(True)
@@ -125,14 +129,11 @@ class SimilarityView(BaseView):
 
     def _on_completed(self, result):
         self._finish_check_ui()
-        if isinstance(result, ManyToManyResult):
-            self._display_many_to_many(result)
-        else:
-            self._display_one_to_many(result)
         self._last_result = result
-        if (isinstance(result, OneToManyResult) and result.duplicate_count > 0) or \
-           (isinstance(result, ManyToManyResult) and len(result.duplicate_pairs) > 0):
-            self._export_btn.set_actionable(True, "")
+        self._render_result(result)
+        # 导出按钮严格绑定“检测结果是否有效”，而非“是否检出重复题”。
+        # 一次干净的查重（0 重复）同样产生有效报告，应允许导出。
+        self._export_btn.set_actionable(self._last_result is not None, "")
 
     def _on_failed(self, message: str):
         self._finish_check_ui()
@@ -140,53 +141,167 @@ class SimilarityView(BaseView):
 
     def _finish_check_ui(self):
         self._check_btn.set_loading(False)
+        self._update_check_state()
         self._progress_bar.setVisible(False)
 
-    # ── 结果展示 ──
-    def _display_one_to_many(self, result: OneToManyResult):
-        self._log_browser.append("\n──── 检测摘要 ────")
-        self._log_browser.append(f"主文档题目数：{result.main_count}")
-        self._log_browser.append(f"重复题目数：{result.duplicate_count}")
-        rate = result.duplicate_count / max(result.main_count, 1) * 100
-        self._log_browser.append(f"重复率：{rate:.1f}%")
-        self._log_browser.append("")
+    # ── 结果展示（结构化卡片，高亮核心数据） ──
+    def _render_result(self, result):
+        """以结构化卡片渲染检测结果，高亮重复率 / 重复题目数。"""
+        self._clear_layout(self._result_layout)
+        if isinstance(result, ManyToManyResult):
+            self._build_many_to_many_cards(result)
+        else:
+            self._build_one_to_many_cards(result)
+
+    def _clear_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+            else:
+                sub = item.layout()
+                if sub is not None:
+                    self._clear_layout(sub)
+
+    def _show_result_placeholder(self):
+        self._clear_layout(self._result_layout)
+        self._result_placeholder = QLabel(
+            "完成检测后，将在此以结构化卡片展示重复率与重复题目。"
+        )
+        self._result_placeholder.setWordWrap(True)
+        self._result_layout.addWidget(self._result_placeholder)
+
+    def _build_one_to_many_cards(self, result: OneToManyResult):
+        t = self.theme
+        total = result.main_count
+        dup = result.duplicate_count
+        rate = dup / max(total, 1) * 100
+        rate_color = t.danger if rate >= 50 else t.accent
+
+        summary = self._card()
+        sl = QVBoxLayout(summary)
+        sl.setContentsMargins(20, 16, 20, 16)
+        sl.setSpacing(8)
+        title = QLabel("检测摘要")
+        title.setStyleSheet(t.qss_section_header())
+        rate_lbl = QLabel(f"{rate:.1f}%")
+        rate_lbl.setStyleSheet(
+            f"font-size: 28px; font-weight: bold; color: {rate_color};"
+        )
+        sub_lbl = QLabel(f"重复题目 {dup} 道 / 总题目 {total} 道")
+        sub_lbl.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+        sl.addWidget(title)
+        sl.addWidget(rate_lbl)
+        sl.addWidget(sub_lbl)
+        self._result_layout.addWidget(summary)
+
+        if not result.details:
+            empty = QLabel("未检测到重复题目，题库质量良好。")
+            empty.setWordWrap(True)
+            empty.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+            self._result_layout.addWidget(empty)
+            return
+
         for d in result.details:
+            dc = self._card()
+            dl = QVBoxLayout(dc)
+            dl.setContentsMargins(16, 12, 16, 12)
+            dl.setSpacing(6)
+            h = QLabel(f"第 {d.index} 题")
+            h.setStyleSheet(
+                f"font-size: 13px; font-weight: bold; color: {t.text_primary};"
+            )
+            dl.addWidget(h)
             text0 = d.text[0] if d.text else ""
             preview = (text0[:50] + "…") if len(text0) > 50 else text0
-            self._log_browser.append(f"第{d.index}题 - {preview}")
+            pv = QLabel(preview)
+            pv.setWordWrap(True)
+            pv.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+            dl.addWidget(pv)
             for item in d.sources:
-                self._log_browser.append(
-                    f"  重复来源：{item.file} (相似度 {item.score:.2f}, {item.reason})"
+                s = QLabel(
+                    f"重复来源：{item.file}（相似度 {item.score:.2f}，{item.reason}）"
                 )
-            self._log_browser.append("")
+                s.setWordWrap(True)
+                s.setStyleSheet(
+                    f"font-size: 12px; color: {t.text_secondary}; padding-left: 12px;"
+                )
+                dl.addWidget(s)
+            self._result_layout.addWidget(dc)
 
-    def _display_many_to_many(self, result: ManyToManyResult):
+    def _build_many_to_many_cards(self, result: ManyToManyResult):
+        t = self.theme
         internal = sum(1 for p in result.duplicate_pairs if p.pair_type == "internal")
         cross = sum(1 for p in result.duplicate_pairs if p.pair_type == "cross")
-        self._log_browser.append("\n──── 检测摘要 ────")
-        self._log_browser.append(
-            f"文档数：{result.document_count}，总题目数：{result.total_questions}"
+        total_pairs = len(result.duplicate_pairs)
+
+        summary = self._card()
+        sl = QVBoxLayout(summary)
+        sl.setContentsMargins(20, 16, 20, 16)
+        sl.setSpacing(8)
+        title = QLabel("检测摘要")
+        title.setStyleSheet(t.qss_section_header())
+        rate_lbl = QLabel(f"{total_pairs} 对")
+        rate_lbl.setStyleSheet(
+            f"font-size: 28px; font-weight: bold; color: {t.accent};"
         )
-        self._log_browser.append(
-            f"重复对总数：{len(result.duplicate_pairs)}"
-            f"（文档内 {internal}，跨文档 {cross}）"
+        sub_lbl = QLabel(
+            f"文档数 {result.document_count} · 总题目 {result.total_questions} · "
+            f"重复对 {total_pairs}（跨文档 {cross} / 文档内 {internal}）"
         )
-        self._log_browser.append("")
-        self._log_browser.append("文档题目分布：")
-        for fname, count in result.doc_questions.items():
-            self._log_browser.append(f"  {fname}：{count} 题")
-        self._log_browser.append("")
-        for i, pair in enumerate(result.duplicate_pairs, 1):
-            tag = "[跨文档]" if pair.pair_type == "cross" else "[文档内]"
-            q1_text = pair.q1_text[0] if pair.q1_text else ""
-            preview = (q1_text[:40] + "…") if len(q1_text) > 40 else q1_text
-            self._log_browser.append(
-                f"{i}. {tag} {pair.q1_file}-第{pair.q1_index}题 "
-                f"⇄ {pair.q2_file}-第{pair.q2_index}题 "
-                f"({pair.score:.2f}, {pair.reason})"
+        sub_lbl.setWordWrap(True)
+        sub_lbl.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+        sl.addWidget(title)
+        sl.addWidget(rate_lbl)
+        sl.addWidget(sub_lbl)
+        self._result_layout.addWidget(summary)
+
+        if result.doc_questions:
+            dist = self._card()
+            dl = QVBoxLayout(dist)
+            dl.setContentsMargins(16, 12, 16, 12)
+            dl.setSpacing(4)
+            dh = QLabel("文档题目分布")
+            dh.setStyleSheet(
+                f"font-size: 13px; font-weight: bold; color: {t.text_primary};"
             )
-            self._log_browser.append(f"   {preview}")
-            self._log_browser.append("")
+            dl.addWidget(dh)
+            for fname, count in result.doc_questions.items():
+                row = QLabel(f"{fname}：{count} 题")
+                row.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+                dl.addWidget(row)
+            self._result_layout.addWidget(dist)
+
+        for i, pair in enumerate(result.duplicate_pairs, 1):
+            tag = "跨文档" if pair.pair_type == "cross" else "文档内"
+            pc = self._card()
+            pl = QVBoxLayout(pc)
+            pl.setContentsMargins(16, 12, 16, 12)
+            pl.setSpacing(6)
+            h = QLabel(
+                f"{i}. [{tag}] {pair.q1_file}-第{pair.q1_index}题 "
+                f"⇄ {pair.q2_file}-第{pair.q2_index}题 "
+                f"（{pair.score:.2f}，{pair.reason}）"
+            )
+            h.setWordWrap(True)
+            h.setStyleSheet(
+                f"font-size: 13px; font-weight: bold; color: {t.text_primary};"
+            )
+            pl.addWidget(h)
+            q1 = pair.q1_text[0] if pair.q1_text else ""
+            preview = (q1[:40] + "…") if len(q1) > 40 else q1
+            pv = QLabel(preview)
+            pv.setWordWrap(True)
+            pv.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
+            pl.addWidget(pv)
+            self._result_layout.addWidget(pc)
+
+    def _card(self):
+        card = QFrame()
+        card.setStyleSheet(self.theme.qss_card())
+        return card
 
     # ── 报告导出（展示层职责） ──
     def _on_export(self):
@@ -204,6 +319,14 @@ class SimilarityView(BaseView):
         else:
             self._export_one_to_many(self._last_result, path)
         self._open_folder(path)
+        folder = os.path.dirname(path) or "."
+        self._export_status.setText(
+            f"✅ 报告已导出：{os.path.basename(path)}　"
+            f"<a href=\"folder:{folder}\" style=\"color: {self.theme.accent}; "
+            f"text-decoration: underline;\">打开文件夹</a>"
+        )
+        self._export_status.setVisible(True)
+        self.toast.show_message("查重报告已导出", success=True)
 
     def _export_one_to_many(self, result: OneToManyResult, path: str):
         doc = Document()
@@ -260,22 +383,31 @@ class SimilarityView(BaseView):
     # ── UI 构建 ──
     def _setup_ui(self):
         t = self.theme
+        self._section_labels = []
+        self._field_labels = []
+        self._module_cards = []
         root = QVBoxLayout(self)
-        root.setContentsMargins(16, 16, 16, 16)
+        root.setContentsMargins(24, 20, 24, 20)
         root.setSpacing(0)
 
-        self._section_labels = []
-        card = QFrame()
-        self._main_card = card
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(24, 20, 24, 20)
-        card_layout.setSpacing(16)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._scroll = scroll
 
+        content = QWidget()
+        content.setStyleSheet("background: transparent;")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(16)
+
+        # 查重模式
         mode_row = QHBoxLayout()
-        mode_row.setSpacing(4)
+        mode_row.setSpacing(8)
         mode_label = QLabel("查重模式：")
         mode_label.setStyleSheet(
-            f"font-size: 14px; font-weight: bold; color: {t.card_header_color}; "
+            f"font-size: 13px; font-weight: bold; color: {t.card_header_color}; "
             "background: transparent; padding: 0;"
         )
         mode_row.addWidget(mode_label)
@@ -289,104 +421,172 @@ class SimilarityView(BaseView):
         mode_row.addWidget(self._radio_1toN)
         mode_row.addWidget(self._radio_NtoN)
         mode_row.addStretch()
-        card_layout.addLayout(mode_row)
+        content_layout.addLayout(mode_row)
 
+        # 主文档（模块卡片，主色边框强调）
         self._one_to_many_widgets = []
-        lbl_main = self._section_label("📄 主文档（选择题库）", card_layout)
-        self._one_to_many_widgets.append(lbl_main)
-        self._main_drop_zone = DropZone("点击或拖拽 .docx 文件", "Word 文档 (*.docx)", theme=t)
+        card_main, lm = self._make_module_card("主文档（选择题库）")
+        self._main_drop_zone = DropZone(
+            "点击或拖拽 .docx 文件", "Word 文档 (*.docx)", theme=t, variant="primary"
+        )
         self._main_drop_zone.file_selected.connect(self._on_main_file)
-        self._one_to_many_widgets.append(self._main_drop_zone)
-        card_layout.addWidget(self._main_drop_zone)
+        self._main_drop_zone.file_cleared.connect(self._on_main_cleared)
+        self._main_drop_zone.invalid_file.connect(self._on_invalid_file)
+        lm.addWidget(self._main_drop_zone)
+        self._one_to_many_widgets.append(card_main)
+        content_layout.addWidget(card_main)
 
         self._divider = QFrame()
         self._divider.setFixedHeight(1)
         self._one_to_many_widgets.append(self._divider)
-        card_layout.addWidget(self._divider)
+        content_layout.addWidget(self._divider)
 
-        lbl_sec = self._section_label("📑 副文档（对比库，可多选）", card_layout)
-        self._one_to_many_widgets.append(lbl_sec)
+        # 副文档（模块卡片，中性边框）
+        card_sec, ls = self._make_module_card("副文档（对比库，可多选）")
         self._secondary_drop_zone = MultiDropZone(
-            "点击或拖拽 .docx 文件（可多选）", "Word 文档 (*.docx)", theme=t
+            "点击或拖拽 .docx 文件（可多选）", "Word 文档 (*.docx)",
+            theme=t, variant="secondary"
         )
         self._secondary_drop_zone.files_selected.connect(self._on_secondary_files)
-        self._one_to_many_widgets.append(self._secondary_drop_zone)
-        card_layout.addWidget(self._secondary_drop_zone)
+        self._secondary_drop_zone.invalid_file.connect(self._on_invalid_file)
+        ls.addWidget(self._secondary_drop_zone)
+        self._one_to_many_widgets.append(card_sec)
+        content_layout.addWidget(card_sec)
 
+        # 所有文档（多对多，中性边框）
         self._many_to_many_widgets = []
-        lbl_all = self._section_label("📚 所有文档（可多选，至少2份）", card_layout)
-        self._many_to_many_widgets.append(lbl_all)
+        card_all, la = self._make_module_card("所有文档（可多选，至少 2 份）")
         self._all_drop_zone = MultiDropZone(
-            "点击或拖拽 .docx 文件（可多选）", "Word 文档 (*.docx)", theme=t
+            "点击或拖拽 .docx 文件（可多选）", "Word 文档 (*.docx)",
+            theme=t, variant="secondary"
         )
         self._all_drop_zone.files_selected.connect(self._on_all_files)
-        self._many_to_many_widgets.append(self._all_drop_zone)
-        card_layout.addWidget(self._all_drop_zone)
+        self._all_drop_zone.invalid_file.connect(self._on_invalid_file)
+        la.addWidget(self._all_drop_zone)
+        self._many_to_many_widgets.append(card_all)
+        content_layout.addWidget(card_all)
         for w in self._many_to_many_widgets:
             w.setVisible(False)
 
-        settings_row = QHBoxLayout()
-        settings_row.setSpacing(8)
-        th_label = QLabel("相似度阈值")
+        # 参数网格（阈值 / 题号格式 / 选项前缀 + 重置）
+        params_row = QHBoxLayout()
+        params_row.setSpacing(12)
         self._threshold_spin = QDoubleSpinBox()
         self._threshold_spin.setRange(0.5, 1.0)
         self._threshold_spin.setSingleStep(0.01)
         self._threshold_spin.setDecimals(2)
         self._threshold_spin.setValue(float(self.settings.value("threshold", 0.8)))
-        num_label = QLabel("题号格式")
+        self._threshold_spin.setFixedHeight(36)
         self._num_edit = QLineEdit()
         self._num_edit.setPlaceholderText("如 1.")
-        opt_label = QLabel("选项前缀")
+        self._num_edit.setFixedHeight(36)
         self._opt_edit = QLineEdit()
         self._opt_edit.setPlaceholderText("如 A.")
-        self._reset_btn = QPushButton("重置")
+        self._opt_edit.setFixedHeight(36)
+
+        # 相似度阈值步进控件：左侧− / 中间输入 / 右侧+，与 Quiz2Slide 字号/行距 1:1 统一；
+        # 内部 QDoubleSpinBox 原生上下箭头已在 StepperInput 中彻底移除。
+        self._threshold_stepper = StepperInput(
+            spin=self._threshold_spin, theme=t, minus_text="−", plus_text="+"
+        )
+        self._threshold_stepper.minus_button.clicked.connect(
+            lambda: (self._threshold_spin.stepDown(), self._save_settings())
+        )
+        self._threshold_stepper.plus_button.clicked.connect(
+            lambda: (self._threshold_spin.stepUp(), self._save_settings())
+        )
+
+        params_row.addWidget(self._make_labeled_field("相似度阈值", self._threshold_stepper))
+        params_row.addWidget(self._make_labeled_field("题号格式", self._num_edit))
+        params_row.addWidget(self._make_labeled_field("选项前缀", self._opt_edit))
+        params_row.addStretch()
+        self._reset_btn = AppButton(
+            "重置", default_height=32, theme=self.theme, variant="secondary"
+        )
         self._reset_btn.clicked.connect(self._on_reset_settings)
-        settings_row.addWidget(th_label)
-        settings_row.addWidget(self._threshold_spin)
-        settings_row.addWidget(num_label)
-        settings_row.addWidget(self._num_edit)
-        settings_row.addWidget(opt_label)
-        settings_row.addWidget(self._opt_edit)
-        settings_row.addWidget(self._reset_btn)
-        settings_row.addStretch()
-        card_layout.addLayout(settings_row)
+        params_row.addWidget(self._reset_btn, alignment=Qt.AlignVCenter)
+        content_layout.addLayout(params_row)
 
         self._threshold_spin.valueChanged.connect(self._save_settings)
         self._num_edit.textChanged.connect(self._save_settings)
         self._opt_edit.textChanged.connect(self._save_settings)
 
         btn_row = QHBoxLayout()
-        btn_row.setSpacing(12)
-        self._check_btn = AnimatedButton("开始检测", default_height=44, theme=self.theme)
+        btn_row.setSpacing(8)
+        self._check_btn = AnimatedButton(
+            "开始检测", default_height=40, theme=self.theme, loading_text="检测中..."
+        )
         self._check_btn.clicked.connect(self._on_check)
-        self._export_btn = AppButton("导出报告", default_height=44, theme=self.theme)
+        self._export_btn = AppButton(
+            "导出报告", default_height=32, theme=self.theme, variant="secondary"
+        )
         self._export_btn.clicked.connect(self._on_export)
         self._export_btn.set_actionable(False, "请先完成检测后导出")
         btn_row.addWidget(self._check_btn)
         btn_row.addWidget(self._export_btn)
-        card_layout.addLayout(btn_row)
+        content_layout.addLayout(btn_row)
 
-        card_layout.addSpacing(8)
+        content_layout.addSpacing(8)
 
         self._progress_bar = AnimatedProgressBar()
         self._progress_bar.setTextVisible(False)
         self._progress_bar.setVisible(False)
-        card_layout.addWidget(self._progress_bar)
+        content_layout.addWidget(self._progress_bar)
 
+        # 处理日志（检测过程中的步骤反馈）
         self._log_browser = QTextBrowser()
         self._log_browser.setOpenExternalLinks(False)
-        self._log_browser.setMinimumHeight(180)
-        self._log_browser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        card_layout.addWidget(self._log_browser)
+        self._log_browser.setMinimumHeight(90)
+        self._log_browser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        content_layout.addWidget(self._log_browser)
 
-        root.addWidget(card)
+        # 检测结果（结构化卡片，替代纯文本展示）
+        self._result_area = QFrame()
+        self._result_area.setObjectName("result_area")
+        self._result_layout = QVBoxLayout(self._result_area)
+        self._result_layout.setContentsMargins(0, 0, 0, 0)
+        self._result_layout.setSpacing(12)
+        self._show_result_placeholder()
+        content_layout.addWidget(self._result_area)
+
+        # 导出后状态：可点击「打开文件夹」链接
+        self._export_status = QLabel("")
+        self._export_status.setVisible(False)
+        self._export_status.setTextFormat(Qt.RichText)
+        self._export_status.linkActivated.connect(self._open_folder_link)
+        content_layout.addWidget(self._export_status)
+
+        scroll.setWidget(content)
+        root.addWidget(scroll, 1)
+        self.toast = ToastNotification(self, theme=self.theme)
+        self._update_check_state()
         self._restyle_all()
 
-    def _section_label(self, text, layout):
-        label = QLabel(text)
-        self._section_labels.append(label)
+    def _make_module_card(self, title):
+        """创建带加粗小标题的浅灰圆角模块卡片，返回 (卡片, 内容布局)。"""
+        card = QFrame()
+        card.setObjectName("module_card")
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(12)
+        header = QLabel(title)
+        header.setObjectName("card_title")
+        self._section_labels.append(header)
+        layout.addWidget(header)
+        self._module_cards.append(card)
+        return card, layout
+
+    def _make_labeled_field(self, label_text, widget):
+        wrapper = QWidget()
+        wrapper.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(wrapper)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        label = QLabel(label_text)
+        self._field_labels.append(label)
         layout.addWidget(label)
-        return label
+        layout.addWidget(widget)
+        return wrapper
 
     def _on_mode_changed(self, button):
         if button == self._radio_1toN:
@@ -402,18 +602,52 @@ class SimilarityView(BaseView):
             for w in self._many_to_many_widgets:
                 w.setVisible(True)
         self._log_browser.clear()
+        self._update_check_state()
 
     def _on_main_file(self, path):
         self._main_path = path
         self._log_browser.clear()
+        self._update_check_state()
+
+    def _on_main_cleared(self):
+        self._main_path = ""
+        self._update_check_state()
 
     def _on_secondary_files(self, paths):
         self._secondary_paths = paths
         self._log_browser.clear()
+        self._update_check_state()
 
     def _on_all_files(self, paths):
         self._all_paths = paths
         self._log_browser.clear()
+        self._update_check_state()
+
+    def _on_invalid_file(self, path):
+        self.toast.show_message(f"文件格式不支持：{os.path.basename(path)}", success=False)
+
+    def _update_check_state(self):
+        """依据模式与已选文件，启用/置灰「开始检测」按钮。"""
+        if self._check_btn._loading:
+            return
+        if self._mode == SimilarityMode.ONE_TO_MANY:
+            if not self._main_path and not self._secondary_paths:
+                self._check_btn.set_actionable(False, "请先选择主文档与至少一个副文档")
+            elif not self._main_path:
+                self._check_btn.set_actionable(False, "请先选择主文档")
+            elif not self._secondary_paths:
+                self._check_btn.set_actionable(False, "请先选择至少一个副文档")
+            else:
+                self._check_btn.set_actionable(True, "")
+        else:
+            if len(self._all_paths) < 2:
+                self._check_btn.set_actionable(False, "请先选择至少 2 份文档")
+            else:
+                self._check_btn.set_actionable(True, "")
+
+    def _open_folder_link(self, link):
+        if link.startswith("folder:"):
+            self._open_folder(link[7:])
 
     # ── QSettings 持久化（P1 #4） ──
     def _load_settings(self):
@@ -463,13 +697,16 @@ class SimilarityView(BaseView):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self._main_card.setStyleSheet(t.qss_card())
+        for card in self._module_cards:
+            card.setStyleSheet(t.qss_card())
+        self._result_area.setStyleSheet("background: transparent; border: none;")
+
         for dz in (self._main_drop_zone, self._secondary_drop_zone, self._all_drop_zone):
             dz._theme = t
             dz._apply_style()
 
         radio_style = (
-            f"QRadioButton {{ color: {t.text_primary}; font-size: 14px; "
+            f"QRadioButton {{ color: {t.text_primary}; font-size: 13px; "
             f"background: transparent; spacing: 6px; padding: 4px 12px; }}"
             f"QRadioButton::indicator {{ width: 16px; height: 16px; }}"
         )
@@ -481,25 +718,48 @@ class SimilarityView(BaseView):
             lbl.setStyleSheet(header_s)
 
         self._divider.setStyleSheet(t.qss_divider())
+
+        label_s = f"font-size: 12px; color: {t.text_secondary}; margin-bottom: 2px;"
+        for lbl in self._field_labels:
+            lbl.setStyleSheet(label_s)
+
         self._check_btn.set_theme(t)
         self._export_btn.set_theme(t)
+        self._reset_btn.set_theme(t)
         self._progress_bar.setStyleSheet(t.qss_progress_bar())
 
         self._log_browser.setStyleSheet(
             f"QTextBrowser {{ background: {t.input_bg}; color: {t.text_primary}; "
-            f"border: none; border-radius: 8px; padding: 12px; font-size: 13px; }}"
+            f"border: none; border-radius: {t.radius}px; padding: 12px; font-size: 13px; }}"
         )
+        # 文本框（题号格式 / 选项前缀）：全局规范，不再包含 QDoubleSpinBox 部分
         input_s = (
-            f"QLineEdit, QDoubleSpinBox {{ padding: 4px 8px; border: none; "
-            f"border-radius: 8px; font-size: 14px; background: {t.input_bg}; "
+            f"QLineEdit {{ padding: 4px 8px; border: 1px solid transparent; "
+            f"border-radius: {t.radius}px; font-size: 13px; background: {t.input_bg}; "
             f"color: {t.text_primary}; }}"
+            f"QLineEdit:hover {{ border-color: {t.accent}; }}"
+            f"QLineEdit:focus {{ border: 1px solid {t.accent}; background: {t.card_bg}; }}"
         )
-        self._threshold_spin.setStyleSheet(input_s)
         self._num_edit.setStyleSheet(input_s)
         self._opt_edit.setStyleSheet(input_s)
-        self._reset_btn.setStyleSheet(
-            f"QPushButton {{ padding: 4px 12px; border: none; border-radius: 8px; "
-            f"font-size: 14px; background: {t.input_bg}; color: {t.text_primary}; }}"
+
+        # 相似度阈值步进控件（中间输入 + 两侧按钮）统一应用全局规范
+        self._threshold_stepper.set_theme(t)
+
+        self._export_status.setStyleSheet(f"color: {t.text_secondary}; font-size: 12px;")
+
+        # 结果区：如有结果则按当前主题重渲染，否则刷新占位提示样式
+        if self._last_result is not None:
+            self._render_result(self._last_result)
+        else:
+            self._show_result_placeholder()
+
+        self._scroll.setStyleSheet(
+            "QScrollArea { background: transparent; border: none; }"
+            "QScrollBar:vertical { width: 6px; background: transparent; }"
+            f"QScrollBar::handle:vertical {{ background: {t.scrollbar_handle}; "
+            "border-radius: 3px; min-height: 30px; }"
+            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
         )
 
     def stop_worker(self):

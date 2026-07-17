@@ -8,6 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from shared.contracts import (
     ExtractQuestionsRequest, ExtractQuestionsResult,
+    GenerateExamRequest, GenerateExamResult,
     GeneratePptxRequest, GeneratePptxResult,
     SimilarityRequest, SimilarityResult,
 )
@@ -32,4 +33,12 @@ class ExtractionService(Protocol):
 class PptxService(Protocol):
     """PPT 生成服务。"""
     def generate(self, request: GeneratePptxRequest) -> GeneratePptxResult:
+        ...
+
+
+@runtime_checkable
+class ExamGeneratorService(Protocol):
+    """JSON→Word 试卷生成服务（题本 + 解析）。"""
+    def generate(self, request: GenerateExamRequest) -> GenerateExamResult:
+        """同步生成题本与解析文档，返回输出路径；失败抛业务异常。"""
         ...

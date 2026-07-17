@@ -28,6 +28,14 @@ class LineSpacingType(str, Enum):
     CUSTOM = "自定义"
 
 
+class ExamLineSpacingType(str, Enum):
+    """JSON→Word 试卷行间距预设（与 UI 下拉一致）。"""
+    SINGLE = "1倍行距"
+    ONE_HALF = "1.5倍行距"
+    DOUBLE = "2倍行距"
+    CUSTOM = "自定义"
+
+
 class EventType(str, Enum):
     """后端向前端推送的事件类型。"""
     CHECK_STARTED = "check_started"
@@ -39,6 +47,9 @@ class EventType(str, Enum):
     PPTX_PROGRESS = "pptx_progress"
     PPTX_COMPLETED = "pptx_completed"
     PPTX_FAILED = "pptx_failed"
+    EXAM_PROGRESS = "exam_progress"
+    EXAM_COMPLETED = "exam_completed"
+    EXAM_FAILED = "exam_failed"
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +157,40 @@ class GeneratePptxResult(BaseModel):
     page_count: int
 
 
+class GenerateExamRequest(BaseModel):
+    """从 JSON 题目数据生成 Word 题本与解析文档。
+
+    排版设置（字体 / 字号 / 行间距 / 首行缩进）对题本文档与解析文档同时生效。
+    """
+
+    input_path: str = Field(..., description="输入 JSON 题目数据文件路径")
+    output_dir: str = Field(
+        "", description="输出目录；为空时默认与输入 JSON 同目录"
+    )
+    font_name: str = Field(
+        "宋体/Times New Roman", description="字体（CJK / Latin 组合名）"
+    )
+    font_size_name: str = Field("五号", description="Word 字号名（如 五号 / 小四）")
+    line_spacing_type: ExamLineSpacingType = ExamLineSpacingType.ONE_HALF
+    line_spacing_value: float = Field(
+        1.5, ge=0.1, le=5.0, description="自定义行距倍数（仅 line_spacing_type=CUSTOM 时生效）"
+    )
+    first_line_indent: bool = Field(
+        True, description="首行缩进 2 字符（开启时题本/解析正文段落缩进）"
+    )
+
+
+class GenerateExamResult(BaseModel):
+    """试卷（题本 + 解析）生成结果。"""
+    question_book_path: str
+    analysis_path: str
+    question_count: int
+    failed_images: List[str] = Field(
+        default_factory=list,
+        description="下载失败的图片 URL 列表；为空表示全部成功",
+    )
+
+
 # 查重结果联合类型（按 mode 判别）
 SimilarityResult = Annotated[
     Union[OneToManyResult, ManyToManyResult], Field(discriminator="mode")
@@ -161,8 +206,10 @@ class _BaseEvent(BaseModel):
 
 
 class ProgressEvent(_BaseEvent):
-    """通用进度事件（查重/提取/PPT生成复用）。"""
-    type: Literal[EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS] = EventType.CHECK_PROGRESS
+    """通用进度事件（查重/提取/PPT生成/试卷生成复用）。"""
+    type: Literal[
+        EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS, EventType.EXAM_PROGRESS
+    ] = EventType.CHECK_PROGRESS
     message: str = ""
     current: int = 0
     total: int = 0
@@ -195,11 +242,24 @@ class PptxCompletedEvent(_BaseEvent):
     result: GeneratePptxResult
 
 
+class ExamCompletedEvent(_BaseEvent):
+    """试卷生成完成事件。"""
+    type: Literal[EventType.EXAM_COMPLETED] = EventType.EXAM_COMPLETED
+    result: GenerateExamResult
+
+
+class ExamFailedEvent(_BaseEvent):
+    """试卷生成失败事件。"""
+    type: Literal[EventType.EXAM_FAILED] = EventType.EXAM_FAILED
+    message: str
+
+
 # 事件联合类型（按 type 判别）
 DomainEvent = Annotated[
     Union[
         CheckStartedEvent, CheckCompletedEvent, ExtractCompletedEvent,
-        PptxCompletedEvent, ProgressEvent, FailedEvent,
+        PptxCompletedEvent, ExamCompletedEvent, ExamFailedEvent,
+        ProgressEvent, FailedEvent,
     ],
     Field(discriminator="type"),
 ]

@@ -20,10 +20,10 @@ from PySide6.QtWidgets import (
     QTextBrowser, QApplication,
 )
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
-from PySide6.QtGui import QPalette
+from PySide6.QtGui import QPalette, QDoubleValidator
 
 from theme import Theme, _get_system_fonts
-from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone
+from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, StepperInput
 from shared.contracts import (
     ExtractQuestionsRequest, GeneratePptxRequest, LineSpacingType,
 )
@@ -40,6 +40,9 @@ class SlideView(BaseView):
 
     def get_name(self) -> str:
         return "Quiz2Slide"
+
+    def get_nav_title(self) -> str:
+        return "📑 题库转PPT"
 
     def get_description(self) -> str:
         return "将 Word 题目文档转换为可直接使用的 PowerPoint 幻灯片。"
@@ -72,16 +75,11 @@ class SlideView(BaseView):
         t = self.theme
         self._field_labels: list = []
         self._section_labels: list = []
+        self._module_cards: list = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(16, 16, 16, 16)
+        root.setContentsMargins(24, 20, 24, 20)
         root.setSpacing(0)
-
-        card = QFrame()
-        self._main_card = card
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(0, 0, 0, 0)
-        card_layout.setSpacing(0)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -92,33 +90,37 @@ class SlideView(BaseView):
         content = QWidget()
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(24, 20, 24, 20)
+        content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(16)
 
-        self._section_header("📄 选择来源", content_layout)
+        # ── 模块一：导入源文档 ──
+        card1, l1 = self._make_module_card("导入源文档")
         fmt_row = QHBoxLayout()
-        fmt_row.setSpacing(12)
+        fmt_row.setSpacing(8)
         self.question_num_fmt = QLineEdit("1.")
-        self.question_num_fmt.setPlaceholderText("1.")
+        self.question_num_fmt.setPlaceholderText("如 1.")
         self.question_num_fmt.setFixedHeight(36)
         self.option_prefix = QLineEdit("A.")
-        self.option_prefix.setPlaceholderText("A.")
+        self.option_prefix.setPlaceholderText("如 A.")
         self.option_prefix.setFixedHeight(36)
         fmt_row.addWidget(self._make_labeled_field("题号格式", self.question_num_fmt))
         fmt_row.addWidget(self._make_labeled_field("选项前缀", self.option_prefix))
-        content_layout.addLayout(fmt_row)
+        l1.addLayout(fmt_row)
 
         self.word_drop_zone = DropZone("点击或拖拽 .docx 文件", "Word 文档 (*.docx)", theme=t)
         self.word_drop_zone.file_selected.connect(self._on_word_file)
-        content_layout.addWidget(self.word_drop_zone)
+        self.word_drop_zone.file_cleared.connect(self._on_word_cleared)
+        self.word_drop_zone.invalid_file.connect(
+            lambda p: self.toast.show_message(
+                f"文件格式不支持：{os.path.basename(p)}", success=False)
+        )
+        l1.addWidget(self.word_drop_zone)
+        content_layout.addWidget(card1)
 
-        self._divider = QFrame()
-        self._divider.setFixedHeight(1)
-        content_layout.addWidget(self._divider)
-
-        self._section_header("🎨 幻灯片风格", content_layout)
+        # ── 模块二：幻灯片样式自定义 ──
+        card2, l2 = self._make_module_card("幻灯片样式自定义")
         font_row = QHBoxLayout()
-        font_row.setSpacing(12)
+        font_row.setSpacing(8)
         system_fonts = _get_system_fonts()
         self.font_name = QComboBox()
         self.font_name.setEditable(True)
@@ -132,55 +134,85 @@ class SlideView(BaseView):
         self.font_size.setValue(18)
         self.font_size.setMinimumWidth(70)
         self.font_size.setFixedHeight(36)
+        self.font_size_stepper = StepperInput(spin=self.font_size, theme=t)
         font_row.addWidget(self._make_labeled_field("字体", self.font_name))
-        font_row.addWidget(self._make_labeled_field("字号", self.font_size))
-        content_layout.addLayout(font_row)
+        font_row.addWidget(self._make_labeled_field("字号", self.font_size_stepper))
+        l2.addLayout(font_row)
+
+        # 行间距模块小标题（严格匹配全局 section_header：13px 加粗 + 主题文本色）
+        spacing_title = QLabel("行间距设置")
+        self._section_labels.append(spacing_title)
+        l2.addWidget(spacing_title)
 
         spacing_row = QHBoxLayout()
-        spacing_row.setSpacing(12)
+        spacing_row.setSpacing(8)
         self.line_spacing_type = QComboBox()
         self.line_spacing_type.addItems(["1 倍", "1.5 倍", "自定义"])
         self.line_spacing_type.setCurrentText("1 倍")
         self.line_spacing_type.setMinimumWidth(160)
         self.line_spacing_type.setFixedHeight(36)
         self.line_spacing_type.currentTextChanged.connect(self._on_spacing_changed)
-        self.line_spacing_value = QDoubleSpinBox()
-        self.line_spacing_value.setRange(0.5, 5.0)
-        self.line_spacing_value.setSingleStep(0.1)
-        self.line_spacing_value.setDecimals(1)
-        self.line_spacing_value.setValue(2.0)
+        spacing_row.addWidget(self.line_spacing_type)
+
+        # 自定义行距：仅在下拉选中「自定义」时显示；占位提示「请输入行距倍数」；
+        # 用 QLineEdit + 步进控件（左侧− / 中间输入 / 右侧+），与阈值输入框 1:1 统一。
+        self.line_spacing_value = QLineEdit()
+        self.line_spacing_value.setPlaceholderText("请输入行距倍数")
+        self.line_spacing_value.setValidator(QDoubleValidator(0.5, 5.0, 1))
+        self.line_spacing_value.setText("2.0")
         self.line_spacing_value.setFixedHeight(36)
-        self.line_spacing_value.setVisible(False)
-        self.first_line_indent = QCheckBox("是")
+        self.line_spacing_value_stepper = StepperInput(
+            spin=self.line_spacing_value, theme=t,
+            min_val=0.5, max_val=5.0, step=0.1, decimals=1, default_value=2.0,
+        )
+        self.line_spacing_value_stepper.setVisible(False)
+        spacing_row.addWidget(self.line_spacing_value_stepper)
+
+        self.first_line_indent = QCheckBox("启用首行缩进")
         self.first_line_indent.setChecked(True)
         self.first_line_indent.setFixedHeight(36)
-        spacing_row.addWidget(self._make_labeled_field("行间距", self.line_spacing_type))
-        spacing_row.addWidget(self._make_labeled_field("自定义", self.line_spacing_value))
-        spacing_row.addWidget(self._make_labeled_field("首行缩进", self.first_line_indent))
+        spacing_row.addWidget(self.first_line_indent, alignment=Qt.AlignVCenter)
         spacing_row.addStretch()
-        content_layout.addLayout(spacing_row)
+        l2.addLayout(spacing_row)
+        content_layout.addWidget(card2)
 
+        # ── 模块三：套用 PPT 模板 ──
+        card3, l3 = self._make_module_card("套用 PPT 模板")
         self.ppt_drop_zone = DropZone("点击或拖拽 .pptx 模板", "PPT 模板 (*.pptx)", theme=t)
         self.ppt_drop_zone.file_selected.connect(self._on_ppt_file)
-        content_layout.addWidget(self.ppt_drop_zone)
+        self.ppt_drop_zone.file_cleared.connect(self._on_ppt_cleared)
+        self.ppt_drop_zone.invalid_file.connect(
+            lambda p: self.toast.show_message(
+                f"文件格式不支持：{os.path.basename(p)}", success=False)
+        )
+        l3.addWidget(self.ppt_drop_zone)
+        content_layout.addWidget(card3)
 
+        # ── 模块四：输出路径设置 ──
+        card4, l4 = self._make_module_card("输出路径设置")
         save_row = QHBoxLayout()
-        save_row.setSpacing(12)
+        save_row.setSpacing(8)
         self.out_path_label = QLabel()
         self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._save_to_label = QLabel("保存到:")
-        change_btn = AppButton("更改", default_height=28, theme=self.theme)
+        change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
         change_btn.setFixedWidth(80)
         change_btn.clicked.connect(lambda: self._on_browse_save())
+        open_btn = AppButton("打开文件夹", default_height=32, theme=self.theme, variant="secondary")
+        open_btn.setFixedWidth(104)
+        open_btn.clicked.connect(self._open_output_folder)
+        self._open_out_btn = open_btn
         save_row.addWidget(self._save_to_label)
         save_row.addWidget(self.out_path_label)
+        save_row.addStretch(1)
         save_row.addWidget(change_btn)
-        content_layout.addLayout(save_row)
+        save_row.addWidget(open_btn)
+        l4.addLayout(save_row)
+        content_layout.addWidget(card4)
 
         content_layout.addStretch()
         scroll.setWidget(content)
-        card_layout.addWidget(scroll)
-        root.addWidget(card)
+        root.addWidget(scroll, 1)
 
         self.error_label = QLabel("")
         self.error_label.setWordWrap(True)
@@ -193,7 +225,9 @@ class SlideView(BaseView):
         self.spinner.setVisible(False)
         self.spinner.setStyleSheet("background: transparent; border: none;")
         btn_row.addWidget(self.spinner)
-        self.convert_btn = AnimatedButton("开始转换", default_height=50, theme=self.theme)
+        self.convert_btn = AnimatedButton(
+            "开始转换", default_height=40, theme=self.theme, loading_text="转换中..."
+        )
         self.convert_btn.clicked.connect(self.on_convert)
         btn_row.addWidget(self.convert_btn)
         root.addLayout(btn_row)
@@ -210,7 +244,22 @@ class SlideView(BaseView):
         root.addWidget(self.progress_label)
 
         self.toast = ToastNotification(self, theme=self.theme)
+        self._update_convert_state()
         self._restyle_all()
+
+    def _make_module_card(self, title):
+        """创建带加粗小标题的浅灰圆角模块卡片，返回 (卡片, 内容布局)。"""
+        card = QFrame()
+        card.setObjectName("module_card")
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(12)
+        header = QLabel(title)
+        header.setObjectName("card_title")
+        self._section_labels.append(header)
+        layout.addWidget(header)
+        self._module_cards.append(card)
+        return card, layout
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
     def _connect_view_model(self):
@@ -258,11 +307,13 @@ class SlideView(BaseView):
 
     def _on_pptx_completed(self, result):
         self._set_loading(False)
+        self._update_convert_state()
         self.progress_bar.setVisible(False)
         self.toast.show_message(f"生成成功，共 {result.page_count} 页", success=True)
         folder = os.path.dirname(self._out_path) or "."
         self.progress_label.setText(
-            f"生成成功  <a href=\"folder:{folder}\" style=\"color: inherit; text-decoration: none;\">打开文件夹</a>"
+            f"生成成功  <a href=\"folder:{folder}\" "
+            f"style=\"color: {self.theme.accent}; text-decoration: underline;\">打开文件夹</a>"
         )
         self.progress_label.setVisible(True)
         logger.info("转换完成: %s", self._out_path)
@@ -283,7 +334,7 @@ class SlideView(BaseView):
         font_name = self.font_name.currentText()
         font_size = self.font_size.value()
         line_height = _resolve_line_spacing(
-            self.line_spacing_type.currentText(), self.line_spacing_value.value()
+            self.line_spacing_type.currentText(), self.line_spacing_value_stepper.value()
         )
         indent_px = round(font_size * 1.333 * 2)
         indent = f"{indent_px}px" if self.first_line_indent.isChecked() else "0"
@@ -335,7 +386,7 @@ class SlideView(BaseView):
             font_size=font_size,
             output_path=self._out_path,
             line_spacing_type=LineSpacingType(self.line_spacing_type.currentText()),
-            line_spacing_value=self.line_spacing_value.value(),
+            line_spacing_value=self.line_spacing_value_stepper.value(),
             first_line_indent=self.first_line_indent.isChecked(),
         )
         self.progress_bar.setVisible(True)
@@ -357,12 +408,39 @@ class SlideView(BaseView):
         self._word_path = path
         out_dir = os.path.dirname(path)
         self._set_out_path(os.path.join(out_dir, "output.pptx"))
+        self._update_convert_state()
 
     def _on_ppt_file(self, path):
         self._ppt_path = path
+        self._update_convert_state()
+
+    def _on_word_cleared(self):
+        self._word_path = ""
+        self._set_out_path("output.pptx")
+        self._update_convert_state()
+
+    def _on_ppt_cleared(self):
+        self._ppt_path = ""
+        self._update_convert_state()
+
+    def _update_convert_state(self):
+        """依据是否已选 Word 文档与 PPT 模板，启用/置灰「开始转换」与「打开文件夹」。"""
+        if self.convert_btn._loading:
+            return
+        has_word = bool(self._word_path)
+        has_ppt = bool(self._ppt_path)
+        if not has_word and not has_ppt:
+            self.convert_btn.set_actionable(False, "请先选择 Word 文档与 PPT 模板")
+        elif not has_word:
+            self.convert_btn.set_actionable(False, "请先选择 Word 文档")
+        elif not has_ppt:
+            self.convert_btn.set_actionable(False, "请先选择 PPT 模板")
+        else:
+            self.convert_btn.set_actionable(True, "")
+        self._open_out_btn.set_actionable(has_word, "请先选择 Word 文档")
 
     def _on_spacing_changed(self, text):
-        self.line_spacing_value.setVisible(text == "自定义")
+        self.line_spacing_value_stepper.setVisible(text == "自定义")
 
     def _on_browse_save(self):
         start_dir = os.path.dirname(self._out_path) if self._out_path else ""
@@ -405,11 +483,6 @@ class SlideView(BaseView):
     def _on_theme_changed(self):
         self.theme.refresh()
         self._restyle_all()
-
-    def _section_header(self, text, parent_layout):
-        label = QLabel(text)
-        self._section_labels.append(label)
-        parent_layout.addWidget(label)
 
     def _make_labeled_field(self, label_text, widget):
         wrapper = QWidget()
@@ -465,44 +538,34 @@ class SlideView(BaseView):
         self.setAutoFillBackground(True)
 
         input_s = (
-            f"QLineEdit {{ padding: 4px 8px; border: none; border-radius: 8px; "
-            f"font-size: 14px; background: {t.input_bg}; color: {t.text_primary}; }}"
+            f"QLineEdit {{ padding: 4px 8px; border: 1px solid transparent; "
+            f"border-radius: {t.radius}px; "
+            f"font-size: 13px; background: {t.input_bg}; color: {t.text_primary}; }}"
+            f"QLineEdit:hover {{ border-color: {t.accent}; }}"
             f"QLineEdit:focus {{ border: 1px solid {t.accent}; background: {t.card_bg}; }}"
         )
-        spin_s = (
-            f"QSpinBox {{ padding: 4px 8px; border: none; border-radius: 8px; "
-            f"font-size: 14px; background: {t.input_bg}; color: {t.text_primary}; }}"
-            f"QSpinBox:focus {{ border: 1px solid {t.accent}; background: {t.card_bg}; }}"
-            f"QSpinBox::up-button {{ width: 22px; height: 12px; subcontrol-position: top right; "
-            f"border: none; background: transparent; }}"
-            f"QSpinBox::down-button {{ width: 22px; height: 12px; subcontrol-position: bottom right; "
-            f"border: none; background: transparent; }}"
-        )
         combo_s = (
-            f"QComboBox {{ padding: 4px 8px; border: none; border-radius: 8px; "
-            f"font-size: 14px; background: {t.input_bg}; color: {t.text_primary}; }}"
+            f"QComboBox {{ padding: 4px 8px; border: 1px solid transparent; "
+            f"border-radius: {t.radius}px; "
+            f"font-size: 13px; background: {t.input_bg}; color: {t.text_primary}; }}"
+            f"QComboBox:hover {{ border-color: {t.accent}; }}"
             f"QComboBox:focus {{ border: 1px solid {t.accent}; background: {t.card_bg}; }}"
             f"QComboBox::drop-down {{ border: none; width: 24px; }}"
-            f"QComboBox QAbstractItemView {{ border: 1px solid {t.border}; border-radius: 8px; "
-            f"selection-background-color: {t.accent}; padding: 4px; }}"
+            f"QComboBox QAbstractItemView {{ border: 1px solid {t.border}; "
+            f"border-radius: {t.radius}px; selection-background-color: {t.accent}; padding: 4px; }}"
         )
-        dspin_s = (
-            f"QDoubleSpinBox {{ padding: 4px 8px; border: none; border-radius: 8px; "
-            f"font-size: 14px; background: {t.input_bg}; color: {t.text_primary}; }}"
-            f"QDoubleSpinBox:focus {{ border: 1px solid {t.accent}; background: {t.card_bg}; }}"
-        )
-        check_s = f"QCheckBox {{ color: {t.text_primary}; }}"
+        check_s = f"QCheckBox {{ color: {t.text_primary}; font-size: 13px; spacing: 6px; }}"
 
         for w in (self.question_num_fmt, self.option_prefix):
             w.setStyleSheet(input_s)
-        self.font_size.setStyleSheet(spin_s)
+        self.font_size_stepper.set_theme(t)
         self.font_name.setStyleSheet(combo_s)
         self.line_spacing_type.setStyleSheet(combo_s)
-        self.line_spacing_value.setStyleSheet(dspin_s)
+        self.line_spacing_value_stepper.set_theme(t)
         self.first_line_indent.setStyleSheet(check_s)
 
-        self._main_card.setStyleSheet(t.qss_card())
-        self._divider.setStyleSheet(t.qss_divider())
+        for card in self._module_cards:
+            card.setStyleSheet(t.qss_card())
 
         label_s = f"font-size: 12px; color: {t.text_secondary}; margin-bottom: 2px;"
         for lbl in self._field_labels:
@@ -511,15 +574,16 @@ class SlideView(BaseView):
         for lbl in self._section_labels:
             lbl.setStyleSheet(header_s)
         self._save_to_label.setStyleSheet(
-            f"color: {t.text_secondary}; font-size: 13px; background: transparent;"
+            f"color: {t.text_secondary}; font-size: 12px; background: transparent;"
         )
         self.out_path_label.setStyleSheet(
-            f"color: {t.text_secondary}; font-size: 13px; background: transparent;"
+            f"color: {t.text_secondary}; font-size: 12px; background: transparent;"
         )
         self.error_label.setStyleSheet(f"color: {t.error_color}; font-size: 12px;")
         self.progress_label.setStyleSheet(f"color: {t.text_secondary}; font-size: 12px;")
         self.progress_bar.setStyleSheet(t.qss_progress_bar())
         self.convert_btn.set_theme(t)
+        self._open_out_btn.set_theme(t)
         self._scroll.setStyleSheet(
             "QScrollArea { background: transparent; border: none; }"
             "QScrollBar:vertical { width: 6px; background: transparent; }"

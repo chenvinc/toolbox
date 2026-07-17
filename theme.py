@@ -11,17 +11,17 @@ from PySide6.QtGui import QColor, QFontDatabase
 # 与 theme.qss 保持一致的兜底模板（当主题文件缺失时使用，确保不崩溃）
 _EMBEDDED_QSS = """\
 # card
-QFrame { background: $card_bg; border-radius: 20px; border: none; }
+QFrame { background: $card_bg; border-radius: $radius; border: none; }
 
 # divider
 background: $border; border: none;
 
 # progress_bar
-QProgressBar { border: none; background: $progress_bg; border-radius: 3px; height: 6px; }
-QProgressBar::chunk { background: $progress_chunk; border-radius: 3px; }
+QProgressBar { border: none; background: $progress_bg; border-radius: $radius; height: 6px; }
+QProgressBar::chunk { background: $progress_chunk; border-radius: $radius; }
 
 # section_header
-font-size: 15px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
+font-size: ${font_module_title}px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
 """
 
 _QSS_PATH = Path(__file__).with_name("theme.qss")
@@ -56,6 +56,25 @@ class Theme:
     def __init__(self):
         self._is_dark = False
         self.refresh()
+        self._set_tokens()
+
+    def _set_tokens(self):
+        """跨深浅色统一的几何与排版令牌，作为设计规范的单一来源。
+
+        这些值与主题无关（浅色/深色共用），初始化时设定一次，后续
+        主题刷新不会改变。QSS 片段与所有控件样式统一从此处取值，
+        确保全局圆角/间距/字号严格一致。
+        """
+        self.radius = 6
+        self.spacing = 16
+        self.control_spacing = 8
+        self.page_pad_x = 24
+        self.page_pad_y = 20
+        self.font_family = "Microsoft YaHei"
+        self.font_page_title = 14
+        self.font_module_title = 13
+        self.font_body = 12
+        self.font_hint = 12
 
     def refresh(self):
         """检测系统当前配色方案（深色/浅色）并更新主题颜色。"""
@@ -66,77 +85,94 @@ class Theme:
         self._set_colors()
 
     def _set_colors(self):
-        """根据 _is_dark 标志设置深色或浅色模式下的全部颜色属性。"""
+        """根据 _is_dark 标志设置深色或浅色模式下的全部颜色属性。
+
+        色彩严格遵循全局 UI 双模式规范（同一套设计令牌，浅/深一一对应）：
+        - 浅色：主色 #1677ff、辅助浅底 #f5f7fa、禁用灰 #d9d9d9、危险 #f53f3f、文本 #333/#666/#999
+        - 深色：主色 #3b93ff、页面/侧栏 #1e1e2e、卡片 #2d2d3f、边框 #3f3f56、悬浮 #383852、
+                禁用 #555566、危险 #ff5555、文本 #f5f5f7/#d0d0e0/#9999b3
+        支持系统配色自动切换（colorSchemeChanged），切换前后视觉层级完全对等、无样式混乱。
+        """
         if self._is_dark:
-            self.card_bg = "#1E1E24"
-            self.input_bg = "#2C2C32"
-            self.text_primary = "#FFFFFF"
-            self.text_secondary = "#98989D"
-            self.text_placeholder = "#636366"
-            self.border = "#3A3A3C"
-            self.dashed_border = "#48484A"
-            self.hover_bg = "#2C2C36"
-            self.progress_bg = "#3A3A3C"
-            self.progress_chunk = "#0A84FF"
-            self.window_bg = QColor(30, 30, 36, 235)
-            self.window_solid_bg = QColor(30, 30, 36)
+            # 深色模式：严格对齐补充双模式规范（同一套设计令牌，深浅一一对应）
+            # 主色 #3b93ff / 页面·侧栏 #1e1e2e / 卡片 #2d2d3f / 边框 #3f3f56
+            # 悬浮 #383852 / 禁用 #555566 / 危险 #ff5555
+            # 文本 #f5f5f7 · #d0d0e0 · #9999b3
+            self.accent = "#3b93ff"
+            self.accent_light = "#4096ff"
+            self.accent_dark = "#0958d9"
+            self.change_btn_color = "#3b93ff"
+            self.danger = "#ff5555"
+            self.error_color = "#ff5555"
+            self.text_primary = "#f5f5f7"
+            self.text_secondary = "#d0d0e0"
+            self.text_placeholder = "#9999b3"
+            self.window_bg = QColor(30, 30, 46, 255)
+            self.window_solid_bg = QColor(30, 30, 46)
+            self.stack_bg = "#1e1e2e"
+            self.sidebar_bg = "#1e1e2e"
+            self.sidebar_border = "#3f3f56"
+            self.card_bg = "#2d2d3f"
+            self.input_bg = "#1f1f1f"
+            self.hover_bg = "#2d2d3f"
+            self.hover_blue = "#383852"
+            self.secondary_bg = "#353549"
+            self.border = "#3f3f56"
+            self.dashed_border = "#434343"
+            self.progress_bg = "#303030"
+            self.progress_chunk = "#3b93ff"
+            self.disabled_btn_bg = "#555566"
+            self.drop_text = "#a0a0a0"
+            self.drop_file_text = "#3b93ff"
+            self.card_header_color = "#f5f5f7"
+            self.nav_text = "#b0b0b0"
+            self.nav_selected_bg = "#383852"
+            self.nav_selected_text = "#3b93ff"
+            self.nav_hover_bg = "#383852"
             self.shadow_color = QColor(0, 0, 0, 80)
-            self.titlebar_text = "#FFFFFF"
+            self.titlebar_text = "#f5f5f7"
             self.titlebar_icon_bg = "rgba(255,255,255,0.12)"
-            self.change_btn_color = "#0A84FF"
-            self.drop_text = "#98989D"
-            self.drop_file_text = "#0A84FF"
-            self.card_header_color = "#FFFFFF"
-            self.error_color = "#FF453A"
-            self.accent = "#0A84FF"
-            self.accent_dark = "#0066CC"
-            self.accent_light = "#409CFF"
-            self.sidebar_bg = "#1C1C22"
-            self.sidebar_border = "#2C2C32"
-            self.nav_text = "#98989D"
-            self.nav_selected_bg = "#2C3A5C"
-            self.nav_selected_text = "#6BA3FF"
-            self.nav_hover_bg = "#2C2C36"
-            self.toast_bg = "rgba(50,50,56,0.92)"
+            self.toast_bg = "rgba(0,0,0,0.85)"
             self.toast_text = "#FFFFFF"
-            self.scrollbar_handle = "rgba(180,180,180,0.3)"
-            self.disabled_btn_bg = "#3A3A3C"
-            self.stack_bg = "#1E1E24"
+            self.scrollbar_handle = "rgba(255,255,255,0.25)"
         else:
-            self.card_bg = "#FFFFFF"
-            self.input_bg = "#F5F5F7"
-            self.text_primary = "#1D1D1F"
-            self.text_secondary = "#8E8E93"
-            self.text_placeholder = "#C0C0C8"
-            self.border = "#E5E5EA"
-            self.dashed_border = "#C0C0CC"
-            self.hover_bg = "#EDF4FF"
-            self.progress_bg = "#E5E5EA"
-            self.progress_chunk = "#007AFF"
-            self.window_bg = QColor(245, 245, 247, 230)
-            self.window_solid_bg = QColor(245, 245, 247)
+            self.accent = "#1677ff"
+            self.accent_light = "#4096ff"
+            self.accent_dark = "#0958d9"
+            self.change_btn_color = "#1677ff"
+            self.danger = "#f53f3f"
+            self.error_color = "#f53f3f"
+            self.text_primary = "#333333"
+            self.text_secondary = "#666666"
+            self.text_placeholder = "#999999"
+            self.window_bg = QColor(255, 255, 255, 255)
+            self.window_solid_bg = QColor(255, 255, 255)
+            self.stack_bg = "#ffffff"
+            self.sidebar_bg = "#f5f7fa"
+            self.sidebar_border = "#e8e8e8"
+            self.card_bg = "#f5f7fa"
+            self.input_bg = "#ffffff"
+            self.hover_bg = "#f5f7fa"
+            self.hover_blue = "#e6f4ff"
+            self.secondary_bg = "#ffffff"
+            self.border = "#e8e8e8"
+            self.dashed_border = "#d9d9d9"
+            self.progress_bg = "#e8e8e8"
+            self.progress_chunk = "#1677ff"
+            self.disabled_btn_bg = "#d9d9d9"
+            self.drop_text = "#999999"
+            self.drop_file_text = "#1677ff"
+            self.card_header_color = "#333333"
+            self.nav_text = "#666666"
+            self.nav_selected_bg = "#e6f4ff"
+            self.nav_selected_text = "#1677ff"
+            self.nav_hover_bg = "#e6f4ff"
             self.shadow_color = QColor(0, 0, 0, 20)
             self.titlebar_text = "#333333"
             self.titlebar_icon_bg = "rgba(255,255,255,0.85)"
-            self.change_btn_color = "#007AFF"
-            self.drop_text = "#8E8E93"
-            self.drop_file_text = "#007AFF"
-            self.card_header_color = "#1D1D1F"
-            self.error_color = "#FF3B30"
-            self.accent = "#007AFF"
-            self.accent_dark = "#0056D6"
-            self.accent_light = "#3395FF"
-            self.sidebar_bg = "#F0F0F5"
-            self.sidebar_border = "#E0E0E6"
-            self.nav_text = "#555555"
-            self.nav_selected_bg = "#DDE4FF"
-            self.nav_selected_text = "#2255CC"
-            self.nav_hover_bg = "#EAEAF2"
             self.toast_bg = "rgba(0,0,0,0.80)"
             self.toast_text = "#FFFFFF"
-            self.scrollbar_handle = "rgba(128,128,128,0.4)"
-            self.disabled_btn_bg = "#C8C8CC"
-            self.stack_bg = "#FFFFFF"
+            self.scrollbar_handle = "rgba(0,0,0,0.20)"
 
     # ── QSS 片段（来自 theme.qss，按主题色替换，支持热加载） ──────────
 
@@ -154,7 +190,14 @@ class Theme:
         （即“热加载”）；模板使用 string.Template 的 $var 语法，避免与 CSS 的 {} 冲突。
         """
         raw = self._read_qss()
-        mapping = {k: v for k, v in vars(self).items() if isinstance(v, str)}
+        mapping = {}
+        for k, v in vars(self).items():
+            if isinstance(v, str):
+                mapping[k] = v
+            elif isinstance(v, (int, float)):
+                mapping[k] = str(v)
+        # 圆角需带 px 单位才符合 QSS 语法（其余 $var 为颜色或纯数字字号）
+        mapping["radius"] = f"{self.radius}px"
         in_block = False
         lines: list[str] = []
         for line in raw.splitlines():

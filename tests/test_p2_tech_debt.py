@@ -60,7 +60,7 @@ class QssEquivalenceTests(unittest.TestCase):
     def test_qss_card_matches_inline(self):
         for dark in (False, True):
             t = self._theme_for(dark)
-            expected = f"QFrame {{ background: {t.card_bg}; border-radius: 20px; border: none; }}"
+            expected = f"QFrame {{ background: {t.card_bg}; border-radius: 6px; border: none; }}"
             self.assertEqual(_norm(t.qss_card()), _norm(expected), f"card dark={dark}")
 
     def test_qss_divider_matches_inline(self):
@@ -74,8 +74,8 @@ class QssEquivalenceTests(unittest.TestCase):
             t = self._theme_for(dark)
             expected = (
                 f"QProgressBar {{ border: none; background: {t.progress_bg}; "
-                f"border-radius: 3px; height: 6px; }}\n"
-                f"QProgressBar::chunk {{ background: {t.progress_chunk}; border-radius: 3px; }}"
+                f"border-radius: 6px; height: 6px; }}\n"
+                f"QProgressBar::chunk {{ background: {t.progress_chunk}; border-radius: 6px; }}"
             )
             self.assertEqual(_norm(t.qss_progress_bar()), _norm(expected), f"progress dark={dark}")
 
@@ -83,7 +83,7 @@ class QssEquivalenceTests(unittest.TestCase):
         for dark in (False, True):
             t = self._theme_for(dark)
             expected = (
-                f"font-size: 15px; font-weight: bold; "
+                f"font-size: 13px; font-weight: bold; "
                 f"color: {t.card_header_color}; background: transparent; padding: 0;"
             )
             self.assertEqual(_norm(t.qss_section_header()), _norm(expected), f"header dark={dark}")

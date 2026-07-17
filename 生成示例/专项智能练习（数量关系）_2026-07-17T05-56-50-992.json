@@ -1,0 +1,3663 @@
+{
+  "pageTitle": "专项智能练习（数量关系）",
+  "pageUrl": "https://spa.fenbi.com/ti/exam/solution/1_1_3o5pjhh?routecs=xingce",
+  "extractTime": "2026-07-17T05:56:49.086Z",
+  "totalQuestions": 30,
+  "questions": [
+    {
+      "questionNumber": "1.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>一条由东向西且宽为1.5米的水渠如下图中灰色部分所示，其中B、C为水渠北岸边相距50米的2个点。AB和AC连线的延长线分别与水渠南岸相交于D、E两点，且DE的距离为50.4米。则A点到水渠南岸的最短距离为多少米？</p><p><img width=\"214px\" height=\"228px\" src=\"//fb.fbstatic.cn/api/tarzan/images/1954b56c2527a74.png?width=700\"></p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/1954b56c2527a74.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=nZw8W4pYTeiOZ0v_qoB2wIT7NpmqmB2FdBqY-nnKgO7KJCpWZ8diDz9wUpLy6fqp",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=hLln89IPvx2r77sAHe39TUa6j2YcEDBhHMjbUvH6lIc",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=AQ592XtNSV9L-kvFZM57HWrhu9wss1_Xmg5kI0VDkkwEMaCVNJwAJcDDtEg1o0sy",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/1954b5940979650.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 5
+        }
+      ],
+      "contentText": "一条由东向西且宽为1.5米的水渠如下图中灰色部分所示，其中B、C为水渠北岸边相距50米的2个点。AB和AC连线的延长线分别与水渠南岸相交于D、E两点，且DE的距离为50.4米。则A点到水渠南岸的最短距离为多少米？\n[IMG1]",
+      "questionStem": "一条由东向西且宽为1.5米的水渠如下图中灰色部分所示，其中B、C为水渠北岸边相距50米的2个点。AB和AC连线的延长线分别与水渠南岸相交于D、E两点，且DE的距离为50.4米。则A点到水渠南岸的最短距离为多少米？\n[IMG1]",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "186",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"1-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">186</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "187",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"1-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">187</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "188",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"1-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">188</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "189",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"1-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correct\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">189</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "38 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "如图所示，过A点向水渠南岸作垂线，交南岸于N点，线段AN即为A点到水渠南岸的最短距离。根据题意可知，[IMG2]，根据三角形相似性质可得，[IMG3]，即[IMG4]，解得AM=187.5米，则所求AN=187.5+1.5=189米。\n[IMG5]\n故正确答案为D。",
+        "source": "2024年山西省县级纪委监委公务员录用考试《行测》题（网友回忆版）第42题",
+        "keypoint": "几何结论类-相似图形、几何结论类-几何小题型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 113,
+            "paragraphs": 2,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 5,
+          "imageTypesSummary": {
+            "tex": 3,
+            "normal": 2
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "1."
+    },
+    {
+      "questionNumber": "2.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某商店购进一批篮球，定价为进价的125%，在售出进货量的20%后，商店决定打折促销。篮球全部卖完后，商家在该批篮球上总获利15%，问该商店这次促销价为定价的多少折？</p></div>",
+      "images": [],
+      "contentText": "某商店购进一批篮球，定价为进价的125%，在售出进货量的20%后，商店决定打折促销。篮球全部卖完后，商家在该批篮球上总获利15%，问该商店这次促销价为定价的多少折？",
+      "questionStem": "某商店购进一批篮球，定价为进价的125%，在售出进货量的20%后，商店决定打折促销。篮球全部卖完后，商家在该批篮球上总获利15%，问该商店这次促销价为定价的多少折？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "8",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"2-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "8.5",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"2-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8.5</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "9",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"2-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correct\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "9.5",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"2-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9.5</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "60 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "根据题意，赋值篮球进货量为10个，则按定价销售10×20%=2个，打折销售10-2=8个。设进价为x元，定价为1.25x元，促销价为定价的a。根据公式：售价=进价×（1+利润率），则总售价=1.25x×2+1.25x×a×8=10x×（1+15%），解得a=0.9，即该商店这次促销价为定价的9折。\n故正确答案为C。",
+        "source": "2021年黑龙江公检法司系统及边境县（市、区）急需紧缺专业岗公务员考试《行测》题第66题",
+        "keypoint": "经济利润问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 82,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 0,
+          "imageTypesSummary": {
+            "tex": 0,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "2."
+    },
+    {
+      "questionNumber": "3.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>楼道上方有一盏灯，小刘径直走向这盏灯。一开始, 他发现自己影子的长度为3.2米，前进1米后，发现影子缩短为1.6米。已知小刘身高为1.6米，则这盏灯的高度约为（    ）米。</p><p><img width=\"495px\" height=\"252px\" src=\"//fb.fbstatic.cn/api/tarzan/images/17e200873647e3d.png?width=700\"></p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/17e200873647e3d.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=gNuK4IQeXomr6HWu9BTEPmXfJVcfPFITiD99UlvveVM",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=ea0_xPG1j_AdMmQ9k4D9Rg",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=-JIraUzFzHhRPyKzXcAoKQ",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/17e200a4bfedf43.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=dO_-2PZ4eZP1s0DXs6RTWZ58yHlZ4fUQdhZiBTLOeN_vcesALn0UZp3s6z5Zlo_o",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=ms1C1zwOO66T6qH7ybJaDcMsfSBmJmNGk671mFfg404L5YNN0uHfz7ToSX9EcjoF",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=cI-kubHC-mw-CMh5PvHg2t6xXIYdwigdcuwP5SJGzT2INZVPDjjSrJ7r9AUhlac2",
+          "alt": "",
+          "isTex": true,
+          "index": 8
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=CqTXVYSfZgAESDW-t5z_6LV0tqd5-ATEUR_5Lg8t_oc",
+          "alt": "",
+          "isTex": true,
+          "index": 9
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=bHNEMaNArzHBvBNGl4sUNimWa6lO3CWux933hG0lv23iCKy2b310JAUr1NNy5FzS",
+          "alt": "",
+          "isTex": true,
+          "index": 10
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=eSQMWYDBalq8P_wCCBjK27gyYZaGW6ZBXez78RL2KrNJ9jvoAYOWZHMuaW2fs-FY",
+          "alt": "",
+          "isTex": true,
+          "index": 11
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=cI-kubHC-mw-CMh5PvHg2stzS0-3-_M9GSCjRiVoZPNGA-E9pltJ_6g2AimAxUMs",
+          "alt": "",
+          "isTex": true,
+          "index": 12
+        }
+      ],
+      "contentText": "楼道上方有一盏灯，小刘径直走向这盏灯。一开始,______他发现自己影子的长度为3.2米，前进1米后，发现影子缩短为1.6米。已知小刘身高为1.6米，则这盏灯的高度约为（______）米。\n[IMG1]",
+      "questionStem": "楼道上方有一盏灯，小刘径直走向这盏灯。一开始,______他发现自己影子的长度为3.2米，前进1米后，发现影子缩短为1.6米。已知小刘身高为1.6米，则这盏灯的高度约为（______）米。\n[IMG1]",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "2.6",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"3-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">2.6</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "2.8",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"3-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">2.8</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "3.2",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"3-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio wrong\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">3.2</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "3.4",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"3-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">3.4</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "40 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题意，[IMG2]米，DB=3.2米，[IMG3]米，[IMG4]米，如图所示：\n[IMG5]\n根据[IMG6]，即[IMG7]，代入数据可得[IMG8]，解得EO=X米。[IMG9]米，DE=DB-EB=3.2-0.6=2.6米，DO=DE+EO=2.6+X米。根据[IMG10]，即[IMG11]，代入数据可得[IMG12]，解得X=2.6米。\n故正确答案为A。",
+        "source": "2022年广东省公务员录用考试《行测》题（县级卷）（网友回忆版）第39题",
+        "keypoint": "几何结论类-相似图形、几何公式类-平面图形"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 101,
+            "paragraphs": 2,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 12,
+          "imageTypesSummary": {
+            "tex": 10,
+            "normal": 2
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "3."
+    },
+    {
+      "questionNumber": "4.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>两冰块相撞，小冰块撞掉一半，大冰块撞掉的是小冰块撞掉的4倍。如果原来大冰块的体积是小冰块的10倍，现在是几倍？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=FriqxHCKrR9yCU2EV3kIHPIXngHQLZzTxbT2AKZalNY",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "两冰块相撞，小冰块撞掉一半，大冰块撞掉的是小冰块撞掉的4倍。如果原来大冰块的体积是小冰块的10倍，现在是几倍？",
+      "questionStem": "两冰块相撞，小冰块撞掉一半，大冰块撞掉的是小冰块撞掉的4倍。如果原来大冰块的体积是小冰块的10倍，现在是几倍？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "16",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"4-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "10",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"4-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">10</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "8",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"4-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "6",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"4-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">6</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "69 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "赋值小冰块原来的体积为2，则大冰块原体积为2×10=20。小冰块撞掉了[IMG1]，剩余2-1=1；大冰块撞掉了1×4=4，剩余20-4=16。则现在剩下的大冰块是小冰块体积的16÷1=16倍。\n故正确答案为A。",
+        "source": "2023年江西省公务员录用考试《行测》题（网友回忆版）第77题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 55,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "4."
+    },
+    {
+      "questionNumber": "5.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某网店销售一款衬衫，进价为100元，售价为150元。为回馈顾客，该网店开展一天的促销活动：每购买两件优惠20元，每购买三件优惠50元。已知促销当天的销售量是前一天的2倍，利润是前一天的1.5倍，每位顾客购买衬衫的数量均为两件或三件。促销当天，购买两件与购买三件衬衫的顾客人数比是（    ）。</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=m8X2S5-cWL7Dwchwjxxqol2FMUxhah7sMoNT8xD6qYg",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=NTV_haFjhQb6i9SyW7W_HA",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=dBCT0OyORHJAlEsl1CLF13214nedlT-nU5Evv49a-_E",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gUsasjlqnMT1oxml7tByB2xspz83OtdnWfOMuI6OqeM",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        }
+      ],
+      "contentText": "某网店销售一款衬衫，进价为100元，售价为150元。为回馈顾客，该网店开展一天的促销活动：每购买两件优惠20元，每购买三件优惠50元。已知促销当天的销售量是前一天的2倍，利润是前一天的1.5倍，每位顾客购买衬衫的数量均为两件或三件。促销当天，购买两件与购买三件衬衫的顾客人数比是（ ）。",
+      "questionStem": "某网店销售一款衬衫，进价为100元，售价为150元。为回馈顾客，该网店开展一天的促销活动：每购买两件优惠20元，每购买三件优惠50元。已知促销当天的销售量是前一天的2倍，利润是前一天的1.5倍，每位顾客购买衬衫的数量均为两件或三件。促销当天，购买两件与购买三件衬衫的顾客人数比是（ ）。",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "5：2",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"5-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">5：2</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "5：3",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"5-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">5：3</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "3：2",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"5-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">3：2</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "3：1",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"5-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">3：1</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "30 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "设促销当天购买两件衬衫的顾客有x人，购买三件衬衫的顾客有y人。则促销当天的销售量为（2x+3y）件，前一天的销售量为（2x+3y）÷2=（x+1.5y）件。根据公式：利润=售价-进价，可得每件衬衫的利润为150-100=50元，则促销当天的利润为[IMG1][IMG2]元，前一天的利润为[IMG3]元。根据题意可列方程：[IMG4]，解得x：y=5：2。\n故正确答案为A。",
+        "source": "2023年江苏省公务员录用考试《行测》题（B类）（网友回忆版）第54题",
+        "keypoint": "经济利润问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 143,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 4,
+          "imageTypesSummary": {
+            "tex": 4,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "5."
+    },
+    {
+      "questionNumber": "6.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某学习平台收到的征文，将通过两轮评审决定能否采用。先由两位编辑进行初审，若两位编辑评审都通过，则予以采用；若两位编辑都未予通过，则不予采用；若仅有一位编辑初审通过，则再由主编进行复审，若复审通过，则予以采用，否则不予采用。设稿件能通过各初审编辑评审的概率均为0.4，复审的稿件能通过的概率为0.2，各编辑独立评审，则每篇征文被采用的概率为：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=UHUAvS2dHAfEjdORsJFlgVpZ6PwDLCH3ui7xh_rOshvFvY4k0oRVAxYPHFPYZFKY",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "某学习平台收到的征文，将通过两轮评审决定能否采用。先由两位编辑进行初审，若两位编辑评审都通过，则予以采用；若两位编辑都未予通过，则不予采用；若仅有一位编辑初审通过，则再由主编进行复审，若复审通过，则予以采用，否则不予采用。设稿件能通过各初审编辑评审的概率均为0.4，复审的稿件能通过的概率为0.2，各编辑独立评审，则每篇征文被采用的概率为：",
+      "questionStem": "某学习平台收到的征文，将通过两轮评审决定能否采用。先由两位编辑进行初审，若两位编辑评审都通过，则予以采用；若两位编辑都未予通过，则不予采用；若仅有一位编辑初审通过，则再由主编进行复审，若复审通过，则予以采用，否则不予采用。设稿件能通过各初审编辑评审的概率均为0.4，复审的稿件能通过的概率为0.2，各编辑独立评审，则每篇征文被采用的概率为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "0.32",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"6-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">0.32</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "0.256",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"6-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">0.256</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "0.24",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"6-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">0.24</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "0.208",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"6-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">0.208</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "49 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题意，每篇征文被采用的情况为：①初审两位编辑均通过，概率为：0.4×0.4=0.16；②初审两位编辑仅有一位通过，且主编复审通过，概率为：[IMG1]，分类用加法，故每篇征文被采用的概率为0.16+0.096=0.256。\n故正确答案为B。",
+        "source": "2023年江西省公务员录用考试《行测》题（网友回忆版）第67题",
+        "keypoint": "给概率求概率"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 170,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "6."
+    },
+    {
+      "questionNumber": "7.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>甲、乙、丙三个研发团队共有研发人员300多人，其中甲的人数比乙多26%。现丙调3人去乙后，两个团队人数相同。问此时甲至少调多少人去丙后，才能保证丙的人数是甲的2倍以上？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=kKp_rJDu9rmFIUcuqsq8XPiLU1fp4py16XtsCKuK5HqQPGycLWM8wrJTfoxTigS5",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=hZo3zl6m48EEIp9vQQR-ie_64fc7tsJo_JF6_vj1esTyGUwatRWkm6xcDP7W33B8",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=qK25yLgn4CeRJgMZSwzENKkyCQlmN6_tI4icFGVPVWE",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        }
+      ],
+      "contentText": "甲、乙、丙三个研发团队共有研发人员300多人，其中甲的人数比乙多26%。现丙调3人去乙后，两个团队人数相同。问此时甲至少调多少人去丙后，才能保证丙的人数是甲的2倍以上？",
+      "questionStem": "甲、乙、丙三个研发团队共有研发人员300多人，其中甲的人数比乙多26%。现丙调3人去乙后，两个团队人数相同。问此时甲至少调多少人去丙后，才能保证丙的人数是甲的2倍以上？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "49",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"7-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">49</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "35",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"7-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">35</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "50",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"7-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">50</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "40",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"7-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">40</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "41 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "由于甲的人数比乙多26%，可得：[IMG1][IMG2]，则甲的人数是63的倍数，乙的人数是50的倍数，设乙的人数为50x人，则甲的人数为63x人。根据丙调3人去乙后，两个团队人数相同，可得：丙-3=50x+3，则丙=（50x+6）人。根据三个研发团队共有研发人员300多人，可得：300<63x+50x+50x+6<400，解得：x=2，即甲的人数为63x=63×2=126人，丙原来的人数为50x+6=50×2+6=106人。丙调3人去乙后，此时丙的人数为106-3=103人。设此时甲调y人去丙，可得：103+y>2×（126-y），解得：[IMG3]，向上取整，则y取50，即此时甲至少调50人去丙后，才能保证丙的人数是甲的2倍以上。\n故正确答案为C。",
+        "source": "2024年国家公务员录用考试《行测》题（地市级网友回忆版）第65题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 84,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 3,
+          "imageTypesSummary": {
+            "tex": 3,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "7."
+    },
+    {
+      "questionNumber": "8.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>小王计划在7天假期自学甲、乙两门在线课程，每门课程需要连学2整天。如在所有可能的安排中随机选择1种，不用学习的3天均不相邻的概率为：</p></div>",
+      "images": [
+        {
+          "role": "option-A",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=3HlpSdpRxWCuIxBoRz8Cpw",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "option-B",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1sgIdcggZt1F799YQvTFOg",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "option-C",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=UfiuBHmaZv335Xi6DA_erQ",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "option-D",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=UEb_NdBI8RYW4w2liadCWg",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1u7BFyMQrRM_01CwCAZG5NQUr1TOngv22lcv9GFL4fNZxuyhQ6fHpj4Izd3YDfyJ",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=R0gP1Kp0jwLLoFv2cdQ8Og",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=CR8R_W7GodCLUvWQQU_v2A",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=cF5DirbunlJXAiJ9WMMqZw",
+          "alt": "",
+          "isTex": true,
+          "index": 8
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=UsdT0xh5uUIK9OZNQVyZtA8iRvpLudGXbt8CfLa9aSc",
+          "alt": "",
+          "isTex": true,
+          "index": 9
+        }
+      ],
+      "contentText": "小王计划在7天假期自学甲、乙两门在线课程，每门课程需要连学2整天。如在所有可能的安排中随机选择1种，不用学习的3天均不相邻的概率为：",
+      "questionStem": "小王计划在7天假期自学甲、乙两门在线课程，每门课程需要连学2整天。如在所有可能的安排中随机选择1种，不用学习的3天均不相邻的概率为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "[IMG1]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"8-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=3HlpSdpRxWCuIxBoRz8Cpw\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-A",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=3HlpSdpRxWCuIxBoRz8Cpw",
+              "alt": "",
+              "isTex": true,
+              "index": 1
+            }
+          ],
+          "lists": []
+        },
+        "B": {
+          "text": "[IMG2]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"8-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=1sgIdcggZt1F799YQvTFOg\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-B",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1sgIdcggZt1F799YQvTFOg",
+              "alt": "",
+              "isTex": true,
+              "index": 2
+            }
+          ],
+          "lists": []
+        },
+        "C": {
+          "text": "[IMG3]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"8-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=UfiuBHmaZv335Xi6DA_erQ\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-C",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=UfiuBHmaZv335Xi6DA_erQ",
+              "alt": "",
+              "isTex": true,
+              "index": 3
+            }
+          ],
+          "lists": []
+        },
+        "D": {
+          "text": "[IMG4]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"8-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> D </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=UEb_NdBI8RYW4w2liadCWg\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-D",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=UEb_NdBI8RYW4w2liadCWg",
+              "alt": "",
+              "isTex": true,
+              "index": 4
+            }
+          ],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "31 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据公式：概率[IMG5]，分析如下：\n甲、乙两门课程均需要占用相邻的2天，可用捆绑法，先将每门课程所占用的2天分别捆绑，再将这2个捆绑体和其它3天进行排序。因每“天”均相同，不用排序，而两门课程不同，需要排序，则总情况数[IMG6]种情况；\n根据题意，不用学习的3天均不相邻，可用插空法，优先安排学习两门课程的时间，因两门课程不同，对两门课程进行排序有[IMG7]种情况，再将剩余3天插入两门课程安排好之后形成的3个空隙，因每“天”均相同不用再排序，有[IMG8]种情况，故满足要求的情况数=2×1=2种情况。\n综上，所求概率[IMG9]。\n故正确答案为D。",
+        "source": "2025年国家公务员录用考试《行测》题（地市级网友回忆版）第74题",
+        "keypoint": "给情况求概率"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 66,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 9,
+          "imageTypesSummary": {
+            "tex": 9,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "8."
+    },
+    {
+      "questionNumber": "9.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某部门有9名员工，从中随机抽取2人参加公司代表大会，要求女员工人数不得少于1人。已知该部门女员工比男员工多1人，则共有多少种方案符合要求？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=RMuD8ALUWpn-RGgT3dpdMJSh63oBbnDDmp2MWT-CFKc",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=jb1bB09cTpRKEGPTvm84Rw",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=Joa-C8GSPPauwVN6OZ8FdA",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        }
+      ],
+      "contentText": "某部门有9名员工，从中随机抽取2人参加公司代表大会，要求女员工人数不得少于1人。已知该部门女员工比男员工多1人，则共有多少种方案符合要求？",
+      "questionStem": "某部门有9名员工，从中随机抽取2人参加公司代表大会，要求女员工人数不得少于1人。已知该部门女员工比男员工多1人，则共有多少种方案符合要求？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "24",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"9-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">24</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "30",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"9-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">30</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "36",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"9-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">36</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "72",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"9-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">72</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "76 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "该部门共9名员工，由于女员工比男员工多1人，故该部门女员工有5人，男员工有4人。抽取2人参加大会，女员工人数不得少于1人，可分情况如下：\n①1个女员工1个男员工，有[IMG1]种方案；\n②2个女员工，有[IMG2]种方案。\n共有[IMG3]种方案。\n故正确答案为B。",
+        "source": "2021年新疆生产建设兵团行政执法类公务员考试《行测》题（网友回忆版）第59题",
+        "keypoint": "基础排列组合"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 69,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 3,
+          "imageTypesSummary": {
+            "tex": 3,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "9."
+    },
+    {
+      "questionNumber": "10.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>现有6根钢筋，长度分别为4尺、7尺、8尺、9尺、10尺和12尺。现每次抽取3根首尾相连组成一个三角形，则一共能组成多少个不同的三角形？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=cLECiGD2oEzBPrPMx8I3QvLqt8H9mkpgIR9kBTmkzHeilQq4yQMVW6y0JXeTBfLa",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "现有6根钢筋，长度分别为4尺、7尺、8尺、9尺、10尺和12尺。现每次抽取3根首尾相连组成一个三角形，则一共能组成多少个不同的三角形？",
+      "questionStem": "现有6根钢筋，长度分别为4尺、7尺、8尺、9尺、10尺和12尺。现每次抽取3根首尾相连组成一个三角形，则一共能组成多少个不同的三角形？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "20",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"10-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">20</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "19",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"10-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">19</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "18",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"10-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">18</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "17",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"10-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">17</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "49 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "方法一：根据题意，从6根钢筋中每次抽取3根，共有[IMG1]种情况，若想构成三角形需满足“两边之和大于第三边，两边之差小于第三边”，任意抽取3根中不满足该条件的有4、7、12以及4、8、12两种情况，则一共能组成20-2=18个不同的三角形。\n方法二：根据枚举法，满足题意的情况数分别为：\n①当抽取到4和7时，第三边可以为：8、9、10共三种情况；\n②当抽取到4和8时，第三边可以为：9、10共两种情况；\n③当抽取到4和9时，第三边可以为：10、12共两种情况；\n④当抽取到4和10时，第三边可以为：12一种情况；\n⑤当抽取到7和8时，第三边可以为：9、10、12共三种情况；\n⑥当抽取到7和9时，第三边可以为：10、12共两种情况；\n⑦当抽取到7和10时，第三边可以为：12一种情况；\n⑧当抽取到8和9时，第三边可以为：10、12共两种情况；\n⑨当抽取到8和10时，第三边可以为：12一种情况；\n⑩当抽取到9和10时，第三边可以为：12一种情况；\n则一共能组成3+2+2+1+3+2+1+2+1+1=18个不同的三角形。\n故正确答案为C。",
+        "source": "2023年北京市公务员录用考试《行测》题（网友回忆版）第76题",
+        "keypoint": "几何公式类-平面图形、基础排列组合、几何结论类-三角形相关"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 67,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "10."
+    },
+    {
+      "questionNumber": "11.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>现针对50岁（含）以上的一批老人进行为期两年的跟踪调查，在人员不变的情况下，第二年50~60岁的占比降低5％，61~70岁的占比降低4％，则71岁的人员数量为：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=6YUitSfAOi3LQMW9SouAL0NhVQ0KHbo-_IrxPgUqaPw",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "现针对50岁（含）以上的一批老人进行为期两年的跟踪调查，在人员不变的情况下，第二年50~60岁的占比降低5％，61~70岁的占比降低4％，则71岁的人员数量为：",
+      "questionStem": "现针对50岁（含）以上的一批老人进行为期两年的跟踪调查，在人员不变的情况下，第二年50~60岁的占比降低5％，61~70岁的占比降低4％，则71岁的人员数量为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "4",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"11-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">4</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "5",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"11-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">5</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "8",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"11-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "9",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"11-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "42 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题意，跟踪调查的人员不变，第二年50~60岁的占比降低5％，是因为60岁的老人变为61岁，则第二年61岁的老人占比为5%。第二年61~70岁的占比降低4％，是因为60岁老人变成61岁（人数增加），70岁老人变成71岁（人数减少），则5%-第二年71岁的老人占比=-4%，因此第二年71岁的老人占比=9%。[IMG1]，则71岁的人员数量为9的倍数，只有D项符合。\n故正确答案为D。",
+        "source": "2024年吉林省公务员录用考试《行测》题（网友回忆版）第53题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 80,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "11."
+    },
+    {
+      "questionNumber": "12.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>棒球队招募两个位置的队员，分别为击球手和投球手，共有10人报名，其中5人只报名击球手，3人只报名投手，另外两人既报名击球手又报名投手。若球队在报名人员中随机抽取2人，则此2人报名相同位置的概率为（    ）。</p></div>",
+      "images": [
+        {
+          "role": "option-A",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=HWUiiW14_FCicOnaJCTMGw",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "option-B",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=ooQwY__8ryHhTUFSi8bMHg",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "option-C",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=QCqjuVG4Gea1Ch1joX-LYw",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "option-D",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=5h3PGZBcXMECgvjQzPqyhw",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=aABbMIWrINIgd6rdAubGCQ",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=hVv83H5PZZUmdx9Y8SC3Nw",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=9G3HgnTO2sLE5qJAd0b8dg",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=BCLFRsNSHevCB4xmszgStLlL8Ffo3wjF8-NzbCt5huA",
+          "alt": "",
+          "isTex": true,
+          "index": 8
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gk0CCCsJyns11QEbD3K5-nlvfgwyx-oZnaBpyzkXm-ORmXMH8Vi_6bqkmIDV-hQDDYorxEVeXKbobjHkzffLTQ",
+          "alt": "",
+          "isTex": true,
+          "index": 9
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=HJG-JY_xEc9uX_FDmrXvim4SGNh4YMoT0Y7TFskn-2A",
+          "alt": "",
+          "isTex": true,
+          "index": 10
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=aABbMIWrINIgd6rdAubGCQ",
+          "alt": "",
+          "isTex": true,
+          "index": 11
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=OC0jjaOhtDNxOdQh5Xl3-27wHmLiHAExicL6yF4j8B0",
+          "alt": "",
+          "isTex": true,
+          "index": 12
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gk0CCCsJyns11QEbD3K5-nlvfgwyx-oZnaBpyzkXm-ORmXMH8Vi_6bqkmIDV-hQDDYorxEVeXKbobjHkzffLTQ",
+          "alt": "",
+          "isTex": true,
+          "index": 13
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=3VTKWKhDTD36ZCL36zvxaSNxkA-NeiVos9_MukmRzmbJwsbgJw8K0zMGeFYIA05m",
+          "alt": "",
+          "isTex": true,
+          "index": 14
+        }
+      ],
+      "contentText": "棒球队招募两个位置的队员，分别为击球手和投球手，共有10人报名，其中5人只报名击球手，3人只报名投手，另外两人既报名击球手又报名投手。若球队在报名人员中随机抽取2人，则此2人报名相同位置的概率为（ ）。",
+      "questionStem": "棒球队招募两个位置的队员，分别为击球手和投球手，共有10人报名，其中5人只报名击球手，3人只报名投手，另外两人既报名击球手又报名投手。若球队在报名人员中随机抽取2人，则此2人报名相同位置的概率为（ ）。",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "[IMG1]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"12-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=HWUiiW14_FCicOnaJCTMGw\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-A",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=HWUiiW14_FCicOnaJCTMGw",
+              "alt": "",
+              "isTex": true,
+              "index": 1
+            }
+          ],
+          "lists": []
+        },
+        "B": {
+          "text": "[IMG2]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"12-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=ooQwY__8ryHhTUFSi8bMHg\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-B",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=ooQwY__8ryHhTUFSi8bMHg",
+              "alt": "",
+              "isTex": true,
+              "index": 2
+            }
+          ],
+          "lists": []
+        },
+        "C": {
+          "text": "[IMG3]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"12-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=QCqjuVG4Gea1Ch1joX-LYw\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-C",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=QCqjuVG4Gea1Ch1joX-LYw",
+              "alt": "",
+              "isTex": true,
+              "index": 3
+            }
+          ],
+          "lists": []
+        },
+        "D": {
+          "text": "[IMG4]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"12-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=5h3PGZBcXMECgvjQzPqyhw\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-D",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=5h3PGZBcXMECgvjQzPqyhw",
+              "alt": "",
+              "isTex": true,
+              "index": 4
+            }
+          ],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "57 %",
+      "errorProne": "A",
+      "solution": {
+        "analysis": "方法一：在报名人员中随机抽取2人，总的情况数有[IMG5]种。2人报名相同位置有两种情况：\n①2人都报名击球手，情况数为[IMG6][IMG7]种；\n②2人都报名投球手，情况数为[IMG8]种，但其中抽取的2人均是既报名击球手又报名投球手的情况重复出现1次，故满足条件的情况数为21+10-1=30种。\n根据公式：概率[IMG9]，则所求概率为[IMG10]。\n方法二：在报名人员中随机抽取2人，总的情况数有[IMG11]种。要求抽取的2人报名相同位置，则反面情况为抽取的2人报名不同位置，只能为其中一人只报名击球手，另一人只报名投球手，情况数为[IMG12]种。根据公式：概率[IMG13]，则所求概率=1-反面情况概率[IMG14]。\n故正确答案为C。",
+        "source": "2025年黑龙江公务员录用考试《行测》题（网友回忆版）第68题",
+        "keypoint": "给情况求概率"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 101,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 14,
+          "imageTypesSummary": {
+            "tex": 14,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "12."
+    },
+    {
+      "questionNumber": "13.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某羽毛球俱乐部推出充值会员优惠活动，具体为月卡会员费用打八折，年卡会员费用打七折，充值总时长1年的月卡比1年的年卡所需费用，打折前后分别多88元和100元，问打折后充值18个月的会员最少需要：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=MWbdxqfN4jy8ElThEcH-9ATNIR6IPjX43QevuFD1LaPU5a3zWu2yc5OcglWIouoO",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "某羽毛球俱乐部推出充值会员优惠活动，具体为月卡会员费用打八折，年卡会员费用打七折，充值总时长1年的月卡比1年的年卡所需费用，打折前后分别多88元和100元，问打折后充值18个月的会员最少需要：",
+      "questionStem": "某羽毛球俱乐部推出充值会员优惠活动，具体为月卡会员费用打八折，年卡会员费用打七折，充值总时长1年的月卡比1年的年卡所需费用，打折前后分别多88元和100元，问打折后充值18个月的会员最少需要：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "不到340元",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"13-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">不到340元</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "340-400元之间",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"13-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">340-400元之间</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "400-460元之间",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"13-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">400-460元之间</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "460元以上",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"13-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">460元以上</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "49 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "设打折前月卡和年卡的会员费用分别为x和y，根据题意可列：12x-y=88······①，[IMG1]······②，联立①②两式，解得x=32，y=296。打折后充值18个月的会员可以采取1张年卡+6张月卡花费最少，总费用=296×0.7+32×6×0.8=207.2+153.6=360.8元，在B项范围内。\n故正确答案为B。",
+        "source": "2024年甘肃公务员录用考试《行测》题（网友回忆版）第65题",
+        "keypoint": "经济利润问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 96,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "13."
+    },
+    {
+      "questionNumber": "14.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某连锁餐厅甲、乙、丙三个店面2024年销售额总计为1000万元，利润总计为120万元。其中，甲店面的销售额是利润的10倍，是丙店面销售额的<img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=QCqjuVG4Gea1Ch1joX-LYw\">，乙店面的利润比甲店面多10万元且比丙店面少10万元。问乙店面的销售额是利润的多少倍？</p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=QCqjuVG4Gea1Ch1joX-LYw",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gwE4JcJeI98_3LYKP-6csVl0d7z0KBxwNHN2mwAIuYk",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        }
+      ],
+      "contentText": "某连锁餐厅甲、乙、丙三个店面2024年销售额总计为1000万元，利润总计为120万元。其中，甲店面的销售额是利润的10倍，是丙店面销售额的[IMG1]，乙店面的利润比甲店面多10万元且比丙店面少10万元。问乙店面的销售额是利润的多少倍？",
+      "questionStem": "某连锁餐厅甲、乙、丙三个店面2024年销售额总计为1000万元，利润总计为120万元。其中，甲店面的销售额是利润的10倍，是丙店面销售额的[IMG1]，乙店面的利润比甲店面多10万元且比丙店面少10万元。问乙店面的销售额是利润的多少倍？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "6",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"14-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">6</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "6.25",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"14-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">6.25</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "7",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"14-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">7</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "7.2",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"14-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">7.2</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "74 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "设2024年甲店面利润为x万元，则其销售额为10x万元，乙店面利润为（x+10）万元，丙店面利润为x+10+10=（x+20）万元，其销售额为[IMG2]万元。根据“甲、乙、丙三个店面2024年利润总计为120万元”，可得x+（x+10）+（x+20）=3x+30=120，解得x=30。又根据“甲、乙、丙三个店面2024年销售额总计为1000万元”，可得乙店面销售额=1000-10x-15x=1000-25×30=250万元，乙店面利润为30+10=40万元，则乙店面的销售额是利润的250÷40=6.25倍。\n故正确答案为B。",
+        "source": "2025年天津市公务员录用考试《行测》题（网友回忆版）第5题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 118,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 2,
+          "imageTypesSummary": {
+            "tex": 2,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "14."
+    },
+    {
+      "questionNumber": "15.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>一块长13厘米、宽5厘米的长方形纸片如下图所示。将其沿直线折叠后使得点A与BC边上某一点E重合，且折痕分别与纸片的AB边、AD边相交。问BE可能的最大和最小长度相差多少厘米？</p><p><img width=\"678px\" height=\"168px\" src=\"//fb.fbstatic.cn/api/tarzan/images/18ce3c7b559a02c.png?width=700\"></p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/18ce3c7b559a02c.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=NlXLUN4HwbSqcpA0zJ12ZQ",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=nn6XPlRFkIPsumLG8S1a_GyVL259yhvho4QQZxl48xuprGg4IrnrVfmidvNbqa9V",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/18d301b38c783df.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 4
+        }
+      ],
+      "contentText": "一块长13厘米、宽5厘米的长方形纸片如下图所示。将其沿直线折叠后使得点A与BC边上某一点E重合，且折痕分别与纸片的AB边、AD边相交。问BE可能的最大和最小长度相差多少厘米？\n[IMG1]",
+      "questionStem": "一块长13厘米、宽5厘米的长方形纸片如下图所示。将其沿直线折叠后使得点A与BC边上某一点E重合，且折痕分别与纸片的AB边、AD边相交。问BE可能的最大和最小长度相差多少厘米？\n[IMG1]",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "3",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"15-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">3</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "4",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"15-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">4</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "5",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"15-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">5</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "6",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"15-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">6</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "40 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "由题意可知，BE最大的长度为BA完全与BC边重合时（如图1所示），即[IMG2]时，此时BE=BA=5厘米；BE最小的长度为AD边完全折起且A与BC边相交于点E（如图2所示），根据勾股定理，[IMG3]厘米，此时BE=13-12=1厘米。故BE可能的最大和最小长度相差5-1=4厘米。\n[IMG4]\n故正确答案为B。",
+        "source": "2024年四川省公务员录用考试《行测》试题（网友回忆版）第53题",
+        "keypoint": "几何结论类-三角形相关"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 94,
+            "paragraphs": 2,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 4,
+          "imageTypesSummary": {
+            "tex": 2,
+            "normal": 2
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "15."
+    },
+    {
+      "questionNumber": "16.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某高校学生会选拔乡村支教志愿者，初试合格者中，语文类5名，数学类6名，文体类4名，从中选取9名志愿者，但每类至少要选2名。问就9名志愿者的科目类别构成而言，共有几种选拔方式？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/tarzan/images/18687ae58814604.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=_3LJhK7ScuV1oUMuxNRu5A",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=yXKO3sbe9Rlnxd7hGOXWNw",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        }
+      ],
+      "contentText": "某高校学生会选拔乡村支教志愿者，初试合格者中，语文类5名，数学类6名，文体类4名，从中选取9名志愿者，但每类至少要选2名。问就9名志愿者的科目类别构成而言，共有几种选拔方式？",
+      "questionStem": "某高校学生会选拔乡村支教志愿者，初试合格者中，语文类5名，数学类6名，文体类4名，从中选取9名志愿者，但每类至少要选2名。问就9名志愿者的科目类别构成而言，共有几种选拔方式？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "6",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"16-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">6</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "7",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"16-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">7</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "8",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"16-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "9",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"16-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "35 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题干“就9名志愿者的科目类别构成而言”，可知本题需按照科目选人，即只考虑每个科目的志愿者人数。结合条件“每类至少要选2名”，则每类先选2名志愿者，共6名；还需要再选3名志愿者，采用枚举法：\n[IMG1]\n因此，共有9种选拔方式。\n方法二：将9名志愿者的构成情况分类讨论如下：\n①按照(2、2、5)的构成方式：从三类里随机选择一类，选5名志愿者, 另外两类各2名。由于文体类只有4名，故只能从语文类和数学类选择，则情况数有[IMG2]种；\n②按照(2、3、4)的构成方式：从三类里分别选2名、3名和4名志愿者，全排列即可，则情况数有[IMG3]种；\n③按照(3、3、3)的构成方式：每类均选3名，情况数只有1种。\n综上，符合题意的选拔方式共有2+6+1=9种。\n故正确答案为D。",
+        "source": "2023年甘肃公务员录用考试《行测》题（网友回忆版）第59题",
+        "keypoint": "基础排列组合"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 87,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 3,
+          "imageTypesSummary": {
+            "tex": 2,
+            "normal": 1
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "16."
+    },
+    {
+      "questionNumber": "17.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>老刘家有100亩草场，平均每亩草场年产草料4吨。草场上饲养了羊、驴、牛共252头，平均每头羊年需草料1吨，每头驴年需草料2吨，每头牛年需草料5吨。去年老刘家草场恰好能满足草料需求，今年老刘没有饲养羊，但驴和牛的数量都翻了一倍，草场仍恰好满足草料需求，则老刘家去年饲养了（    ）头牛。</p></div>",
+      "images": [],
+      "contentText": "老刘家有100亩草场，平均每亩草场年产草料4吨。草场上饲养了羊、驴、牛共252头，平均每头羊年需草料1吨，每头驴年需草料2吨，每头牛年需草料5吨。去年老刘家草场恰好能满足草料需求，今年老刘没有饲养羊，但驴和牛的数量都翻了一倍，草场仍恰好满足草料需求，则老刘家去年饲养了（ ）头牛。",
+      "questionStem": "老刘家有100亩草场，平均每亩草场年产草料4吨。草场上饲养了羊、驴、牛共252头，平均每头羊年需草料1吨，每头驴年需草料2吨，每头牛年需草料5吨。去年老刘家草场恰好能满足草料需求，今年老刘没有饲养羊，但驴和牛的数量都翻了一倍，草场仍恰好满足草料需求，则老刘家去年饲养了（ ）头牛。",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "32",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"17-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">32</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "33",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"17-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">33</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "34",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"17-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">34</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "35",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"17-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">35</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "59 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "根据题意可知，草场每年可生产草料100×4=400吨。设老刘家去年饲养羊、驴、牛分别为x头、y头、z头，根据“饲养了羊、驴、牛共252头”，可列式：x+y+z=252①；根据去年和今年草场均恰好满足草料需求，且今年没有饲养羊，驴和牛的数量都翻了一倍，可列式：x+2y+5z=400②；2×2y+2×5z=400③。联立方程①、②、③式可解得：x=200、y=20、z=32，则老刘家去年饲养了32头牛。\n故正确答案为A。",
+        "source": "2024年深圳市考公务员录用考试《行测》试题（网友回忆版）第51题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 140,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 0,
+          "imageTypesSummary": {
+            "tex": 0,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "17."
+    },
+    {
+      "questionNumber": "18.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>高速公路某路段转向处靠近居民楼，为减少噪声需设置隔音板（如下图所示），安装隔音板范围为公路转向处的一段圆曲线（即从点A至点B圆弧），测控人员在过点A、B的两条切线的交点C处，测得从A到B转角<img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=R_h5kyVmIgsRYKNMyFIpBg\">为<img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=YqOnvRQdAcgJgKOAHNqXRw\">，若此圆曲线的半径OA=1km，则这段隔音板的安装长度为：</p><p><img width=\"200px\" height=\"231px\" src=\"//fb.fenbike.cn/api/tarzan/images/19599a7a0348798.png?width=700\"></p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=R_h5kyVmIgsRYKNMyFIpBg",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "stem",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=YqOnvRQdAcgJgKOAHNqXRw",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "stem",
+          "src": "https://fb.fenbike.cn/api/tarzan/images/19599a7a0348798.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 3
+        },
+        {
+          "role": "option-A",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=QpKoj6x40DNUBP5p94aqELrXVwrlSIYWw4PQRRthS7A",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "option-B",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=AaHkKGOm2HyyFyK4LSx6cvTy9fwpnl8aild2JZJg3Ko",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "option-C",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=woOKGgtPkMKEnB6KqikSLgPYBAbVbV1ROMJcKsU3fNs",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "option-D",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=8SKMXhllvvT64QLwkg0v0srSfNhHBemSMkQqjitjdjs",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=nSG9tZV4x84h9aKCuVBE6DG6nrLzgS4z51Izm8Hkcrk",
+          "alt": "",
+          "isTex": true,
+          "index": 8
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=34eapzbCytTpIidSWcNUHCMFwBtDQsN1EUKkJ7HrpwM",
+          "alt": "",
+          "isTex": true,
+          "index": 9
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=rqr7_wiXAUl2WOhyA2z5Xh8msMiIHP5fro7Oby5dXgs",
+          "alt": "",
+          "isTex": true,
+          "index": 10
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1J4kIKO0ajOCjUcbUT-Vgw",
+          "alt": "",
+          "isTex": true,
+          "index": 11
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=IqYLzMOR0uAns6ecJdj72-Xr2hawlVaABbOeGE7UbraAydkkAzi-5BFRXUg0aU4ryM4JUcHKYnehg8UvZQNB66R7ZZl_RuHt2LfmOKeOax0",
+          "alt": "",
+          "isTex": true,
+          "index": 12
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=aTnnq-wKCmPX6aKRYnAGlC3DvkNZ5xCL6mYkYhh8wPViMkx50IHmXA6F6HifEm3j",
+          "alt": "",
+          "isTex": true,
+          "index": 13
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=7xvIlGe5aqqTbrqLWJbV81gASDDU8dldSnLasRktIbqXRkIQbpBKx9bHitNijMvAzIzjJXZBi-WfdtCU8nxO0g",
+          "alt": "",
+          "isTex": true,
+          "index": 14
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=zNK-CA9OIxD88AgBZssq1JdPC7EZnNahM7Hd3dWeNB0",
+          "alt": "",
+          "isTex": true,
+          "index": 15
+        }
+      ],
+      "contentText": "高速公路某路段转向处靠近居民楼，为减少噪声需设置隔音板（如下图所示），安装隔音板范围为公路转向处的一段圆曲线（即从点A至点B圆弧），测控人员在过点A、B的两条切线的交点C处，测得从A到B转角[IMG1]为[IMG2]，若此圆曲线的半径OA=1km，则这段隔音板的安装长度为：\n[IMG3]",
+      "questionStem": "高速公路某路段转向处靠近居民楼，为减少噪声需设置隔音板（如下图所示），安装隔音板范围为公路转向处的一段圆曲线（即从点A至点B圆弧），测控人员在过点A、B的两条切线的交点C处，测得从A到B转角[IMG1]为[IMG2]，若此圆曲线的半径OA=1km，则这段隔音板的安装长度为：\n[IMG3]",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "[IMG4]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"18-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=QpKoj6x40DNUBP5p94aqELrXVwrlSIYWw4PQRRthS7A\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-A",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=QpKoj6x40DNUBP5p94aqELrXVwrlSIYWw4PQRRthS7A",
+              "alt": "",
+              "isTex": true,
+              "index": 4
+            }
+          ],
+          "lists": []
+        },
+        "B": {
+          "text": "[IMG5]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"18-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=AaHkKGOm2HyyFyK4LSx6cvTy9fwpnl8aild2JZJg3Ko\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-B",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=AaHkKGOm2HyyFyK4LSx6cvTy9fwpnl8aild2JZJg3Ko",
+              "alt": "",
+              "isTex": true,
+              "index": 5
+            }
+          ],
+          "lists": []
+        },
+        "C": {
+          "text": "[IMG6]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"18-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=woOKGgtPkMKEnB6KqikSLgPYBAbVbV1ROMJcKsU3fNs\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-C",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=woOKGgtPkMKEnB6KqikSLgPYBAbVbV1ROMJcKsU3fNs",
+              "alt": "",
+              "isTex": true,
+              "index": 6
+            }
+          ],
+          "lists": []
+        },
+        "D": {
+          "text": "[IMG7]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"18-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=8SKMXhllvvT64QLwkg0v0srSfNhHBemSMkQqjitjdjs\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-D",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=8SKMXhllvvT64QLwkg0v0srSfNhHBemSMkQqjitjdjs",
+              "alt": "",
+              "isTex": true,
+              "index": 7
+            }
+          ],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "69 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "因为AC、BC与弧线相切，故[IMG8]、[IMG9]。已知[IMG10]，四边形OACB内角和为[IMG11]，则[IMG12]。根据弧长公式：弧长[IMG13]，则点A至点B弧长[IMG14]，即这段隔音板的安装长度为[IMG15]km。\n故正确答案为C。",
+        "source": "2025年河北省公务员录用考试《行测》题（网友回忆版）第67题",
+        "keypoint": "几何公式类-平面图形"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 144,
+            "paragraphs": 2,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 15,
+          "imageTypesSummary": {
+            "tex": 14,
+            "normal": 1
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "18."
+    },
+    {
+      "questionNumber": "19.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某农场采摘脐橙，每名工人的工作效率相同。8：00开始工作，每30分钟休息10分钟，11：50结束，正好完成当天任务的一半。下午从14：00开始工作，工人的数量增加了一半，且每30分钟休息5分钟。问完成当天任务的时间是：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=6u6Nm_MIonD3d1BYleTivMw7qNhaVRmckNV8hfb9HD0AAjbEFZXcMZ6oOwOE7rxb",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=n1d8zw4VPiW1FmYMZ34etX8QqXwbrjn1LNzbReIGOZc",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=kDdQeKuKS300Bkr4AfibyaNd_9dA-z0-r7ddBYKCx2reEZmvETMp2Aq4kzbnC4j1aIKsmgbxlS9ffBBb_ya2WQ",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=uBdT3EWJqv39j75v6hyRKAIYGldS49pjPFDnPCTNAzAyUwIceTPNaHmpHJul9Bi6",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        }
+      ],
+      "contentText": "某农场采摘脐橙，每名工人的工作效率相同。8：00开始工作，每30分钟休息10分钟，11：50结束，正好完成当天任务的一半。下午从14：00开始工作，工人的数量增加了一半，且每30分钟休息5分钟。问完成当天任务的时间是：",
+      "questionStem": "某农场采摘脐橙，每名工人的工作效率相同。8：00开始工作，每30分钟休息10分钟，11：50结束，正好完成当天任务的一半。下午从14：00开始工作，工人的数量增加了一半，且每30分钟休息5分钟。问完成当天任务的时间是：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "16：15",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"19-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16：15</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "16：20",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"19-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16：20</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "16：25",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"19-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16：25</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "16：30",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"19-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16：30</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "43 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "设上午工人数量为x人，则下午工人数量为[IMG1]人。根据每名工人的工作效率相同，且效率不变，赋值每名工人的工作效率为1。根据题意可得，上午工人每40分钟休息1次，到11：50共休息了[IMG2]次······30分钟，即上午工作时间为5×30+30=180分钟，则下午工作量=上午工作量=180x，下午工作时间为[IMG3]分钟=2小时，根据下午每30分钟休息5分钟，可得下午共休息[IMG4]分钟（最后一次30分钟结束时已完成任务不需要再休息），故完成当天任务的时间是16：15。\n故正确答案为A。",
+        "source": "2025年四川省考/选调公务员录用考试《行测》试题（网友回忆版）第54题",
+        "keypoint": "给具体单位型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 109,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 4,
+          "imageTypesSummary": {
+            "tex": 4,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "19."
+    },
+    {
+      "questionNumber": "20.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>清朝乾隆皇帝曾出上联“客上天然居，居然天上客”，纪昀以“人过大佛寺，寺佛大过人”对出下联，这副对联既可以顺读也可以逆读，被称作回文联。数学中也有类似回文数，如212、37473等，则三位数中回文数是奇数的概率为：</p></div>",
+      "images": [
+        {
+          "role": "option-A",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=kpfnsbxPwb6gg57g6OSA5mJ99svDM6dvRRBGon7z_Fo",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "option-B",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=BQ7Y89Ue-4zhZqRGXqiH6Qg3j168kuR7xZeu_fPVLEY",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "option-C",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1E-pvnErbya_IWnEiDkCU0JOsH3Yd31nIoRJBfyMfkk",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "option-D",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=kLLts1I6tVcQO9aunDcFsxQiynd-aQ8YUceh8jCQP7M",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=NN23sgfsiE8EU8nHqVfdiT9z6MOr1OjJmu8fB5lF4NmwCa64BJwhqdcZAQLYPA5BbCQbE52Mb_JX3v_PQEQAM_0OhhVLnROfWFY4v7U9SJM",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        }
+      ],
+      "contentText": "清朝乾隆皇帝曾出上联“客上天然居，居然天上客”，纪昀以“人过大佛寺，寺佛大过人”对出下联，这副对联既可以顺读也可以逆读，被称作回文联。数学中也有类似回文数，如212、37473等，则三位数中回文数是奇数的概率为：",
+      "questionStem": "清朝乾隆皇帝曾出上联“客上天然居，居然天上客”，纪昀以“人过大佛寺，寺佛大过人”对出下联，这副对联既可以顺读也可以逆读，被称作回文联。数学中也有类似回文数，如212、37473等，则三位数中回文数是奇数的概率为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "[IMG1]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"20-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=kpfnsbxPwb6gg57g6OSA5mJ99svDM6dvRRBGon7z_Fo\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-A",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=kpfnsbxPwb6gg57g6OSA5mJ99svDM6dvRRBGon7z_Fo",
+              "alt": "",
+              "isTex": true,
+              "index": 1
+            }
+          ],
+          "lists": []
+        },
+        "B": {
+          "text": "[IMG2]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"20-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=BQ7Y89Ue-4zhZqRGXqiH6Qg3j168kuR7xZeu_fPVLEY\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-B",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=BQ7Y89Ue-4zhZqRGXqiH6Qg3j168kuR7xZeu_fPVLEY",
+              "alt": "",
+              "isTex": true,
+              "index": 2
+            }
+          ],
+          "lists": []
+        },
+        "C": {
+          "text": "[IMG3]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"20-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=1E-pvnErbya_IWnEiDkCU0JOsH3Yd31nIoRJBfyMfkk\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-C",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=1E-pvnErbya_IWnEiDkCU0JOsH3Yd31nIoRJBfyMfkk",
+              "alt": "",
+              "isTex": true,
+              "index": 3
+            }
+          ],
+          "lists": []
+        },
+        "D": {
+          "text": "[IMG4]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"20-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> D </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=kLLts1I6tVcQO9aunDcFsxQiynd-aQ8YUceh8jCQP7M\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-D",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=kLLts1I6tVcQO9aunDcFsxQiynd-aQ8YUceh8jCQP7M",
+              "alt": "",
+              "isTex": true,
+              "index": 4
+            }
+          ],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "49 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题意三位数是回文数的情况，即百位数字和个位数字相同，且由于三位数百位数字不能为0，只能是1-9中的任意一个，十位数字可以是0-9中的任意一个，故总情况数有9×10=90种。回文数是奇数的情况，即个位数字可以是1、3、5、7、9中的一个，百位数字和个位数字相同，十位数字可以是0-9中的任意一个，故满足条件的情况有5×10=50种。则三位数中回文数是奇数的概率为[IMG5]。\n故正确答案为D。",
+        "source": "2022年浙江省公务员录用考试《行测》题（C类）（网友回忆版）第15题",
+        "keypoint": "给情况求概率"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 106,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 5,
+          "imageTypesSummary": {
+            "tex": 5,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "20."
+    },
+    {
+      "questionNumber": "21.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>712934856是一个包含1至9每个数字恰好一次的九位数，它具有以下特征：数字1至6在其中是从小到大排列的，但是数字1至7不是从小到大排列的。则符合这种特征的九位数共有多少个？</p></div>",
+      "images": [],
+      "contentText": "712934856是一个包含1至9每个数字恰好一次的九位数，它具有以下特征：数字1至6在其中是从小到大排列的，但是数字1至7不是从小到大排列的。则符合这种特征的九位数共有多少个？",
+      "questionStem": "712934856是一个包含1至9每个数字恰好一次的九位数，它具有以下特征：数字1至6在其中是从小到大排列的，但是数字1至7不是从小到大排列的。则符合这种特征的九位数共有多少个？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "12",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"21-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">12</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "336",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"21-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">336</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "432",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"21-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">432</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "504",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"21-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">504</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "42 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "第一步：根据“数字1至6在其中是从小到大排列的”，可知1至6这6个数字的排列顺序为1种；\n第二步：将数字7插入第一步六个数字产生的7个空里，由“数字1至7不是从小到大排列的”可得数字7不能放在数字6之后，因此只有6个空可以用，有6种情况；\n第三步：将数字8插入第二步七个数字产生的8个空里，有8种情况；\n第四步：将数字9插入第三步八个数字产生的9个空里，有9种情况；\n分步用乘法，因此总情况数=1×6×8×9=432。\n故正确答案为C。",
+        "source": "2023年辽宁省公务员录用考试《行测》题（网友回忆版）第65题",
+        "keypoint": "基础排列组合"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 89,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 0,
+          "imageTypesSummary": {
+            "tex": 0,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "21."
+    },
+    {
+      "questionNumber": "22.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>甲生产线的效率是乙生产线的2倍，是丙生产线的3倍。某日8：00甲生产线先开始生产，此后乙、丙生产线也依次开始生产，9：00时甲的当日产量是乙的6倍，10：00时乙的当日产量是丙的4倍。问丙是几点开始生产的？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=ql0hwTrTYPAYd6ebkcN7v3yE8aKsx-8DJEkbxwOcYrA",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "甲生产线的效率是乙生产线的2倍，是丙生产线的3倍。某日8：00甲生产线先开始生产，此后乙、丙生产线也依次开始生产，9：00时甲的当日产量是乙的6倍，10：00时乙的当日产量是丙的4倍。问丙是几点开始生产的？",
+      "questionStem": "甲生产线的效率是乙生产线的2倍，是丙生产线的3倍。某日8：00甲生产线先开始生产，此后乙、丙生产线也依次开始生产，9：00时甲的当日产量是乙的6倍，10：00时乙的当日产量是丙的4倍。问丙是几点开始生产的？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "9：30",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"22-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9：30</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "9：20",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"22-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9：20</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "9：15",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"22-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9：15</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "9：10",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"22-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">9：10</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "48 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "根据题意，赋值甲生产线每小时的效率为6，则乙的效率为3，丙的效率为2。某日8：00甲生产线开始生产，9：00时其当日产量=1×6=6，根据“9：00时甲的当日产量是乙的6倍”，可知9：00时乙的当日产量=6÷6=1，10：00时乙的当日产量为1+3×1=4。根据“10：00时乙的当日产量是丙的4倍”，可知10：00时丙的当日产量=4÷4=1，即已用时[IMG1]小时=30分钟，则丙是从9：30开始生产的。\n故正确答案为A。",
+        "source": "2025年云南省公务员录用考试《行测》题（网友回忆版）第57题",
+        "keypoint": "给效率比例型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 103,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "22."
+    },
+    {
+      "questionNumber": "23.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>甲、乙两工程队承担某个项目的施工任务，甲、乙同时施工5小时后，甲单独施工5小时，或者甲、乙同时施工4小时后，乙单独施工9小时，均可完成整个任务。已知甲、乙每小时的工费分别为1000元、600元，则全程由甲完成比全程由乙完成（    ）。</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=0zP2-vNGdctDdorbcO_IOfMsdZ0XGxqJIzeoRdt05nE",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=CxS14Z33d8RZWTU7IkpmMBw7OMPqn7mtIKw3OgimSws",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gi5XD8WKvJoGsUBsCw6ezs77aBQcV6eNO6MW8YG9URA",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=vzJd7_PpCZDfdoFSWB8nPvciskMJKYjcTb-aW6Zhw-g",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=uIiaUinKoZJXmDxpDZFtIb42MTtGDKHmi1X3l4YGV9g",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        }
+      ],
+      "contentText": "甲、乙两工程队承担某个项目的施工任务，甲、乙同时施工5小时后，甲单独施工5小时，或者甲、乙同时施工4小时后，乙单独施工9小时，均可完成整个任务。已知甲、乙每小时的工费分别为1000元、600元，则全程由甲完成比全程由乙完成（ ）。",
+      "questionStem": "甲、乙两工程队承担某个项目的施工任务，甲、乙同时施工5小时后，甲单独施工5小时，或者甲、乙同时施工4小时后，乙单独施工9小时，均可完成整个任务。已知甲、乙每小时的工费分别为1000元、600元，则全程由甲完成比全程由乙完成（ ）。",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "高3000元以上",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"23-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">高3000元以上</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "高不到3000元",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"23-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">高不到3000元</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "低3000元以上",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"23-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">低3000元以上</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "低不到3000元",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"23-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">低不到3000元</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "61 %",
+      "errorProne": "A",
+      "solution": {
+        "analysis": "根据题意可知：工作总量=5×（甲+乙）+5甲=4×（甲+乙）+9乙，整理可得6甲=8乙，则[IMG1]。赋值甲、乙的效率分别为4、3，则工作总量=5×（4+3）+5×4=55，故全程由甲、乙完成的时间分别为[IMG2]小时、[IMG3]小时。根据“甲、乙每小时的工费分别为1000元、600元”，则全程由甲完成的工费为[IMG4]元，全程由乙完成的工费为[IMG5]元。因此，全程由甲完成比全程由乙完成高13750-11000=2750元，即高不到3000元。\n故正确答案为B。",
+        "source": "2024年黑龙江省公安机关人民警察专项录用考试《行测》题（网友回忆版）第65题",
+        "keypoint": "给效率比例型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 115,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 5,
+          "imageTypesSummary": {
+            "tex": 5,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "23."
+    },
+    {
+      "questionNumber": "24.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>甲、乙、丙三家工厂同时进行改造升级，升级之前三家工厂每小时完成任务数量之比为3：4：5，升级后每小时完成任务数量之比为2：3：4，升级后原来三家合作需要12天完成的生产任务能比之前少用4天完成。则升级后丙的效率提升了：</p></div>",
+      "images": [
+        {
+          "role": "option-A",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=HWUiiW14_FCicOnaJCTMGw",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "option-B",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=9zyxzZKZo5xcPkl1lZtMbQ",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "option-C",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=ooQwY__8ryHhTUFSi8bMHg",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "option-D",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=-YBKzysaRKCk5IKGRNJQ8A",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=vJV6KMZ3Yg41HAmL41nGfNW_iipe_iJkrq5mUDAvPZE",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=lRFSSXmX3i4_HsG7dlYf8jglZaWfv9s3_FeyQ8QcVPs",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gDqjE94433a4uROYrWV2UmIwEZWpkLLvXZ3Ove_LHx8",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        }
+      ],
+      "contentText": "甲、乙、丙三家工厂同时进行改造升级，升级之前三家工厂每小时完成任务数量之比为3：4：5，升级后每小时完成任务数量之比为2：3：4，升级后原来三家合作需要12天完成的生产任务能比之前少用4天完成。则升级后丙的效率提升了：",
+      "questionStem": "甲、乙、丙三家工厂同时进行改造升级，升级之前三家工厂每小时完成任务数量之比为3：4：5，升级后每小时完成任务数量之比为2：3：4，升级后原来三家合作需要12天完成的生产任务能比之前少用4天完成。则升级后丙的效率提升了：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "[IMG1]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"24-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=HWUiiW14_FCicOnaJCTMGw\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-A",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=HWUiiW14_FCicOnaJCTMGw",
+              "alt": "",
+              "isTex": true,
+              "index": 1
+            }
+          ],
+          "lists": []
+        },
+        "B": {
+          "text": "[IMG2]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"24-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=9zyxzZKZo5xcPkl1lZtMbQ\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-B",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=9zyxzZKZo5xcPkl1lZtMbQ",
+              "alt": "",
+              "isTex": true,
+              "index": 2
+            }
+          ],
+          "lists": []
+        },
+        "C": {
+          "text": "[IMG3]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"24-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=ooQwY__8ryHhTUFSi8bMHg\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-C",
+              "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=ooQwY__8ryHhTUFSi8bMHg",
+              "alt": "",
+              "isTex": true,
+              "index": 3
+            }
+          ],
+          "lists": []
+        },
+        "D": {
+          "text": "[IMG4]",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"24-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> D </div><!----><app-format-html _ngcontent-ng-c1498882093=\"\" _nghost-ng-c2523839719=\"\" class=\"ng-star-inserted\"><div _ngcontent-ng-c2523839719=\"\"><p><img flag=\"tex\" src=\"//fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&amp;latex=-YBKzysaRKCk5IKGRNJQ8A\"></p></div></app-format-html><!---->",
+          "images": [
+            {
+              "role": "option-D",
+              "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=-YBKzysaRKCk5IKGRNJQ8A",
+              "alt": "",
+              "isTex": true,
+              "index": 4
+            }
+          ],
+          "lists": []
+        }
+      },
+      "correctAnswer": "D",
+      "correctRate": "54 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "赋值升级之前甲、乙、丙三家工厂每天的效率分别为3、4、5，则生产任务总量=12×（3+4+5）=144。升级后三家工厂每天的效率之和为[IMG5]，则升级后丙每天的效率为[IMG6]，故丙的效率提升了[IMG7]。\n故正确答案为D。",
+        "source": "2025年上海市公务员录用考试《行测》题（A类）（网友回忆版）第92题",
+        "keypoint": "给效率比例型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 109,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 7,
+          "imageTypesSummary": {
+            "tex": 7,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "24."
+    },
+    {
+      "questionNumber": "25.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某企业2020年营业收入比上年降低了10%，但国家减税降费政策使成本比上年降低了20%。若2019年该企业的利润率为20%，则2020年该企业的利润率为多少？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/186a117ea5b1c71.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=bSCq06pHuZvA8w674W6BquGWSnIk3lPKzfFbTEhUFrxHFRoiQbD3-Thy7Wq4tXbL",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18&latex=4GuYj9qhJxAVADZCiu2LYcDcwUd4DDubHcY6SNbq_FM",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        }
+      ],
+      "contentText": "某企业2020年营业收入比上年降低了10%，但国家减税降费政策使成本比上年降低了20%。若2019年该企业的利润率为20%，则2020年该企业的利润率为多少？",
+      "questionStem": "某企业2020年营业收入比上年降低了10%，但国家减税降费政策使成本比上年降低了20%。若2019年该企业的利润率为20%，则2020年该企业的利润率为多少？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "25%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"25-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">25%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "30%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"25-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">30%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "35%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"25-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">35%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "40%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"25-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">40%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "51 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "赋值该企业2019年的成本为100，根据题干条件可列表如下：\n[IMG1]\n根据公式“利润率[IMG2]”，则2020年该企业的利润率[IMG3]。\n故正确答案为C。",
+        "source": "2021年湖北省选调生招录考试综合知识和行政职业能力测验试卷（网友回忆版）第71题",
+        "keypoint": "经济利润问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 79,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 3,
+          "imageTypesSummary": {
+            "tex": 2,
+            "normal": 1
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "25."
+    },
+    {
+      "questionNumber": "26.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>为了丰富居民的业余生活，区政府拟在花苑小区西面围墙外的空地上，修建一个矩形文化广场，广场的一边为小区围墙。现沿广场周边植树，相邻两棵树、最东边的树与围墙的间隔最多为4m，且远离围墙的两个角上都植树。已知围墙一侧无需植树，最终共植树63棵，那么文化广场的最大面积为：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=xQx_phJ15qNt3dagGvSqxK6cYSqGMMPGLsSkl3N1Hyk",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=S6hD6NIMXs5zfvVJTyQIPg",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=ihddUl1iqLLnL_-ZxuI5fGXL3PPWuAMr2_FjW3Xm7LLXun5hL5aaOPuDjioeHmbH",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=Gb35ss-dRjrQ7pQhUbI66A",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=q6E3TjNE5GVwo4FLHtSsBQ",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=NTRXH4AUsz0GuiQ-4TzXEAl4gXLYn6p2eW_fFmOOv4eSAewYbstoltvvZXmnihs_",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=qE6MuXzT8sR7tK3dsGQXt6cpjbZAdd6VcyqnQzd3pyqUK8XUId1L10M29pMjTRSs",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        }
+      ],
+      "contentText": "为了丰富居民的业余生活，区政府拟在花苑小区西面围墙外的空地上，修建一个矩形文化广场，广场的一边为小区围墙。现沿广场周边植树，相邻两棵树、最东边的树与围墙的间隔最多为4m，且远离围墙的两个角上都植树。已知围墙一侧无需植树，最终共植树63棵，那么文化广场的最大面积为：",
+      "questionStem": "为了丰富居民的业余生活，区政府拟在花苑小区西面围墙外的空地上，修建一个矩形文化广场，广场的一边为小区围墙。现沿广场周边植树，相邻两棵树、最东边的树与围墙的间隔最多为4m，且远离围墙的两个角上都植树。已知围墙一侧无需植树，最终共植树63棵，那么文化广场的最大面积为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "7442",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"26-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">7442</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "7848",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"26-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">7848</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "8192",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"26-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8192</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "8498",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"26-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">8498</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "C",
+      "correctRate": "48 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "由题意可知，相邻两棵树、最东边的树与围墙的间隔取最大值4m时，文化广场的边长最大，此时文化广场的面积最大。设与围墙相垂直的两条边均植树x棵，则与围墙相垂直的边长均为4xm。由于围墙一侧无需植树且最终共植树63棵，则与围墙相平行的边植树63-2x+2=（65-2x）棵，则与围墙相平行的边长为[IMG1]。设文化广场的面积为[IMG2]，则[IMG3]，令y=0，解得[IMG4]，[IMG5]，当[IMG6]时，y取最大值。则文化广场的最大面积为[IMG7]。\n故正确答案为C。",
+        "source": "2025年江苏省公务员录用考试《行测》题（B类）（网友回忆版）第68题",
+        "keypoint": "函数最值问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 132,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 7,
+          "imageTypesSummary": {
+            "tex": 7,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "26."
+    },
+    {
+      "questionNumber": "27.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某单位拟于下周周一至周六期间举办“人人学党史，人人讲党史”和“我为群众办实事”实践活动，每个活动均需连续开展两天，那么这两个活动的时间完全不重叠的概率为：</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=8GZ8TpFk7uFMi227KdtOPnhl0V4nKMFCMkjydNlDhhc",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=47_hbUhNMlcAynsLkv0GyJmEP5QNzR7kDBOHphQDHnc",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=nAhLrNpMT90PNXofP8QBwuUTSgCR09WdJrpzIO0zNqo",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=hMcygbmW9t7LA0zDOSbg2w",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=gk0CCCsJyns11QEbD3K5-nlvfgwyx-oZnaBpyzkXm-ORmXMH8Vi_6bqkmIDV-hQDugODwTQhXGPMepfNvt9ql8SpUUDVIaXNAp4P06AofLw",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        }
+      ],
+      "contentText": "某单位拟于下周周一至周六期间举办“人人学党史，人人讲党史”和“我为群众办实事”实践活动，每个活动均需连续开展两天，那么这两个活动的时间完全不重叠的概率为：",
+      "questionStem": "某单位拟于下周周一至周六期间举办“人人学党史，人人讲党史”和“我为群众办实事”实践活动，每个活动均需连续开展两天，那么这两个活动的时间完全不重叠的概率为：",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "40%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"27-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">40%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "48%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"27-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">48%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "52%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"27-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">52%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "60%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"27-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">60%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "41 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "每个活动均需连续开展两天，则每个活动可选择的举办时间有（周一、周二）、（周二、周三）、（周三、周四）、（周四、周五）、（周五、周六），共5种情况，两个活动的举办时间共有[IMG1]种情况。若想两个活动时间完全不重叠，可有以下3种情况：\n①其中一个活动选择（周一、周二），另一个活动可选择（周三、周四）、（周四、周五）或（周五、周六），情况数为[IMG2]种；\n②其中一个活动选择（周二、周三），另一个活动可选择（周四、周五）或（周五、周六），情况数为[IMG3]种；\n③其中一个活动选择（周三、周四），另一个活动可选择（周五、周六），情况数为[IMG4]种。\n满足条件的情况数为6+4+2=12种，则所求概率[IMG5]。\n故正确答案为B。",
+        "source": "2022年青海省公务员录用考试《行测》题（网友回忆版）第67题",
+        "keypoint": "给情况求概率"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 77,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 5,
+          "imageTypesSummary": {
+            "tex": 5,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "27."
+    },
+    {
+      "questionNumber": "28.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>某地火灾被扑灭之后组织了一批环保志愿者上山清运遗留垃圾。假设需要清运的垃圾总量是80吨，开工后由于附近居民的积极参与，实际清运的速度是原计划的4倍，结果提前5小时完成任务。问这批志愿者原计划每小时清运的垃圾吨数是多少？（    ）</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=VW71SBRL-Cpdly5Y-_2bdrmXfLUCqFcryEf3SewFgoCHTj05BhMBC3_-U2Uyf528",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=7614Yz-WjUJMU19GPx2NYNfpawwDhM9Y-Huib6AfpKM",
+          "alt": "",
+          "isTex": true,
+          "index": 2
+        }
+      ],
+      "contentText": "某地火灾被扑灭之后组织了一批环保志愿者上山清运遗留垃圾。假设需要清运的垃圾总量是80吨，开工后由于附近居民的积极参与，实际清运的速度是原计划的4倍，结果提前5小时完成任务。问这批志愿者原计划每小时清运的垃圾吨数是多少？（ ）",
+      "questionStem": "某地火灾被扑灭之后组织了一批环保志愿者上山清运遗留垃圾。假设需要清运的垃圾总量是80吨，开工后由于附近居民的积极参与，实际清运的速度是原计划的4倍，结果提前5小时完成任务。问这批志愿者原计划每小时清运的垃圾吨数是多少？（ ）",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "10",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"28-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">10</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "12",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"28-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">12</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "16",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"28-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">16</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "18",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"28-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">18</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "78 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "根据题意，垃圾总量一定，原计划清运速度与实际清运速度之比为1：4，则原计划清运时间与实际清运时间之比为4：1，原计划比实际多用的3份时间对应5小时，则原计划清运时间为[IMG1]小时，原计划清运的效率为[IMG2]，即这批志愿者原计划每小时清运垃圾12吨。\n故正确答案为B。",
+        "source": "2023年重庆市选调优秀大学生到基层工作考试《行测》题第54题",
+        "keypoint": "给具体单位型"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 112,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 2,
+          "imageTypesSummary": {
+            "tex": 2,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "28."
+    },
+    {
+      "questionNumber": "29.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>如下图所示，某地计划修建一个长50米，宽40米的长方形观光园。现在需要在观光园中修建几条鹅卵石小道供游客行走，其中一条是长为50米，宽为2米的水平直线型小路，另外两条修成斜线型，并且要求这两条斜线型小路任何地方的水平方向宽度都是1米，问修完小路后观光园剩下部分的面积是多少平方米？</p><p><img width=\"154px\" height=\"136px\" src=\"//fb.fbstatic.cn/api/tarzan/images/18688050c2c273f.png?width=700\"></p></div>",
+      "images": [
+        {
+          "role": "stem",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/18688050c2c273f.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 1
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/tarzan/images/1868805463c0a72.png?width=700",
+          "alt": "",
+          "isTex": false,
+          "index": 2
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=fmfEdiOzDr7HIv8Q8IPMY7ca25h8Jl70mBta9oZvYq5Zj9Z17z3KVDO3jpizwbbB2PllYoE_dm59MfB5pgDklLhVqPEtm-GooB5INjxNswj8EIpIthZEhNvkEaxpBqN968HmgdoXI_VUS9XNpYhhkPCr2cZruN573VfqYAs9eGM",
+          "alt": "",
+          "isTex": true,
+          "index": 3
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=fmfEdiOzDr7HIv8Q8IPMY_yNoJBspKxSS1PEWMdMy1TIFHb1exVfZ7iYayyXfEAw",
+          "alt": "",
+          "isTex": true,
+          "index": 4
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=-2TR6di5gUMndYep8Ckm4FTQynnQat6ksCtTu36d3XExCWTC_GZ9aKZ4JivFY041er0KyMb6BAeBQN2hRJxXpQ",
+          "alt": "",
+          "isTex": true,
+          "index": 5
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=9-AMBAKq8858MeEF0CUr3hz154sF62kGHS8RjbCVI5z0MiHNcrRTHCej5rSGl1XUT2VH9tOYBDeIljuGp6kd4DvqsO0QRLC52t1554VrgrE",
+          "alt": "",
+          "isTex": true,
+          "index": 6
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=KW0TMQFApxBIUY3S2LsAB5hFTJDwXLiZhG41hgxFXS1ErbcgP0F-Hr9vb7sgBIXx",
+          "alt": "",
+          "isTex": true,
+          "index": 7
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=6qTVTFaRG7yJidfnw6itovfq2aidQUU5N99bUgS9Pds",
+          "alt": "",
+          "isTex": true,
+          "index": 8
+        },
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=opeVvKTAcgf_ehLZAIrcvnAw2zecjBJDWAbawqgFihkspJV1PMfndUJDD6wMLqdM",
+          "alt": "",
+          "isTex": true,
+          "index": 9
+        }
+      ],
+      "contentText": "如下图所示，某地计划修建一个长50米，宽40米的长方形观光园。现在需要在观光园中修建几条鹅卵石小道供游客行走，其中一条是长为50米，宽为2米的水平直线型小路，另外两条修成斜线型，并且要求这两条斜线型小路任何地方的水平方向宽度都是1米，问修完小路后观光园剩下部分的面积是多少平方米？\n[IMG1]",
+      "questionStem": "如下图所示，某地计划修建一个长50米，宽40米的长方形观光园。现在需要在观光园中修建几条鹅卵石小道供游客行走，其中一条是长为50米，宽为2米的水平直线型小路，另外两条修成斜线型，并且要求这两条斜线型小路任何地方的水平方向宽度都是1米，问修完小路后观光园剩下部分的面积是多少平方米？\n[IMG1]",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "1862",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"29-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">1862</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "1880",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"29-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">1880</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "1950",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"29-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">1950</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "1960",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"29-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">1960</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "A",
+      "correctRate": "56 %",
+      "errorProne": "B",
+      "solution": {
+        "analysis": "根据题干，观光园如图所示：\n[IMG2]\n题目所求剩余面积等于[IMG3]。[IMG4]平方米。[IMG5]平方米。由于两个平行四边形底边相同，则[IMG6][IMG7][IMG8][IMG9]平方米。则题目所求剩余面积=2000-100-38=1862平方米。\n故正确答案为A。",
+        "source": "2023年甘肃公务员录用考试《行测》题（网友回忆版）第69题",
+        "keypoint": "几何公式类-平面图形"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 147,
+            "paragraphs": 2,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 9,
+          "imageTypesSummary": {
+            "tex": 7,
+            "normal": 2
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "29."
+    },
+    {
+      "questionNumber": "30.",
+      "questionType": "单选题",
+      "section": "未知",
+      "sectionIndex": 0,
+      "contentHtml": "<div _ngcontent-ng-c2523839719=\"\"><p>甲、乙二人合伙成立公司，约定每年利润的60%留作公司发展用途，40%按二人投资比例分配。已知公司成立第三年的利润比第二年高300万元，是第一年利润的3倍；甲第二年分配的金额是第三年的一半，且比第一年多20万元。问乙的投资额占比为多少？</p></div>",
+      "images": [
+        {
+          "role": "solution",
+          "src": "https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18&latex=JqCdr-3L4iczOIw48IrqiBrtfxykE8sspXAdeXjqm2HrF2xPt6_JlJkNk3NLW5KA",
+          "alt": "",
+          "isTex": true,
+          "index": 1
+        }
+      ],
+      "contentText": "甲、乙二人合伙成立公司，约定每年利润的60%留作公司发展用途，40%按二人投资比例分配。已知公司成立第三年的利润比第二年高300万元，是第一年利润的3倍；甲第二年分配的金额是第三年的一半，且比第一年多20万元。问乙的投资额占比为多少？",
+      "questionStem": "甲、乙二人合伙成立公司，约定每年利润的60%留作公司发展用途，40%按二人投资比例分配。已知公司成立第三年的利润比第二年高300万元，是第一年利润的3倍；甲第二年分配的金额是第三年的一半，且比第一年多20万元。问乙的投资额占比为多少？",
+      "nestedLists": [],
+      "options": {
+        "A": {
+          "text": "40%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"30-0\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> A </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">40%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "B": {
+          "text": "50%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"30-1\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio correctLost\"> B </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">50%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "C": {
+          "text": "60%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"30-2\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> C </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">60%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        },
+        "D": {
+          "text": "75%",
+          "html": "<input _ngcontent-ng-c1498882093=\"\" type=\"radio\" class=\"option-radio ng-untouched ng-pristine\" id=\"30-3\" disabled=\"\"><div _ngcontent-ng-c1498882093=\"\" class=\"input-radio\"> D </div><p _ngcontent-ng-c1498882093=\"\" class=\"input-text ng-star-inserted\">75%</p><!----><!---->",
+          "images": [],
+          "lists": []
+        }
+      },
+      "correctAnswer": "B",
+      "correctRate": "47 %",
+      "errorProne": "C",
+      "solution": {
+        "analysis": "设该公司第一年的利润为x万元，根据题意可得，第三年的利润为3x万元，第二年的利润为（3x-300）万元。已知每年二人将利润的40%按投资比例分配，且甲第二年分配的金额是第三年的一半，设甲的投资额占比为y，可列方程：[IMG1]，解得x=200。则第一年的利润为200万元，第二年的利润为3×200-300=300万元。又因甲第二年分配的金额比第一年多20万元，可列方程：300×40%×y=200×40%×y+20，解得y=50%，故甲的投资额占比为50%，则乙的投资额占比为1-50%=50%。\n故正确答案为B。",
+        "source": "2023年国家公务员录用考试《行测》题（副省级网友回忆版）第73题",
+        "keypoint": "和差倍比问题"
+      },
+      "diagnostics": {
+        "pageVersion": "v2_粉笔题库单页面",
+        "extraction": {
+          "stem": {
+            "found": true,
+            "length": 117,
+            "paragraphs": 1,
+            "hasNestedLists": false
+          },
+          "options": {
+            "found": 4,
+            "expected": 4,
+            "complete": true
+          },
+          "answer": {
+            "correct": true,
+            "rate": true
+          },
+          "solution": {
+            "analysis": true,
+            "keypoint": true,
+            "hasNestedLists": false
+          },
+          "imagesCount": 1,
+          "imageTypesSummary": {
+            "tex": 1,
+            "normal": 0
+          }
+        },
+        "health": {
+          "isComplete": true,
+          "hasCriticalMissing": false,
+          "confidence": "high"
+        },
+        "section": {
+          "name": "未知",
+          "index": 0
+        }
+      },
+      "originalQuestionNumber": "30."
+    }
+  ],
+  "metadata": {
+    "parseErrors": 0,
+    "scrapeVersion": "1.0.0",
+    "diagnosticsSummary": {
+      "completeCount": 30,
+      "incompleteCount": 0,
+      "completionRate": "100.00%",
+      "imagesQuestionsCount": 27,
+      "nestedListsCount": 0,
+      "sections": [
+        {
+          "name": "未知",
+          "index": 0,
+          "questionCount": 30,
+          "imagesCount": 128,
+          "nestedListsCount": 0,
+          "completeCount": 30
+        }
+      ],
+      "problematicQuestions": []
+    }
+  }
+}

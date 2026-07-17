@@ -22,6 +22,13 @@ class BaseView(QWidget):
         """返回视图名称，用于导航栏显示。"""
         raise NotImplementedError
 
+    def get_nav_title(self) -> str:
+        """返回导航栏展示标题（图标 + 中文释义），默认回退到 get_name。
+
+        子类应重写以提供更友好的中文入口名，例如「📑 题库转PPT」。
+        """
+        return self.get_name()
+
     def get_description(self) -> str:
         """返回视图功能描述（导航栏 tooltip）。"""
         raise NotImplementedError

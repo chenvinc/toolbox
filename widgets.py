@@ -1,10 +1,12 @@
 """自定义 UI 控件 — 动画按钮、进度条、Toast 通知和文件拖放区。"""
 
 import os
+import re
 
 from PySide6.QtWidgets import (
     QPushButton, QProgressBar, QFrame, QLabel,
-    QVBoxLayout, QFileDialog, QToolTip,
+    QVBoxLayout, QHBoxLayout, QWidget, QSizePolicy, QFileDialog, QToolTip,
+    QDoubleSpinBox, QSpinBox, QLineEdit, QDialog, QPlainTextEdit,
 )
 from PySide6.QtCore import (
     Qt, Signal, QTimer,
@@ -17,17 +19,26 @@ from theme import Theme
 class AppButton(QPushButton):
     """统一按钮样式：圆角矩形、可用/不可用、提示原因和主题驱动。"""
 
-    def __init__(self, text, default_height=44, theme=None):
-        """初始化按钮，设定默认高度、主题和默认交互状态。"""
+    def __init__(self, text, default_height=44, theme=None, loading_text="转换中...",
+                 variant="primary"):
+        """初始化按钮，设定默认高度、主题和默认交互状态。
+
+        loading_text：进入加载态时显示的文案，默认“转换中...”（Word→PPT 场景）。
+        调用方应按业务语义传入，如查重场景传“检测中...”。
+        variant：按钮规范变体，"primary" 主按钮（蓝底白字，核心执行操作）；
+        "secondary" 次级按钮（白底蓝边框蓝字，辅助操作）。
+        """
         super().__init__(text)
         self._default_height = default_height
         if default_height is not None:
             self.setFixedHeight(default_height)
         self._theme = theme if theme is not None else Theme()
+        self._variant = variant
         self._can_click = True
         self._disabled_reason = ""
         self._loading = False
         self._original_text = text
+        self._loading_text = loading_text
         self._update_cursor()
         self.update_style()
 
@@ -53,19 +64,29 @@ class AppButton(QPushButton):
     def update_style(self):
         t = self._theme
         if self._can_click and not self._loading:
-            bg = t.accent
-            hover = t.accent_light
-            pressed = t.accent_dark
-            fg = "white"
+            if self._variant == "secondary":
+                bg = t.secondary_bg
+                fg = t.accent
+                border = f"1px solid {t.accent}"
+                hover = t.hover_blue
+                pressed = t.hover_blue
+            else:
+                bg = t.accent
+                fg = "white"
+                border = "none"
+                hover = t.accent_light
+                pressed = t.accent_dark
         else:
             bg = t.disabled_btn_bg
+            fg = "#bfbfbf"
+            border = "none"
             hover = bg
             pressed = bg
-            fg = "rgba(255,255,255,0.75)"
 
         self.setStyleSheet(
-            f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
-            f"border-radius: 14px; padding: 0 18px; min-height: {self._default_height}px; }}"
+            f"QPushButton {{ background: {bg}; color: {fg}; border: {border}; "
+            f"border-radius: {t.radius}px; padding: 0 18px; "
+            f"min-height: {self._default_height}px; }}"
             f"QPushButton:hover {{ background: {hover}; }}"
             f"QPushButton:pressed {{ background: {pressed}; }}"
         )
@@ -83,10 +104,14 @@ class AppButton(QPushButton):
         super().mousePressEvent(event)
 
     def set_loading(self, loading, reason="正在处理中..."):
+        # 幂等保护：仅在“非加载态 → 加载态”的首次跃迁时保存原始文案，
+        # 避免重复 set_loading(True)（如 _on_check 与 _on_started 各调一次）
+        # 把已切换为加载文案的文本误存为 _original_text，导致恢复时回不到初始文案。
+        if loading and not self._loading:
+            self._original_text = self.text()
         self._loading = loading
         if loading:
-            self._original_text = self.text()
-            self.setText("转换中...")
+            self.setText(self._loading_text)
             self.set_actionable(False, reason)
         else:
             self.setText(self._original_text)
@@ -96,9 +121,15 @@ class AppButton(QPushButton):
 class AnimatedButton(AppButton):
     """带有按压高度动画和加载状态的主操作按钮。"""
 
-    def __init__(self, text, default_height=50, theme=None):
-        """初始化按钮，设定默认高度和文本。"""
-        super().__init__(text, default_height=default_height, theme=theme)
+    def __init__(self, text, default_height=50, theme=None, loading_text="转换中...",
+                 variant="primary"):
+        """初始化按钮，设定默认高度和文本。
+
+        loading_text 透传至 AppButton，决定加载态显示的文案。
+        variant 透传至 AppButton，决定主/次按钮规范。
+        """
+        super().__init__(text, default_height=default_height, theme=theme,
+                         loading_text=loading_text, variant=variant)
 
     def mousePressEvent(self, event):
         if not self._can_click or self._loading:
@@ -155,6 +186,135 @@ class AnimatedProgressBar(QProgressBar):
         self.setValue(int(val))
 
 
+class StepperInput(QWidget):
+    """左侧减号 + 中间数值输入框（去掉原生上下箭头）+ 右侧加号 步进控件。
+
+    全项目统一：Quiz2Slide 的「字号」「自定义行距」与 Similarity 的「相似度阈值」
+    共用同一组件，外观 1:1 一致。仅做渲染层包装：
+    - 中间为 QDoubleSpinBox / QSpinBox：保留其 range/singleStep/decimals/value，
+      仅隐藏原生箭头；value() 透传内部控件。
+    - 中间为 QLineEdit：用调用方设置的 QDoubleValidator 约束，± 按钮按 step 增减并
+      clamp 到 [min, max]，value() 解析文本返回 float（空/非法时回退 default_value）。
+    所有圆角/边框/hover/聚焦/配色均来自全局主题令牌，不引入任何自定义样式参数。
+    """
+
+    valueChanged = Signal(float)
+
+    def __init__(self, spin=None, theme=None, minus_text="−", plus_text="+",
+                 min_val=None, max_val=None, step=1.0, decimals=1, default_value=0.0):
+        super().__init__()
+        self._theme = theme if theme is not None else Theme()
+        self._min_val = min_val
+        self._max_val = max_val
+        self._step_val = step
+        self._decimals = decimals
+        self._default_value = default_value
+
+        if spin is None:
+            spin = QDoubleSpinBox()
+        self._spin = spin
+        self._spin.setFocusPolicy(Qt.StrongFocus)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        self.minus_button = QPushButton(minus_text)
+        self.plus_button = QPushButton(plus_text)
+        for b in (self.minus_button, self.plus_button):
+            b.setFixedSize(28, 36)
+            b.setCursor(Qt.PointingHandCursor)
+        self.minus_button.clicked.connect(self._step_down)
+        self.plus_button.clicked.connect(self._step_up)
+
+        layout.addWidget(self.minus_button)
+        layout.addWidget(self._spin, 1)
+        layout.addWidget(self.plus_button)
+
+        self.set_theme(self._theme)
+
+    # ── 主题 ──
+    def set_theme(self, theme):
+        """重新应用中间输入框与两侧按钮的全局规范样式（含隐藏原生箭头）。"""
+        self._theme = theme
+        self._spin.setStyleSheet(self._middle_style())
+        btn = self._btn_style()
+        self.minus_button.setStyleSheet(btn)
+        self.plus_button.setStyleSheet(btn)
+
+    def _middle_style(self):
+        t = self._theme
+        return (
+            "QLineEdit, QDoubleSpinBox, QSpinBox {"
+            f" padding: 4px 8px; border: 1px solid transparent; border-radius: {t.radius}px;"
+            f" font-size: 13px; background: {t.input_bg}; color: {t.text_primary};"
+            "}"
+            # 彻底移除原生上下箭头（宽度/高度归零 + 清除箭头图像），消除重复调节控件
+            "QDoubleSpinBox::up-button, QDoubleSpinBox::down-button,"
+            " QSpinBox::up-button, QSpinBox::down-button {"
+            " width: 0px; height: 0px; border: none; background: transparent; image: none; }"
+            "QDoubleSpinBox::up-arrow, QDoubleSpinBox::down-arrow,"
+            " QSpinBox::up-arrow, QSpinBox::down-arrow { width: 0px; height: 0px; image: none; }"
+            f"QLineEdit:hover, QDoubleSpinBox:hover, QSpinBox:hover {{ border-color: {t.accent}; }}"
+            f"QLineEdit:focus, QDoubleSpinBox:focus, QSpinBox:focus {{"
+            f" border: 1px solid {t.accent}; background: {t.card_bg}; }}"
+        )
+
+    def _btn_style(self):
+        t = self._theme
+        return (
+            f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_primary};"
+            f" border: 1px solid {t.border}; border-radius: {t.radius}px; font-size: 16px; }}"
+            f"QPushButton:hover {{ border-color: {t.accent}; color: {t.accent}; }}"
+            f"QPushButton:pressed {{ background: {t.hover_blue}; }}"
+            f"QPushButton:disabled {{ background: {t.disabled_btn_bg};"
+            f" color: {t.text_placeholder}; border: 1px solid {t.border}; }}"
+        )
+
+    # ── 取值 ──
+    def value(self):
+        """返回当前数值：SpinBox 直接透传，QLineEdit 解析文本并 clamp。"""
+        if isinstance(self._spin, (QDoubleSpinBox, QSpinBox)):
+            return self._spin.value()
+        try:
+            val = float(self._spin.text())
+        except ValueError:
+            return self._default_value
+        if self._min_val is not None:
+            val = max(self._min_val, val)
+        if self._max_val is not None:
+            val = min(self._max_val, val)
+        return val
+
+    # ── 步进 ──
+    def _step_up(self):
+        self._step(1)
+
+    def _step_down(self):
+        self._step(-1)
+
+    def _step(self, direction):
+        if isinstance(self._spin, (QDoubleSpinBox, QSpinBox)):
+            if direction > 0:
+                self._spin.stepUp()
+            else:
+                self._spin.stepDown()
+            return
+        # QLineEdit 模式：按 step 增减并 clamp，保证数值范围与步长不变
+        try:
+            cur = float(self._spin.text()) if self._spin.text().strip() else self._default_value
+        except ValueError:
+            cur = self._default_value
+        new = cur + direction * self._step_val
+        if self._min_val is not None:
+            new = max(self._min_val, new)
+        if self._max_val is not None:
+            new = min(self._max_val, new)
+        new = round(new, self._decimals)
+        self._spin.setText(f"{new:.{self._decimals}f}")
+        self.valueChanged.emit(new)
+
+
 class ToastNotification(QFrame):
     """从窗口顶部滑入的短暂提示消息框（设计为全局固定风格，不随主题变化）。"""
 
@@ -168,7 +328,7 @@ class ToastNotification(QFrame):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._label)
-        self._apply_frame_style()
+        self._apply_frame_style(True)
         self._show_anim = QPropertyAnimation(self, b"pos")
         self._show_anim.setDuration(200)
         self._show_anim.setEasingCurve(QEasingCurve.OutCubic)
@@ -188,13 +348,15 @@ class ToastNotification(QFrame):
             "background: transparent;"
         )
 
-    def _apply_frame_style(self):
+    def _apply_frame_style(self, success=True):
         if self._theme:
-            bg = self._theme.toast_bg
+            bg = self._theme.danger if not success else self._theme.toast_bg
+            radius = self._theme.radius
         else:
             bg = "rgba(0,0,0,0.80)"
+            radius = 12
         self.setStyleSheet(
-            f"QFrame {{ background: {bg}; border-radius: 12px; }}"
+            f"QFrame {{ background: {bg}; border-radius: {radius}px; }}"
         )
 
     def show_message(self, text, success=True, duration=3000):
@@ -204,6 +366,7 @@ class ToastNotification(QFrame):
         """
         prefix = "✅ " if success else "❌ "
         self._label.setText(prefix + text)
+        self._apply_frame_style(success)
         self.adjustSize()
         self.setFixedWidth(min(self.width() + 20, self.parent().width() - 40))
         x = (self.parent().width() - self.width()) // 2
@@ -226,63 +389,123 @@ class ToastNotification(QFrame):
 
 
 class DropZone(QFrame):
-    """支持点击选择和拖拽放入的文件选择区域。"""
+    """支持点击选择、拖拽放入的单文件上传区。
+
+    特性：拖拽悬浮反馈（背景淡蓝 + 边框高亮）、单文件删除按钮、
+    长文件名省略 + hover 完整路径提示、按 file_filter 校验格式（不合规发 invalid_file）。
+    """
 
     file_selected = Signal(str)
+    file_cleared = Signal()
+    invalid_file = Signal(str)
 
-    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None):
-        """初始化文件拖放区域。"""
+    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None,
+                 variant="secondary"):
+        """初始化单文件拖放区域。
+
+        variant：视觉层级变体。
+        - "primary"：主文档上传框，使用主色虚线边框（强调、突出主次）。
+        - "secondary"（默认）：中性虚线边框，作为辅助上传框。
+        两种变体在 hover / 拖拽时均切换为主色实线边框 + 悬浮底色。
+        """
         super().__init__()
         self._theme = theme
         self.setAcceptDrops(True)
         self._compact = compact
         self._file_filter = file_filter
+        self._variant = variant
         self._placeholder = placeholder_text
-        layout = QVBoxLayout(self)
+        self._file_path = ""
+        self._allowed_exts = self._parse_exts(file_filter)
+
+        layout = QHBoxLayout(self)
         if compact:
             layout.setContentsMargins(14, 0, 14, 0)
             self.setFixedHeight(48)
         else:
-            layout.setContentsMargins(24, 20, 24, 20)
-            self.setMinimumHeight(72)
-        self.label = QLabel(placeholder_text)
-        self.label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.label)
+            layout.setContentsMargins(24, 0, 16, 0)
+            self.setMinimumHeight(64)
+        layout.setSpacing(8)
+
+        self._text_label = QLabel(placeholder_text)
+        self._text_label.setAlignment(Qt.AlignVCenter)
+        self._text_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        layout.addWidget(self._text_label, 1)
+
+        self._del_btn = QPushButton("✕")
+        self._del_btn.setFixedSize(20, 20)
+        self._del_btn.setCursor(Qt.PointingHandCursor)
+        self._del_btn.clicked.connect(self.clear)
+        self._del_btn.setVisible(False)
+        layout.addWidget(self._del_btn)
+
         self.setCursor(Qt.PointingHandCursor)
         self._apply_style()
 
-    def _apply_style(self):
-        """根据当前主题应用正常状态和拖拽状态的样式表，同时更新标签颜色。"""
+    @staticmethod
+    def _parse_exts(file_filter):
+        """从 'Word 文档 (*.docx)' 形式解析出允许的后缀列表（小写）。"""
+        if not file_filter:
+            return []
+        return [e.lower() for e in re.findall(r"\*\.(\w+)", file_filter)]
+
+    def _is_allowed(self, path):
+        if not self._allowed_exts:
+            return True
+        low = path.lower()
+        return any(low.endswith("." + e) for e in self._allowed_exts)
+
+    def _del_btn_style(self):
         t = self._theme
-        db = t.dashed_border if t else "#C0C0CC"
-        ib = t.input_bg if t else "#F5F5F7"
+        bg = t.secondary_bg if t else "#f0f0f3"
+        fg = t.text_secondary if t else "#8E8E93"
+        hover = t.danger if t else "#FF3B30"
+        return (
+            f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
+            f"border-radius: 10px; font-size: 12px; }}"
+            f"QPushButton:hover {{ color: white; background: {hover}; }}"
+        )
+
+    def _apply_style(self):
+        """根据当前主题与 variant 应用正常/拖拽样式，同时更新标签与删除按钮。"""
+        t = self._theme
+        ib = t.input_bg if t else "#ffffff"
+        if self._variant == "primary":
+            # 主文档：主色虚线边框，凸显“主”的地位
+            normal_border = f"2px dashed {t.accent}"
+        else:
+            # 辅助：中性虚线边框，弱化以形成主次对比
+            normal_border = f"2px dashed {t.dashed_border if t else '#d9d9d9'}"
         self._normal_style = (
-            f"QFrame {{ background: {ib}; border: 2px dashed {db}; "
-            f"border-radius: 12px; }}"
-            f"QFrame:hover {{ border-color: {t.accent if t else '#007AFF'}; "
-            f"background: {t.hover_bg if t else '#EDF4FF'}; }}"
+            f"QFrame {{ background: {ib}; border: {normal_border}; "
+            f"border-radius: {t.radius}px; }}"
+            f"QFrame:hover {{ border-color: {t.accent}; "
+            f"background: {t.hover_blue}; }}"
         )
         self._drag_style = (
-            f"QFrame {{ background: {t.hover_bg if t else '#EDF4FF'}; "
-            f"border: 2px solid {t.accent if t else '#007AFF'}; border-radius: 12px; }}"
+            f"QFrame {{ background: {t.hover_blue}; "
+            f"border: 2px solid {t.accent}; border-radius: {t.radius}px; }}"
         )
         self.setStyleSheet(self._normal_style)
+        self._del_btn.setStyleSheet(self._del_btn_style())
 
-        if self.label.text() == self._placeholder:
-            text_color = t.drop_text if t else "#8E8E93"
-            self.label.setStyleSheet(
-                f"color: {text_color}; font-size: 13px; "
-                "background: transparent; border: none;"
-            )
-        else:
+        if self._file_path:
             ac = t.drop_file_text if t else "#007AFF"
-            self.label.setStyleSheet(
+            self._text_label.setStyleSheet(
                 f"color: {ac}; font-size: 13px; font-weight: bold; "
                 "background: transparent; border: none;"
             )
+        else:
+            tc = t.drop_text if t else "#8E8E93"
+            self._text_label.setStyleSheet(
+                f"color: {tc}; font-size: 13px; background: transparent; border: none;"
+            )
 
     def mousePressEvent(self, event):
-        """左键点击时打开文件选择对话框。"""
+        """左键点击空白处打开文件选择对话框；点击删除按钮不触发。"""
+        child = self.childAt(event.pos())
+        if isinstance(child, QPushButton):
+            return
         if event.button() == Qt.LeftButton:
             self._open_dialog()
 
@@ -304,54 +527,345 @@ class DropZone(QFrame):
         urls = event.mimeData().urls()
         if urls:
             path = urls[0].toLocalFile()
-            self.set_file(path)
-            self.file_selected.emit(path)
+            if self.set_file(path):
+                self.file_selected.emit(path)
 
     def set_file(self, path):
-        """设置已选文件，更新标签文本为文件名并以主题色高亮显示。"""
-        self.label.setText(os.path.basename(path))
+        """校验通过后设置文件，更新标签/工具提示并暴露完整路径。返回是否成功。"""
+        if not self._is_allowed(path):
+            self.invalid_file.emit(path)
+            return False
+        self._file_path = path
+        base = os.path.basename(path)
+        fm = self._text_label.fontMetrics()
+        elided = fm.elidedText(base, Qt.ElideMiddle, 280)
+        self._text_label.setText(elided)
+        self._text_label.setToolTip(path)
+        self._del_btn.setVisible(True)
         self._apply_style()
+        return True
+
+    def clear(self):
+        """清空已选文件，恢复占位态，并广播 file_cleared。"""
+        if not self._file_path:
+            return
+        self._file_path = ""
+        self._text_label.setText(self._placeholder)
+        self._text_label.setToolTip("")
+        self._del_btn.setVisible(False)
+        self._apply_style()
+        self.file_cleared.emit()
+
+    def get_path(self):
+        return self._file_path
 
     def _open_dialog(self):
-        """打开文件选择对话框，选择后设置文件并发射 file_selected 信号。"""
+        """打开单文件选择对话框，选择后校验、设置并发射 file_selected。"""
         path, _ = QFileDialog.getOpenFileName(
             self, "选择文件", "", self._file_filter
         )
-        if path:
-            self.set_file(path)
+        if path and self.set_file(path):
             self.file_selected.emit(path)
 
 
-class MultiDropZone(DropZone):
-    """扩展 DropZone，支持同时选择和拖入多个文件，显示已选文件数量。
+class MultiDropZone(QFrame):
+    """多文件上传区：文件列表展示、单文件删除、批量清空、格式校验、拖拽悬浮反馈。
 
-    原定义在 legacy similarity_checker，阶段4 迁移至本通用 UI 组件库。
+    每次文件集合变化（新增 / 删除 / 清空）均广播 files_selected(当前完整列表)；
+    单个文件格式不合规时广播 invalid_file（由视图层弹轻量 Toast）。
     """
 
     files_selected = Signal(list)
+    invalid_file = Signal(str)
 
-    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None):
-        super().__init__(placeholder_text, file_filter, compact, theme)
+    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None,
+                 variant="secondary"):
+        super().__init__()
+        self._theme = theme
+        self.setAcceptDrops(True)
+        self._compact = compact
+        self._file_filter = file_filter
+        self._variant = variant
+        self._placeholder = placeholder_text
+        self._paths = []
+        self._allowed_exts = self._parse_exts(file_filter)
 
-    def _open_dialog(self):
-        paths, _ = QFileDialog.getOpenFileNames(
-            self, "选择文件", "", self._file_filter,
+        layout = QVBoxLayout(self)
+        if compact:
+            layout.setContentsMargins(14, 10, 14, 10)
+            self.setMinimumHeight(56)
+        else:
+            layout.setContentsMargins(20, 16, 20, 16)
+            self.setMinimumHeight(80)
+        layout.setSpacing(8)
+
+        self._placeholder_label = QLabel(placeholder_text)
+        self._placeholder_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self._placeholder_label)
+
+        self._list_widget = QWidget()
+        self._list_layout = QVBoxLayout(self._list_widget)
+        self._list_layout.setContentsMargins(0, 0, 0, 0)
+        self._list_layout.setSpacing(6)
+        layout.addWidget(self._list_widget)
+
+        self._clear_btn = AppButton(
+            "清空全部", default_height=28, theme=theme, variant="secondary"
         )
-        if paths:
-            self._handle_files(paths)
+        self._clear_btn.setFixedWidth(96)
+        self._clear_btn.clicked.connect(self.clear_all)
+        layout.addWidget(self._clear_btn, alignment=Qt.AlignRight)
+
+        self.setCursor(Qt.PointingHandCursor)
+        self._apply_style()
+        self._refresh()
+
+    @staticmethod
+    def _parse_exts(file_filter):
+        if not file_filter:
+            return []
+        return [e.lower() for e in re.findall(r"\*\.(\w+)", file_filter)]
+
+    def _is_allowed(self, path):
+        if not self._allowed_exts:
+            return True
+        low = path.lower()
+        return any(low.endswith("." + e) for e in self._allowed_exts)
+
+    def _apply_style(self):
+        t = self._theme
+        ib = t.input_bg if t else "#ffffff"
+        if self._variant == "primary":
+            normal_border = f"2px dashed {t.accent}"
+        else:
+            normal_border = f"2px dashed {t.dashed_border if t else '#d9d9d9'}"
+        self._normal_style = (
+            f"QFrame {{ background: {ib}; border: {normal_border}; "
+            f"border-radius: {t.radius}px; }}"
+            f"QFrame:hover {{ border-color: {t.accent}; background: {t.hover_blue}; }}"
+        )
+        self._drag_style = (
+            f"QFrame {{ background: {t.hover_blue}; border: 2px solid {t.accent}; "
+            f"border-radius: {t.radius}px; }}"
+        )
+        self.setStyleSheet(self._normal_style)
+        self._placeholder_label.setStyleSheet(
+            f"color: {t.drop_text if t else '#8E8E93'}; font-size: 13px; "
+            "background: transparent; border: none;"
+        )
+
+    def _row_style(self):
+        t = self._theme
+        return (
+            f"QFrame {{ background: {t.secondary_bg if t else '#f2f2f7'}; "
+            f"border: none; border-radius: {t.radius}px; padding: 6px 10px; }}"
+            f"QLabel {{ color: {t.text_primary if t else '#1d1d1f'}; "
+            f"font-size: 13px; background: transparent; border: none; }}"
+        )
+
+    def _del_btn_style(self):
+        t = self._theme
+        bg = t.secondary_bg if t else "#f0f0f3"
+        fg = t.text_secondary if t else "#8E8E93"
+        hover = t.danger if t else "#FF3B30"
+        return (
+            f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
+            f"border-radius: 10px; font-size: 12px; }}"
+            f"QPushButton:hover {{ color: white; background: {hover}; }}"
+        )
+
+    def _refresh(self):
+        """重建文件列表行（含省略名 + 完整路径 tooltip + 单删按钮），并按有无文件切换占位/清空。"""
+        while self._list_layout.count():
+            item = self._list_layout.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+        if not self._paths:
+            self._placeholder_label.setVisible(True)
+            self._list_widget.setVisible(False)
+            self._clear_btn.setVisible(False)
+            return
+        self._placeholder_label.setVisible(False)
+        self._list_widget.setVisible(True)
+        self._clear_btn.setVisible(True)
+        row_style = self._row_style()
+        del_style = self._del_btn_style()
+        for path in self._paths:
+            row = QFrame()
+            row.setStyleSheet(row_style)
+            rl = QHBoxLayout(row)
+            rl.setContentsMargins(0, 0, 0, 0)
+            rl.setSpacing(8)
+            base = os.path.basename(path)
+            fm = row.fontMetrics()
+            elided = fm.elidedText(base, Qt.ElideMiddle, 240)
+            name = QLabel(elided)
+            name.setToolTip(path)
+            name.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            rl.addWidget(name, 1)
+            del_btn = QPushButton("✕")
+            del_btn.setFixedSize(20, 20)
+            del_btn.setCursor(Qt.PointingHandCursor)
+            del_btn.setStyleSheet(del_style)
+            del_btn.clicked.connect(lambda _=False, p=path: self._remove_path(p))
+            rl.addWidget(del_btn)
+            self._list_layout.addWidget(row)
+
+    def _remove_path(self, path):
+        if path in self._paths:
+            self._paths.remove(path)
+            self._refresh()
+            self.files_selected.emit(list(self._paths))
+
+    def clear_all(self):
+        if not self._paths:
+            return
+        self._paths = []
+        self._refresh()
+        self.files_selected.emit([])
+
+    def get_paths(self):
+        return list(self._paths)
+
+    def _add_files(self, paths):
+        changed = False
+        for p in paths:
+            if not self._is_allowed(p):
+                self.invalid_file.emit(p)
+            elif p not in self._paths:
+                self._paths.append(p)
+                changed = True
+        if changed:
+            self._refresh()
+            self.files_selected.emit(list(self._paths))
+
+    def mousePressEvent(self, event):
+        """点击空白处（非按钮）打开文件选择对话框，便于继续追加文件。"""
+        child = self.childAt(event.pos())
+        if isinstance(child, QPushButton):
+            return
+        if event.button() == Qt.LeftButton:
+            self._open_dialog()
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+            self.setStyleSheet(self._drag_style)
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event):
+        self.setStyleSheet(self._normal_style)
 
     def dropEvent(self, event):
         self.setStyleSheet(self._normal_style)
         urls = event.mimeData().urls()
         if urls:
             paths = [url.toLocalFile() for url in urls]
-            self._handle_files(paths)
+            self._add_files(paths)
 
-    def _handle_files(self, paths):
-        self._paths = paths
-        if len(paths) == 1:
-            self.set_file(paths[0])
-        else:
-            self.label.setText(f"已选择 {len(paths)} 个文件")
-            self._apply_style()
-        self.files_selected.emit(paths)
+    def _open_dialog(self):
+        paths, _ = QFileDialog.getOpenFileNames(
+            self, "选择文件", "", self._file_filter,
+        )
+        if paths:
+            self._add_files(paths)
+
+
+class ErrorDialog(QDialog):
+    """全局错误提示弹窗（复用主题令牌，与其他工具样式一致）。
+
+    用于需要明确告知用户的错误场景：
+      - JSON 解析失败（弹窗展示具体失败位置）
+      - 输出目录无写入权限（附「选择目录」按钮以便重新选择后重试）
+      - 部分图片下载失败（明细列出失败 URL）
+
+    样式与项目公共规范统一：卡片式面板、错误色标题、主题按钮，禁止硬编码样式值。
+    """
+
+    extraClicked = Signal()
+
+    def __init__(self, parent, theme, *, title, message, detail=None,
+                 confirm_label="知道了", extra_label=None):
+        """初始化错误弹窗。
+
+        Args:
+            parent: 父控件（通常为视图自身）。
+            theme: 当前主题（Theme 实例），用于配色与控件样式。
+            title: 弹窗标题（错误色加粗）。
+            message: 主要说明文字（自动换行）。
+            detail: 可选的多行明细（如失败图片 URL 列表），以只读文本框展示。
+            confirm_label: 确认按钮文案，默认「知道了」。
+            extra_label: 可选次级动作按钮文案（如「选择目录」），点击会触发 extraClicked。
+        """
+        super().__init__(parent)
+        self._theme = theme
+        self.setModal(True)
+        self.setWindowTitle(title)
+        self.setMinimumWidth(460)
+        self.setMaximumHeight(560)
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(24, 20, 24, 20)
+        root.setSpacing(14)
+
+        # 标题行：错误色警示符 + 标题
+        title_row = QHBoxLayout()
+        title_row.setSpacing(8)
+        dot = QLabel("⚠")
+        dot.setStyleSheet(
+            f"color: {theme.error_color}; font-size: 18px; background: transparent;"
+        )
+        title_label = QLabel(title)
+        title_label.setStyleSheet(
+            f"color: {theme.error_color}; font-size: 14px; font-weight: bold; "
+            f"background: transparent;"
+        )
+        title_row.addWidget(dot)
+        title_row.addWidget(title_label)
+        title_row.addStretch(1)
+        root.addLayout(title_row)
+
+        # 主要说明
+        msg_label = QLabel(message)
+        msg_label.setWordWrap(True)
+        msg_label.setTextFormat(Qt.PlainText)
+        msg_label.setStyleSheet(
+            f"color: {theme.text_primary}; font-size: 13px; background: transparent;"
+        )
+        root.addWidget(msg_label)
+
+        # 明细（可选）：只读多行文本框
+        if detail:
+            detail_box = QPlainTextEdit()
+            detail_box.setReadOnly(True)
+            detail_box.setPlainText(detail)
+            detail_box.setStyleSheet(
+                f"QPlainTextEdit {{ background: {theme.input_bg}; "
+                f"color: {theme.text_secondary}; border: 1px solid {theme.border}; "
+                f"border-radius: {theme.radius}px; font-size: 12px; padding: 6px; }}"
+            )
+            root.addWidget(detail_box, 1)
+
+        # 按钮行：次级动作（可选）+ 确认
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(8)
+        btn_row.addStretch(1)
+        if extra_label:
+            self._extra_btn = AppButton(
+                extra_label, default_height=36, theme=theme, variant="secondary"
+            )
+            self._extra_btn.clicked.connect(self._on_extra)
+            btn_row.addWidget(self._extra_btn)
+        self._confirm_btn = AppButton(
+            confirm_label, default_height=36, theme=theme, variant="primary"
+        )
+        self._confirm_btn.clicked.connect(self.accept)
+        btn_row.addWidget(self._confirm_btn)
+        root.addLayout(btn_row)
+
+    def _on_extra(self):
+        self.extraClicked.emit()
+        self.accept()

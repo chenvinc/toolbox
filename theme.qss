@@ -4,14 +4,14 @@
 # （修改本文件后在下次主题刷新/切换时即生效）。
 
 # card
-QFrame { background: $card_bg; border-radius: 20px; border: none; }
+QFrame { background: $card_bg; border-radius: $radius; border: none; }
 
 # divider
 background: $border; border: none;
 
 # progress_bar
-QProgressBar { border: none; background: $progress_bg; border-radius: 3px; height: 6px; }
-QProgressBar::chunk { background: $progress_chunk; border-radius: 3px; }
+QProgressBar { border: none; background: $progress_bg; border-radius: $radius; height: 6px; }
+QProgressBar::chunk { background: $progress_chunk; border-radius: $radius; }
 
 # section_header
-font-size: 15px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
+font-size: ${font_module_title}px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
