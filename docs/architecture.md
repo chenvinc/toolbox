@@ -1,6 +1,6 @@
 # Toolbox 前后端分离架构重构 — 设计文档
 
-> 阶段定位：**阶段1-4 全部落地**（契约层设计 + Word→Slide 样板 + 相似度检测迁移 + 遗留清理与界面重建）。全部回归测试通过（38 测试全绿，offscreen），`core/`+`shared/` mypy `--strict` 零报错。
+> 阶段定位：**阶段1-4 全部落地**（契约层设计 + Word→Slide 样板 + 相似度检测迁移 + 遗留清理与界面重建）。全部回归测试通过（55 测试全绿，offscreen），`core/`+`shared/` mypy `--strict` 零报错。
 > 作者视角：项目首席架构师
 > 依据：现有 `similarity_checker.py` / `word_2_slide_tool.py` / `utils.py` / `base_tool.py` 真实代码
 
@@ -39,7 +39,7 @@ project_root/
 │   │   ├── tasks.py             # TaskRunner（异步执行端口）
 │   │   └── io.py                # DocumentLoader / PptxWriter（文件IO端口）
 │   ├── services/                # 业务实现
-│   │   ├── similarity.py        # SimilarityServiceImpl
+│   │   ├── similarity_service.py        # SimilarityServiceImpl
 │   │   └── slide_builder.py     # Extraction + Pptx 实现
 │   ├── adapters/                # 外部依赖适配（python-docx / python-pptx 封装）
 │   │   ├── docx_loader.py
@@ -563,7 +563,7 @@ def async_task(method):
 - **阶段1**：落地 `shared/` + `core/ports/` + 本文档。无行为变化。（已完成）
 - **阶段2（样板）**：把 `word_2_slide_tool.py` 的 `extract_questions` / `generate_pptx` 迁到 `core/services/slide_builder.py`，经 `DocxLoaderAdapter` 读文件；新建 `SlideViewModel` 跑通端到端，回归测试通过。（已完成）
 - **阶段3（本次）**：把 `similarity_checker.py` 的 `score_question_pair` + 1对多/多对多比对循环迁到 `core/`；引入结构化 `Question` 领域模型；`SimilarityServiceImpl` 经 `DocumentLoader` + `parse_questions` 注入，发射 `CheckStarted/Progress/Completed` 事件；新建 `SimilarityViewModel` 桥接。遗留 `similarity_checker.py` 暂不改动（Strangler Fig）。（已完成）
-- **阶段4（本次完成）**：删除遗留 `utils.py`/`base_tool.py`/`similarity_checker.py`/`word_2_slide_tool.py` 中已迁移逻辑，并用新 `SimilarityViewModel` / `SlideViewModel` 重建 `ui/views/` 真实界面（`SlideView` / `SimilarityView` / `BaseView`），替换 legacy `SimilarityCheckerTool` / `Word2SlideTool`；旧测试 `test_similarity_logic.py` 与 `test_similarity_legacy_parity.py` 下线；定稿本文档。`app.py` 改为 DI 接线（`Container.build(QtTaskRunner(), QtEventEmitter())` → ViewModels → Views），`closeEvent` 经 `stop_worker` 取消后台线程。验收：38 测试全绿（offscreen），`core/`+`shared/` mypy `--strict` 零报错。
+- **阶段4（本次完成）**：删除遗留 `utils.py`/`base_tool.py`/`similarity_checker.py`/`word_2_slide_tool.py` 中已迁移逻辑，并用新 `SimilarityViewModel` / `SlideViewModel` 重建 `ui/views/` 真实界面（`SlideView` / `SimilarityView` / `BaseView`），替换 legacy `SimilarityCheckerTool` / `Word2SlideTool`；旧测试 `test_similarity_logic.py` 与 `test_similarity_legacy_parity.py` 下线；定稿本文档。`app.py` 改为 DI 接线（`Container.build(QtTaskRunner(), QtEventEmitter())` → ViewModels → Views），`closeEvent` 经 `stop_worker` 取消后台线程。验收：55 测试全绿（offscreen），`core/`+`shared/` mypy `--strict` 零报错。
 
 ---
 
@@ -588,7 +588,7 @@ def async_task(method):
   - `core/di.py`：极简 DI 容器。
   - `ui/infra/`：`QtTaskRunner` + `@async_task`、`QtEventEmitter`（Qt Signal 桥接）。
   - `ui/viewmodels/slide_viewmodel.py`：胶水层，单向数据流验证通过。
-  - `utils.py` 退化为兼容薄壳，**旧模块 + 旧测试符号不变**（37 测试全绿，含 `test_same_path_raises_value_error`）。
+  - `utils.py` 在阶段2退化为兼容薄壳，**旧模块 + 旧测试符号不变**（37 测试全绿，含 `test_same_path_raises_value_error`），**该文件已于阶段4删除**（见下）。
   - 新增测试：`tests/unit/core/test_slide_builder.py`（mock 注入）、`tests/integration/test_slide_viewmodel.py`（ViewModel 接线）、`tests/integration/test_slide_e2e.py`（真实适配器端到端）。
 - **阶段4 遗留清理与界面重建**：已落地并完成验收。
   - **删除遗留源**：`similarity_checker.py` / `word_2_slide_tool.py` / `base_tool.py` / `utils.py`；其逻辑由 `core/`（后端）+ `ui/views/`（新界面）承接。
@@ -597,7 +597,7 @@ def async_task(method):
   - **DI 接线**：`app.py` 由 `Container.build(QtTaskRunner(), QtEventEmitter())` 组装 `SlideViewModel`/`SimilarityViewModel` → `SlideView`/`SimilarityView`；`closeEvent` 调 `stop_worker` → `cancel_current` 阻塞等待后台线程终止（修复 SIGABRT）。
   - **测试迁移**：`tests/test_preview_escape.py`、`tests/test_p1_settings_and_threads.py`、`tests/test_p2_tech_debt.py`、`tests/test_generate_pptx.py` 改为直测 `core`/`ui.infra`；新增 `tests/unit/core/test_scorer.py`。下线 `tests/test_similarity_logic.py` 与 `tests/integration/test_similarity_legacy_parity.py`。
   - **修复的关键问题**：`QtEventEmitter(QObject, EventEmitter)` 元类冲突（改为结构实现）；`SimilarityView` 缺 `QPushButton`/`QSizePolicy` 导入；`_load_settings` 加载时触发 `_save_settings` 把半载状态（`opt_prefix=""`）写回（加载期间 `blockSignals`）；`QtTaskRunner` 后台线程销毁时仍运行导致 SIGABRT（`_active` 强引用 + `finished→deleteLater` + `join()/cancel()` 容错）。
-  - **验收**：38 测试全绿（offscreen，无 SIGABRT）；`core/`+`shared/` mypy `--strict` 零报错；`core/`、`shared/` 零 Qt 导入复查通过。
+  - **验收**：55 测试全绿（offscreen，无 SIGABRT）；`core/`+`shared/` mypy `--strict` 零报错；`core/`、`shared/` 零 Qt 导入复查通过。
 
 ---
 
@@ -624,4 +624,4 @@ def async_task(method):
 
 ### 阶段3 未做项（已在阶段4 完成）
 - **`ui/views/` 真实 QWidget 界面**：已在阶段4 以 `BaseView` / `SlideView` / `SimilarityView` 重建，legacy `SimilarityCheckerTool` / `Word2SlideTool` 已删除。
-- **git 提交**：阶段1-4 成果尚未提交，待你确认后执行。
+- **git 提交**：阶段1-4 成果已在提交 `16a2b24`（refactor: 前后端分离架构重构）中落库；本文档及测试修复为后续新增的工作区改动，待评审后提交。

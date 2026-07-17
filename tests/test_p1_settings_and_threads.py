@@ -208,6 +208,55 @@ class P1ThreadTests(unittest.TestCase):
         # 无任务时取消不应崩溃
         vm.cancel_current()
 
+    def test_check_button_text_recovers_after_completion(self):
+        """回归：生产序列 click→started→completed 后，开始检测按钮文案应恢复。
+
+        根因：_on_check 与 _on_started 都会调 set_loading(True)。若 set_loading
+        每次都覆盖 _original_text，则第二次调用会把已切换为“检测中”的文案误存为
+        原始文案，导致 completed 后恢复成“检测中”而非“开始检测”。修复后
+        set_loading 仅在非加载态首次跃迁时保存 _original_text。
+        """
+        from ui.views import similarity_view
+        from ui.views.similarity_view import SimilarityView
+        from core.di import Container
+        from ui.infra.qt_task_runner import QtTaskRunner
+        from ui.infra.qt_event_emitter import QtEventEmitter
+        from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
+        from shared.contracts import OneToManyResult
+
+        runner = QtTaskRunner()
+        emitter = QtEventEmitter()
+        container = Container.build(task_runner=runner, event_emitter=emitter)
+        vm = SimilarityViewModel(container.resolve("similarity"), runner, emitter)
+        view = SimilarityView(vm)
+        # headless 下隔离渲染细节，仅验证按钮文案恢复
+        view._log_browser = type("FakeLog", (), {
+            "append": lambda self, *a, **k: None,
+            "clear": lambda self, *a, **k: None,
+            "setHtml": lambda self, *a, **k: None,
+        })()
+        # 提供合法输入，使 _on_check 进入正式流程（不再因缺文件提前返回）；
+        # 把真正发起异步检测的方法替换为桩，避免 headless 下启后台线程干扰断言。
+        view._main_path = "main.docx"
+        view._secondary_paths = ["a.docx"]
+        view._vm.check = MagicMock()
+
+        # 模拟生产中真实调用序列
+        view._on_check()                       # → set_loading(True)，存“开始检测”
+        self.assertEqual(view._check_btn.text(), "检测中...")
+
+        # 后台线程启动后 CHECK_STARTED 经 UI 线程回调 _on_started（再次 set_loading）
+        view._on_started(SimilarityMode.ONE_TO_MANY)
+        self.assertEqual(view._check_btn.text(), "检测中...")
+
+        # 检测完成：应恢复“开始检测”
+        view._on_completed(
+            OneToManyResult(main_count=1, duplicate_count=0, details=[])
+        )
+        self.assertEqual(view._check_btn.text(), "开始检测")
+        self.assertTrue(view._check_btn.isEnabled())
+        view.deleteLater()
+
 
 class P1SettingsPersistenceTests(unittest.TestCase):
     """SimilarityView 通过 QSettings 持久化阈值/题号格式/选项前缀。"""

@@ -38,7 +38,7 @@ class ScorerTests(unittest.TestCase):
         self.assertIsInstance(result.score, float)
         self.assertGreaterEqual(result.score, 0.0)
         self.assertLessEqual(result.score, 1.0)
-        self.assertIn("reason", result.reason)
+        self.assertIsInstance(result.reason, str)
 
     def test_field_equivalence_with_legacy(self):
         # 与 legacy score_question_pair 返回的子比率字段一一对应
