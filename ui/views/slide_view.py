@@ -204,7 +204,7 @@ class SlideView(BaseView):
         save_row.addWidget(self._save_to_label)
         save_row.addWidget(self.out_path_label)
         save_row.addStretch(1)
-        save_row.addWidget(change_btn)
+        save_row.addWidget(self.change_btn)
         save_row.addWidget(open_btn)
         l4.addLayout(save_row)
         content_layout.addWidget(card4)
