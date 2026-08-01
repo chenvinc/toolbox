@@ -103,12 +103,22 @@ def async_task(method: Callable) -> Callable:
 
     后台任务抛出的异常回调到 ``self.on_async_error(exc)``（若 ViewModel 定义）。
     进度/结果通过事件端口（EventEmitter）推送给 UI，而非此装饰器直接处理。
+
+    ``_task_runner`` 必须由 ``BaseViewModel.__init__`` 注入；若子类忘记调用
+    ``super().__init__(task_runner=...)``，装饰器在调用时抛出 RuntimeError。
     """
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
-        runner = getattr(self, "_task_runner", None)
-        if runner is None:
-            return method(self, *args, **kwargs)
+        # 不再用 getattr 静默回退：task_runner 必须由 BaseViewModel 构造注入。
+        # 若子类忘记调用 super().__init__()，这里给出明确、可操作的报错。
+        try:
+            runner = self._task_runner
+        except AttributeError:
+            raise RuntimeError(
+                f"@async_task used on {type(self).__name__}.{method.__name__}, "
+                f"but _task_runner was not injected. "
+                f"Did you forget to call super().__init__(task_runner=...)?"
+            ) from None
 
         def _run():
             return method(self, *args, **kwargs)

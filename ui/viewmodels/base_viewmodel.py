@@ -34,6 +34,13 @@ class BaseViewModel(QObject):
 
     def __init__(self, event_emitter: EventEmitter, task_runner: TaskRunner) -> None:
         super().__init__()
+        # 显式契约：task_runner 必须在构造期注入且符合 TaskRunner 端口协议；
+        # 不符合则在实例化阶段立即报错，避免 @async_task 退化为静默同步执行。
+        if not isinstance(task_runner, TaskRunner):
+            raise TypeError(
+                f"{type(self).__name__} 要求 task_runner 满足 TaskRunner 端口协议，"
+                f"但收到 {type(task_runner).__name__}（{task_runner!r}）"
+            )
         self._emitter = event_emitter
         self._task_runner = task_runner
         # 订阅领域事件；由基类统一桥接到 _on_event（含 _WATCHED 过滤）

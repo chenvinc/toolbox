@@ -201,13 +201,14 @@ c.register("demo", DemoServiceImpl(demo_writer, event_emitter))
 
 ## 5. ViewModel（`ui/viewmodels/demo_viewmodel.py`）
 
-> **继承 `BaseViewModel`**（v4.0 抽取，见 `ui/viewmodels/base_viewmodel.py`）。基类已提供：构造时持有 `task_runner`/`event_emitter` 并订阅事件、`cancel_current()`、`_on_event` 模板方法（**内置 `_WATCHED` 串台防护**）。子类只需：① 声明类属性 `_WATCHED`；② 实现 `_dispatch` 与 `on_async_error`；③ 把业务 `service` 存到 `self._service`，并把 `_current_task` 存到 `self._current_task`。
+> **继承 `BaseViewModel`**（v4.0 抽取，见 `ui/viewmodels/base_viewmodel.py`）。基类已提供：构造时**强制注入并对 `task_runner` 做 `TaskRunner` 端口协议校验**、持有 `event_emitter` 并订阅事件、`cancel_current()`、`_on_event` 模板方法（**内置 `_WATCHED` 串台防护**）。子类只需：① 声明类属性 `_WATCHED`；② 实现 `_dispatch` 与 `on_async_error`；③ 把业务 `service` 存到 `self._service`，并把 `_current_task` 存到 `self._current_task`。**不要再手动写 `self._task_runner`**——它由基类构造注入，缺省/不兼容会在实例化时立即报错。
 
 ```python
 from __future__ import annotations
 from PySide6.QtCore import Signal
 from core.ports.services import DemoService
-from core.ports.tasks import TaskHandle
+from core.ports.tasks import TaskHandle, TaskRunner
+from core.ports.events import EventEmitter
 from shared.contracts import (
     DemoCompletedEvent, DemoFailedEvent, DemoRequest, DomainEvent, EventType,
     ProgressEvent,
@@ -229,12 +230,13 @@ class DemoViewModel(BaseViewModel):
     failed = Signal(object)                # 抛异常本体，供视图 isinstance 分流
 
     def __init__(self, service: DemoService,
-                 task_runner,
-                 event_emitter) -> None:
-        # 基类负责：持有 task_runner/event_emitter、订阅事件、提供 cancel_current
+                 task_runner: TaskRunner,
+                 event_emitter: EventEmitter) -> None:
+        # 基类负责：类型校验 task_runner（必须实现 TaskRunner 端口）、
+        # 持有 task_runner/event_emitter、订阅事件、提供 cancel_current。
+        # 无需（也不应）手动写 self._task_runner —— 基类已强制注入并校验。
         super().__init__(event_emitter, task_runner)
         self._service = service
-        self._task_runner = task_runner    # ⚠️ 字段必须叫 _task_runner（@async_task 用 getattr 找）
         self._current_task: TaskHandle | None = None
 
     def on_async_error(self, exc: Exception) -> None:
@@ -438,7 +440,7 @@ self._add_tool(DemoView(demo_vm))
 - [ ] `core/services/demo_service.py` 内 `emitter.emit(进度/完成)`
 - [ ] `core/services/__init__.py` 已补导出
 - [ ] `core/di.py` 已 `register("demo", ...)`
-- [ ] `ui/viewmodels` 继承 `BaseViewModel`，声明 `_WATCHED`，实现 `_dispatch` / `on_async_error` 与 `@async_task` 命令（`cancel_current` 已继承）
+- [ ] `ui/viewmodels` 继承 `BaseViewModel`，声明 `_WATCHED`，实现 `_dispatch` / `on_async_error` 与 `@async_task` 命令（`cancel_current` 已继承；`task_runner` 由基类构造注入并校验，子类无需手写 `self._task_runner`）
 - [ ] `ui/views` 继承 `BaseView`，含三列表、`_restyle_all`、`_load_settings(blockSignals)`、`stop_worker`
 - [ ] `app.py` 装配 VM + `_add_tool`
 - [ ] `pytest` 通过（core 层可脱离 Qt 单测）
@@ -451,8 +453,11 @@ self._add_tool(DemoView(demo_vm))
 | --- | --- | --- |
 | 忘记给新服务补 `__init__.py` 导出 | `di.py` 仅能从子模块 import，易漏 | 同步 `core/services/__init__.py` 的 import 与 `__all__` |
 | 复用既有 `EventType` | 多个 VM 串台、信号错乱 | 每个工具用专属 `EventType` |
-| VM 字段不叫 `_task_runner` | `@async_task` 退化成同步执行 | 固定命名为 `self._task_runner` |
+| `task_runner` 未注入 / 非 `TaskRunner` 协议 | 构造即抛 `TypeError`（含类名与实收类型） | `BaseViewModel` 已在构造期强制注入并校验，子类无需手动写 `self._task_runner` |
+| 子类忘记 `super().__init__(task_runner=...)` | 调用 `@async_task` 方法时抛 `RuntimeError` | 子类 `__init__` 必须 `super().__init__(event_emitter, task_runner)` |
 | 漏写 `on_async_error` | 后台异常被静默吞掉 | 必须实现，转成 `failed` 信号 |
 | View 按钮未存实例属性 | 主题切换后按钮不变色 | 存 `self._btn` 并在 `_restyle_all` 调 `set_theme` |
 | DropZone 传 `theme=None` | 构造即 `AttributeError` | 必传 theme |
 | 在 `core` 里 import PySide6 | 架构违规、无法脱离 Qt 单测 | 第三方库只放 `core/adapters` |
+
+> 💡 **历史教训（v4.x）**：已消除 `_task_runner` 魔法字段陷阱。早期 `@async_task` 用 `getattr(self, "_task_runner", None)` 静默回退同步执行，拼写错/漏注入会悄无声息卡死 UI 且极难调试。现改为 `BaseViewModel.__init__` **构造函数强制注入 + `TaskRunner` 端口协议校验**——未传或非协议对象会在**实例化时立即抛出 `TypeError`**（含子类名与实收类型）；若子类忘记调 `super().__init__(task_runner=...)`，调用 `@async_task` 方法时抛 `RuntimeError` 并提示补调用。不要再写 `getattr` 兜底的写法。
