@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtGui import QColor, QFontDatabase
 
 # 与 theme.qss 保持一致的兜底模板（当主题文件缺失时使用，确保不崩溃）
@@ -25,6 +25,15 @@ font-size: ${font_module_title}px; font-weight: bold; color: $card_header_color;
 """
 
 _QSS_PATH = Path(__file__).with_name("theme.qss")
+
+# 全局唯一的 Theme 实例（单例）。所有 `Theme()` / `get_theme()` 调用返回同一对象，
+# 避免 ≥5 处各自创建实例、各自刷新导致的冗余与潜在不一致。
+_INSTANCE: "Theme | None" = None
+
+
+def get_theme() -> "Theme":
+    """返回全局唯一的 Theme 单例（推荐用法，语义清晰于 `Theme()`）。"""
+    return Theme()
 
 
 def _get_system_fonts():
@@ -47,13 +56,28 @@ def _get_system_fonts():
     return preferred + rest
 
 
-class Theme:
-    """管理应用程序的深色/浅色主题配色方案。
+class Theme(QObject):
+    """管理应用程序的深色/浅色主题配色方案（全局单例）。
 
     检测系统配色自动切换，提供各组件的颜色属性供样式表使用。
+    进程内只有一个实例：`Theme()` 与 `get_theme()` 等价；`refresh()` 后会通过
+    `theme_changed` 信号广播，供各视图统一重绘（集中刷新，避免多点重复接线）。
     """
 
-    def __init__(self):
+    theme_changed = Signal()
+
+    def __new__(cls):
+        global _INSTANCE
+        if _INSTANCE is None:
+            _INSTANCE = super().__new__(cls)
+        return _INSTANCE
+
+    def __init__(self) -> None:
+        # 单例守卫：__new__ 返回同一实例后，__init__ 仍会被重复调用，需跳过重复初始化
+        if getattr(self, "_initialized", False):
+            return
+        super().__init__()
+        self._initialized = True
         self._is_dark = False
         self.refresh()
         self._set_tokens()
@@ -77,12 +101,16 @@ class Theme:
         self.font_hint = 12
 
     def refresh(self):
-        """检测系统当前配色方案（深色/浅色）并更新主题颜色。"""
+        """检测系统当前配色方案（深色/浅色）并更新主题颜色。
+
+        更新后通过 `theme_changed` 广播，供订阅者统一重绘（集中刷新）。
+        """
         app = QApplication.instance()
         if app:
             scheme = app.styleHints().colorScheme()
             self._is_dark = (scheme == Qt.ColorScheme.Dark)
         self._set_colors()
+        self.theme_changed.emit()
 
     def _set_colors(self):
         """根据 _is_dark 标志设置深色或浅色模式下的全部颜色属性。

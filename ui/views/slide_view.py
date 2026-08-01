@@ -67,9 +67,7 @@ class SlideView(BaseView):
         self._connect_view_model()
         self._load_settings()
         self._center_on_screen()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed
-        )
+        self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── QtSettings helper（避免与 typing 冲突） ──
     def _setup_ui(self):
@@ -79,7 +77,7 @@ class SlideView(BaseView):
         self._module_cards: list = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
 
         scroll = QScrollArea()
@@ -92,12 +90,12 @@ class SlideView(BaseView):
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(16)
+        content_layout.setSpacing(self.theme.spacing)
 
         # ── 模块一：导入源文档 ──
         card1, l1 = self._make_module_card("导入源文档")
         fmt_row = QHBoxLayout()
-        fmt_row.setSpacing(8)
+        fmt_row.setSpacing(self.theme.control_spacing)
         self.question_num_fmt = QLineEdit("1.")
         self.question_num_fmt.setPlaceholderText("如 1.")
         self.question_num_fmt.setFixedHeight(36)
@@ -121,7 +119,7 @@ class SlideView(BaseView):
         # ── 模块二：幻灯片样式自定义 ──
         card2, l2 = self._make_module_card("幻灯片样式自定义")
         font_row = QHBoxLayout()
-        font_row.setSpacing(8)
+        font_row.setSpacing(self.theme.control_spacing)
         system_fonts = _get_system_fonts()
         self.font_name = QComboBox()
         self.font_name.setEditable(True)
@@ -146,7 +144,7 @@ class SlideView(BaseView):
         l2.addWidget(spacing_title)
 
         spacing_row = QHBoxLayout()
-        spacing_row.setSpacing(8)
+        spacing_row.setSpacing(self.theme.control_spacing)
         self.line_spacing_type = QComboBox()
         self.line_spacing_type.addItems(["1 倍", "1.5 倍", "自定义"])
         self.line_spacing_type.setCurrentText("1 倍")
@@ -192,7 +190,7 @@ class SlideView(BaseView):
         # ── 模块四：输出路径设置 ──
         card4, l4 = self._make_module_card("输出路径设置")
         save_row = QHBoxLayout()
-        save_row.setSpacing(8)
+        save_row.setSpacing(self.theme.control_spacing)
         self.out_path_label = QLabel()
         self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._save_to_label = QLabel("保存到:")
@@ -253,7 +251,7 @@ class SlideView(BaseView):
         card = QFrame()
         card.setObjectName("module_card")
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
         layout.setSpacing(12)
         header = QLabel(title)
         header.setObjectName("card_title")
@@ -484,7 +482,6 @@ class SlideView(BaseView):
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
     def _on_theme_changed(self):
-        self.theme.refresh()
         self._restyle_all()
 
     def _make_labeled_field(self, label_text, widget):

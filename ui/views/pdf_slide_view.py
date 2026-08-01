@@ -58,9 +58,7 @@ class PdfSlideView(BaseView):
         self._setup_ui()
         self._connect_view_model()
         self._load_settings()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed
-        )
+        self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── UI 构建 ──
     def _setup_ui(self):
@@ -70,7 +68,7 @@ class PdfSlideView(BaseView):
         self._module_cards: list = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
 
         scroll = QScrollArea()
@@ -83,7 +81,7 @@ class PdfSlideView(BaseView):
         content.setStyleSheet("background: transparent; border: none;")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(16)
+        content_layout.setSpacing(self.theme.spacing)
 
         # ── 模块一：导入 PDF 文档 ──
         card1, l1 = self._make_module_card("导入 PDF 文档")
@@ -127,7 +125,7 @@ class PdfSlideView(BaseView):
         # ── 模块三：输出路径设置 ──
         card3, l3 = self._make_module_card("输出路径设置")
         save_row = QHBoxLayout()
-        save_row.setSpacing(8)
+        save_row.setSpacing(self.theme.control_spacing)
         self.out_path_label = QLabel()
         self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._save_to_label = QLabel("保存到:")
@@ -184,7 +182,7 @@ class PdfSlideView(BaseView):
         card = QFrame()
         card.setObjectName("module_card")
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
         layout.setSpacing(12)
         header = QLabel(title)
         header.setObjectName("card_title")
@@ -328,7 +326,6 @@ class PdfSlideView(BaseView):
         self.error_label.setText(msg)
 
     def _on_theme_changed(self):
-        self.theme.refresh()
         self._restyle_all()
 
     # ── QSettings 持久化（记住上次使用的模板路径） ──

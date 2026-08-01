@@ -216,8 +216,7 @@ toolbox/
 
 ### 4.2 主题热切换
 - 检测源：`QApplication.styleHints().colorScheme()` 与 `Qt.ColorScheme.Dark` 比较（**不读 QSettings/环境变量，无手动开关**）。
-- 主窗口与每个 View 都各自 `connect(styleHints().colorSchemeChanged, ...)`，回调里 `theme.refresh() + _restyle_all()`。
-- ⚠️ **Theme 不是单例**：运行时存在 ≥5 个独立 `Theme` 实例（`app.py` + 4 个 View 各一个，控件在 `theme=None` 时还会再造），各自刷新各自同步。
+- **集中刷新（v4.0，Phase 4）**：`app.py` 保留唯一一处 `connect(styleHints().colorSchemeChanged, ...)`，回调里 `theme.refresh()`；`Theme` 为全局单例，`refresh()` 末尾通过 `theme_changed` 信号广播，各 View 订阅 `theme.theme_changed` 后只做 `_restyle_all()`（**不再各自连 OS 信号、不再在处理器内调 `refresh()`**，否则自触发死循环）。OS 级连接由 5 处降为 1 处。
 
 ### 4.3 工具注册
 `app.py`：`Container.build` → 造 4 个 VM → `_register_tools(...)` → 逐个 `_add_tool(View)`。
@@ -267,7 +266,7 @@ toolbox/
   - `qss_progress_bar()` → `# progress_bar` 块（含 `height:6px`）。
 - 私有支撑：`_read_qss()`（`OSError` 时回退内置 `_EMBEDDED_QSS`）、`_qss_block(name)`（`string.Template` 替换 `$var`，特判 `radius→"6px"`）。
 - **暗色检测**：`refresh()` 读 `QApplication.styleHints().colorScheme()`，不读 QSettings/环境变量，无手动开关。
-- **非单例**：见 §4.2。
+- **单例 + 集中刷新**：`Theme` 为全局单例（`get_theme()` 等价 `Theme()`），`refresh()` 末尾经 `theme_changed` 信号广播；视图统一订阅该信号做重绘（见 §4.2）。
 
 **`theme.qss`**（17 行）：4 个块（`# card` / `# divider` / `# progress_bar` / `# section_header`），用 `$var`/`${var}` 模板语法（`string.Template`）。
 
@@ -286,8 +285,8 @@ toolbox/
 | 3 | 适配器无基类（Protocol 有意） | 保持；勿强行加基类 |
 | 4 | 共享 `QtEventEmitter`，EventType 须专属 | 新增工具务必加 `XXX_PROGRESS/COMPLETED/FAILED`；`contracts.py` 的 `EventType` 已加「专属约定」注释。`SlideViewModel` 原误监听 `CHECK_FAILED`→`pptx_failed` 的历史耦合 ✅ **已解耦（v4.0，Phase 2）**：`SlideViewModel` 不再监听 `CHECK_FAILED`（`CHECK_*` 属 SimilarityChecker） |
 | 5 | `failed` 信号载荷不一致（str vs object） | ✅ **已修复（v4.0，Phase 2）**：四个 VM 的失败信号统一为 `Signal(object)`，`on_async_error` 透传异常对象（以 `JsonExamViewModel` 为范本），视图侧统一 `msg = message if isinstance(message, str) else str(message)` 处理 |
-| 6 | `Theme` 非单例、≥5 实例 | 若需全局一致，可改单例或集中刷新 |
-| 7 | 设计令牌多数未消费，布局硬编码 | View 中统一改用令牌（如 `spacing`/`page_pad_*`） |
+| 6 | `Theme` 非单例、≥5 实例 | ✅ **已修复（v4.0，Phase 4）**：`Theme` 改为全局单例（`__new__` 缓存 + `_initialized` 守卫），升级为 `QObject` 暴露 `theme_changed` 信号；`refresh()` 末尾广播该信号，`app.py` 保留唯一 `colorSchemeChanged` 接线触发 `refresh()`，4 个 View 改订阅 `self.theme.theme_changed`（处理器去掉 `refresh()` 防自触发死循环）。OS 级连接由 5 处降为 1 处 |
+| 7 | 设计令牌多数未消费，布局硬编码 | ✅ **已修复（v4.0，Phase 4）**：View 布局中等于令牌值的魔数（`24/20/16/8`）值保留替换为 `self.theme.page_pad_x/page_pad_y/spacing/control_spacing`；`font_*`/`radius` 等令牌早已由 `theme.qss` 的 `$var` 注入经 `Theme._qss_block` 消费 |
 | 8 | QSettings key 命名不一致 | ✅ **已修复（v4.0，Phase 3）**：抽 `ui/infra/settings_keys.py` 按工具集中常量，保持原字符串值不变（不破坏已有用户持久化），消除拼写/命名不一致隐患 |
 | 9 | `first_line_indent` 以字符串存布尔 | ✅ **已修复（v4.0，Phase 3）**：`json_exam_view` 改为真布尔存储；读取兼容旧 `"true"/"false"` 字符串值（`raw if isinstance(raw, bool) else str(raw) == "true"`） |
 | 10 | 视图 `_restyle_all` 覆盖不一致 | 以 SimilarityView 为准统一 |

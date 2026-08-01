@@ -272,7 +272,7 @@ from PySide6.QtGui import QPalette
 from ui.views.base_view import BaseView
 from ui.infra.preview_escape import escape_preview_line  # 需要预览 HTML 时
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification
-from theme import Theme
+from theme import get_theme
 
 
 class DemoView(BaseView):
@@ -288,7 +288,7 @@ class DemoView(BaseView):
     def __init__(self, view_model) -> None:
         super().__init__()
         self._vm = view_model
-        self.theme = Theme()
+        self.theme = get_theme()                  # 全局单例（推荐），或 Theme()
         # 业务状态字段 ...
         self.settings = QSettings("Demo", "Demo")   # 两参数同名；键名集中到 ui/infra/settings_keys.py 的 DemoKeys 常量
         self._field_labels: list = []
@@ -297,13 +297,15 @@ class DemoView(BaseView):
         self._setup_ui()
         self._connect_view_model()
         self._load_settings()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed)
+        # 集中刷新：app.py 保留唯一 colorSchemeChanged 接线触发 theme.refresh()，
+        # refresh() 会广播 Theme.theme_changed，各 View 订阅它即可（无需各自连 OS 信号）
+        self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ---- UI 构建 ----
     def _setup_ui(self) -> None:
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y,
+                                self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
@@ -313,7 +315,7 @@ class DemoView(BaseView):
         content = QWidget()
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(16)
+        content_layout.setSpacing(self.theme.spacing)
         self._scroll.setWidget(content)
 
         self._make_module_card("模块")            # 复制标准实现
@@ -324,7 +326,8 @@ class DemoView(BaseView):
 
     def _make_module_card(self, title: str):
         # 与既有 4 个 View 逐字相同：QFrame(objectName=module_card) + QVBoxLayout
-        # (20,16,20,16) spacing12 + QLabel(title, objectName=card_title)
+        # setContentsMargins(theme.page_pad_y, theme.spacing, theme.page_pad_y, theme.spacing)
+        # + QLabel(title, objectName=card_title)
         # 追加到 _section_labels 与 _module_cards，return card, layout
         ...
 
@@ -338,9 +341,8 @@ class DemoView(BaseView):
         self._vm.completed.connect(self._on_completed)
         self._vm.failed.connect(self._on_failed)
 
-    # ---- 主题热切换 ----
+    # ---- 主题热切换（订阅 theme_changed，禁止在此调 refresh()，否则自触发死循环） ----
     def _on_theme_changed(self) -> None:
-        self.theme.refresh()
         self._restyle_all()
 
     def _restyle_all(self) -> None:

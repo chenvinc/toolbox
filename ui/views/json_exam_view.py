@@ -77,9 +77,7 @@ class JsonExamView(BaseView):
         self._setup_ui()
         self._connect_view_model()
         self._load_settings()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed
-        )
+        self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
     def _connect_view_model(self):
@@ -95,7 +93,7 @@ class JsonExamView(BaseView):
         self._module_cards: list = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
 
         scroll = QScrollArea()
@@ -108,7 +106,7 @@ class JsonExamView(BaseView):
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(16)
+        content_layout.setSpacing(self.theme.spacing)
 
         # ── 模块一：导入题目数据 ──
         card1, l1 = self._make_module_card("导入题目数据")
@@ -127,7 +125,7 @@ class JsonExamView(BaseView):
         # ── 模块二：排版设置 ──
         card2, l2 = self._make_module_card("排版设置")
         font_row = QHBoxLayout()
-        font_row.setSpacing(8)
+        font_row.setSpacing(self.theme.control_spacing)
         self.font_name = QComboBox()
         self.font_name.addItems(FONT_CHOICES)
         self.font_name.setCurrentText("宋体/Times New Roman")
@@ -151,7 +149,7 @@ class JsonExamView(BaseView):
         l2.addWidget(spacing_title)
 
         spacing_row = QHBoxLayout()
-        spacing_row.setSpacing(8)
+        spacing_row.setSpacing(self.theme.control_spacing)
         self.line_spacing_type = QComboBox()
         # 选项与契约 ExamLineSpacingType 的枚举值逐一对应
         self.line_spacing_type.addItems(["1倍行距", "1.5倍行距", "2倍行距", "自定义"])
@@ -186,7 +184,7 @@ class JsonExamView(BaseView):
         # ── 模块三：输出设置 ──
         card3, l3 = self._make_module_card("输出设置")
         save_row = QHBoxLayout()
-        save_row.setSpacing(8)
+        save_row.setSpacing(self.theme.control_spacing)
         self._save_to_label = QLabel("保存到:")
         self.out_dir_label = QLabel("（默认：与输入 JSON 同目录）")
         self.out_dir_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -242,7 +240,7 @@ class JsonExamView(BaseView):
         card = QFrame()
         card.setObjectName("module_card")
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
         layout.setSpacing(12)
         header = QLabel(title)
         header.setObjectName("card_title")
@@ -462,7 +460,6 @@ class JsonExamView(BaseView):
         self.settings.setValue(JsonExamKeys.OUTPUT_DIR, self._out_dir)
 
     def _on_theme_changed(self):
-        self.theme.refresh()
         self._restyle_all()
 
     def _restyle_all(self):

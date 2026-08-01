@@ -59,9 +59,7 @@ class SimilarityView(BaseView):
         self._setup_ui()
         self._connect_view_model()
         self._load_settings()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed
-        )
+        self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
     def _connect_view_model(self):
@@ -184,8 +182,8 @@ class SimilarityView(BaseView):
 
         summary = self._card()
         sl = QVBoxLayout(summary)
-        sl.setContentsMargins(20, 16, 20, 16)
-        sl.setSpacing(8)
+        sl.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
+        sl.setSpacing(self.theme.control_spacing)
         title = QLabel("检测摘要")
         title.setStyleSheet(t.qss_section_header())
         rate_lbl = QLabel(f"{rate:.1f}%")
@@ -241,8 +239,8 @@ class SimilarityView(BaseView):
 
         summary = self._card()
         sl = QVBoxLayout(summary)
-        sl.setContentsMargins(20, 16, 20, 16)
-        sl.setSpacing(8)
+        sl.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
+        sl.setSpacing(self.theme.control_spacing)
         title = QLabel("检测摘要")
         title.setStyleSheet(t.qss_section_header())
         rate_lbl = QLabel(f"{total_pairs} 对")
@@ -389,7 +387,7 @@ class SimilarityView(BaseView):
         self._field_labels = []
         self._module_cards = []
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
 
         scroll = QScrollArea()
@@ -402,11 +400,11 @@ class SimilarityView(BaseView):
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(16)
+        content_layout.setSpacing(self.theme.spacing)
 
         # 查重模式
         mode_row = QHBoxLayout()
-        mode_row.setSpacing(8)
+        mode_row.setSpacing(self.theme.control_spacing)
         mode_label = QLabel("查重模式：")
         mode_label.setStyleSheet(
             f"font-size: 13px; font-weight: bold; color: {t.card_header_color}; "
@@ -514,7 +512,7 @@ class SimilarityView(BaseView):
         self._opt_edit.textChanged.connect(self._save_settings)
 
         btn_row = QHBoxLayout()
-        btn_row.setSpacing(8)
+        btn_row.setSpacing(self.theme.control_spacing)
         self._check_btn = AnimatedButton(
             "开始检测", default_height=40, theme=self.theme, loading_text="检测中..."
         )
@@ -528,7 +526,7 @@ class SimilarityView(BaseView):
         btn_row.addWidget(self._export_btn)
         content_layout.addLayout(btn_row)
 
-        content_layout.addSpacing(8)
+        content_layout.addSpacing(self.theme.control_spacing)
 
         self._progress_bar = AnimatedProgressBar()
         self._progress_bar.setTextVisible(False)
@@ -569,7 +567,7 @@ class SimilarityView(BaseView):
         card = QFrame()
         card.setObjectName("module_card")
         layout = QVBoxLayout(card)
-        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
         layout.setSpacing(12)
         header = QLabel(title)
         header.setObjectName("card_title")
@@ -677,7 +675,6 @@ class SimilarityView(BaseView):
         self._save_settings()
 
     def _on_theme_changed(self):
-        self.theme.refresh()
         self._restyle_all()
 
     def _open_folder(self, path):
