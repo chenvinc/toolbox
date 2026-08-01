@@ -109,7 +109,7 @@ class SimilarityViewModelTests(unittest.TestCase):
             threshold=0.8,
         ))
         self.assertEqual(len(self.failed), 1)
-        self.assertIn("未提取到题目", self.failed[0])
+        self.assertIn("未提取到题目", str(self.failed[0]))
         self.assertEqual(self.completed, [])
 
 

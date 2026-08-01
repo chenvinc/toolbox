@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 
 from docx import Document
 from PySide6.QtWidgets import (
@@ -27,6 +26,7 @@ from shared.contracts import (
 )
 from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
 from ui.views.base_view import BaseView
+from ui.infra.open_folder import open_folder
 
 logger = logging.getLogger(__name__)
 
@@ -135,9 +135,10 @@ class SimilarityView(BaseView):
         # 一次干净的查重（0 重复）同样产生有效报告，应允许导出。
         self._export_btn.set_actionable(self._last_result is not None, "")
 
-    def _on_failed(self, message: str):
+    def _on_failed(self, message: object):
         self._finish_check_ui()
-        self._log_browser.append(f"\n错误：{message}")
+        msg = message if isinstance(message, str) else str(message)
+        self._log_browser.append(f"\n错误：{msg}")
 
     def _finish_check_ui(self):
         self._check_btn.set_loading(False)
@@ -680,15 +681,7 @@ class SimilarityView(BaseView):
 
     def _open_folder(self, path):
         folder = os.path.dirname(path) or "."
-        try:
-            if sys.platform == "darwin":
-                os.system(f"open '{folder}'")
-            elif sys.platform == "win32":
-                os.system(f"explorer '{folder}'")
-            else:
-                os.system(f"xdg-open '{folder}'")
-        except Exception:  # pragma: no cover - 系统调用
-            pass
+        open_folder(folder)
 
     def _restyle_all(self):
         t = self.theme

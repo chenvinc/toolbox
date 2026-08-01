@@ -8,7 +8,10 @@ from __future__ import annotations
 
 from typing import Callable, Dict, List, Optional, Protocol, TYPE_CHECKING, runtime_checkable
 
-from shared.contracts import GenerateExamRequest, GenerateExamResult
+from shared.contracts import (
+    ConvertPdfRequest, ConvertPdfResult,
+    GenerateExamRequest, GenerateExamResult,
+)
 
 if TYPE_CHECKING:
     from core.models.exam_question import ExamQuestion
@@ -37,6 +40,23 @@ class PptxWriter(Protocol):
         on_progress: Callable[[int, int], None],
     ) -> int:
         """基于模板为每道题生成两页幻灯片并保存，返回生成的页数。"""
+        ...
+
+
+@runtime_checkable
+class PdfSlideConverter(Protocol):
+    """PDF → PPTX 转换写操作封装（适配 pymupdf + python-pptx）。"""
+
+    def convert(
+        self,
+        request: ConvertPdfRequest,
+        on_progress: Callable[[int, int], None],
+    ) -> ConvertPdfResult:
+        """按定版管线执行转换并保存 PPTX，返回统计结果。
+
+        ``on_progress(current_page, total_pages)`` 每处理一页回调一次。
+        失败抛 ``PdfReadError`` / ``TemplateInvalidError`` 等业务异常。
+        """
         ...
 
 

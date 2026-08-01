@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 
 from core.ports.events import EventEmitter
 from core.ports.services import ExtractionService, PptxService
@@ -19,17 +19,29 @@ from shared.contracts import (
     ExtractQuestionsResult, GeneratePptxResult,
 )
 from ui.infra.qt_task_runner import async_task
+from ui.viewmodels.base_viewmodel import BaseViewModel
 
 
-class SlideViewModel(QObject):
+class SlideViewModel(BaseViewModel):
     """Quiz2Slide 对应的视图模型。"""
 
     # ── UI 可绑定的信号 ──
     extracted = Signal(object)       # ExtractQuestionsResult
-    extract_failed = Signal(str)
+    extract_failed = Signal(object)   # str(消息) 或 异常对象（见 on_async_error）
     pptx_progress = Signal(str, int, int)
     pptx_completed = Signal(object)  # GeneratePptxResult
-    pptx_failed = Signal(str)
+    pptx_failed = Signal(object)     # str(消息) 或 异常对象（见 on_async_error）
+
+    # 关心的领域事件。CHECK_* 属 SimilarityChecker 工具（见 contracts.py 注释），
+    # 本工具只关心 EXTRACT_*/PPTX_*，不再监听 CHECK_FAILED（历史耦合已解耦，
+    # 见 docs/architecture.md §8 问题 #3）。
+    _WATCHED = frozenset({
+        EventType.EXTRACT_COMPLETED,
+        EventType.EXTRACT_FAILED,
+        EventType.PPTX_PROGRESS,
+        EventType.PPTX_COMPLETED,
+        EventType.PPTX_FAILED,
+    })
 
     def __init__(
         self,
@@ -38,26 +50,18 @@ class SlideViewModel(QObject):
         task_runner: TaskRunner,
         event_emitter: EventEmitter,
     ) -> None:
-        super().__init__()
+        super().__init__(event_emitter, task_runner)
         self._extraction = extraction
         self._pptx = pptx
-        self._task_runner = task_runner
-        self._emitter = event_emitter
-        # 订阅领域事件，统一桥接到 Qt 信号
-        event_emitter.on_event(self._on_event)
 
     # ── 后台异常回调（由 @async_task 触发） ──
     def on_async_error(self, exc: Exception) -> None:
-        self.pptx_failed.emit(str(exc))
-
-    def cancel_current(self) -> None:
-        """取消最近一次后台任务（供窗口关闭时清理线程）。"""
-        handle = getattr(self, "_current_task", None)
-        if handle is not None:
-            handle.cancel()
+        # 透传异常对象（而非字符串），与 JsonExamViewModel 保持一致，
+        # 使视图可按异常类型分流；领域失败事件仍走 _dispatch 发 message 字符串。
+        self.pptx_failed.emit(exc)
 
     # ── 事件 → 信号桥接（单向数据流：core → UI） ──
-    def _on_event(self, event: DomainEvent) -> None:
+    def _dispatch(self, event: DomainEvent) -> None:
         etype = event.type
         if etype == EventType.EXTRACT_COMPLETED:
             self.extracted.emit(event.result)
@@ -67,7 +71,7 @@ class SlideViewModel(QObject):
             self.pptx_completed.emit(event.result)
         elif etype == EventType.EXTRACT_FAILED:
             self.extract_failed.emit(event.message)
-        elif etype in (EventType.PPTX_FAILED, EventType.CHECK_FAILED):
+        elif etype == EventType.PPTX_FAILED:
             self.pptx_failed.emit(event.message)
 
     # ── 命令转发（单向数据流：UI → core） ──

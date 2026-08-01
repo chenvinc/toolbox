@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from shared.contracts import (
+    ConvertPdfRequest, ConvertPdfResult,
     ExtractQuestionsRequest, ExtractQuestionsResult,
     GenerateExamRequest, GenerateExamResult,
     GeneratePptxRequest, GeneratePptxResult,
@@ -33,6 +34,14 @@ class ExtractionService(Protocol):
 class PptxService(Protocol):
     """PPT 生成服务。"""
     def generate(self, request: GeneratePptxRequest) -> GeneratePptxResult:
+        ...
+
+
+@runtime_checkable
+class PdfSlideService(Protocol):
+    """PDF → PPTX 转换服务（保留可编辑文字，套用模板母版背景）。"""
+    def convert(self, request: ConvertPdfRequest) -> ConvertPdfResult:
+        """同步执行转换，返回统计结果；失败抛业务异常。"""
         ...
 
 

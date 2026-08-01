@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import os
-import subprocess
 import sys
 
 from PySide6.QtWidgets import (
@@ -29,6 +28,7 @@ from shared.contracts import (
 )
 from core.adapters.pptx_writer import _resolve_line_spacing
 from ui.infra.preview_escape import escape_preview_line, sanitize_font_name
+from ui.infra.open_folder import open_folder
 from ui.viewmodels.slide_viewmodel import SlideViewModel
 from ui.views.base_view import BaseView
 
@@ -195,9 +195,9 @@ class SlideView(BaseView):
         self.out_path_label = QLabel()
         self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._save_to_label = QLabel("保存到:")
-        change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
-        change_btn.setFixedWidth(80)
-        change_btn.clicked.connect(lambda: self._on_browse_save())
+        self.change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
+        self.change_btn.setFixedWidth(80)
+        self.change_btn.clicked.connect(lambda: self._on_browse_save())
         open_btn = AppButton("打开文件夹", default_height=32, theme=self.theme, variant="secondary")
         open_btn.setFixedWidth(104)
         open_btn.clicked.connect(self._open_output_folder)
@@ -294,10 +294,11 @@ class SlideView(BaseView):
             return
         self._prompt_and_convert(self._extracted)
 
-    def _on_extract_failed(self, message: str):
+    def _on_extract_failed(self, message: object):
         self._set_loading(False)
-        self._show_error(f"题目识别失败：{message}")
-        logger.error("题目识别失败: %s", message)
+        msg = message if isinstance(message, str) else str(message)
+        self._show_error(f"题目识别失败：{msg}")
+        logger.error("题目识别失败: %s", msg)
 
     def _on_pptx_progress(self, message: str, current: int, total: int):
         self.progress_label.setText(message)
@@ -318,11 +319,12 @@ class SlideView(BaseView):
         self.progress_label.setVisible(True)
         logger.info("转换完成: %s", self._out_path)
 
-    def _on_pptx_failed(self, message: str):
+    def _on_pptx_failed(self, message: object):
         self._set_loading(False)
         self.progress_bar.setVisible(False)
-        self.toast.show_message(message, success=False)
-        logger.error("转换失败: %s", message)
+        msg = message if isinstance(message, str) else str(message)
+        self.toast.show_message(msg, success=False)
+        logger.error("转换失败: %s", msg)
 
     # ── 预览确认对话框（UI 交互，控制权在 UI 层） ──
     def _prompt_and_convert(self, questions):
@@ -519,16 +521,7 @@ class SlideView(BaseView):
         if not self._out_path:
             return
         folder_path = os.path.dirname(self._out_path)
-        try:
-            if os.name == "nt":
-                subprocess.Popen(["explorer", folder_path])
-            elif os.name == "posix":
-                if sys.platform == "darwin":
-                    subprocess.Popen(["open", folder_path])
-                else:
-                    subprocess.Popen(["xdg-open", folder_path])
-        except Exception as e:  # pragma: no cover - 系统调用
-            logger.warning("打开文件夹失败: %s", e)
+        open_folder(folder_path)
 
     def _restyle_all(self):
         t = self.theme
@@ -584,6 +577,11 @@ class SlideView(BaseView):
         self.progress_bar.setStyleSheet(t.qss_progress_bar())
         self.convert_btn.set_theme(t)
         self._open_out_btn.set_theme(t)
+        self.change_btn.set_theme(t)
+        # 拖放区须在换肤时同步刷新（对齐 SimilarityView），否则暗色模式下不跟随
+        for dz in (self.word_drop_zone, self.ppt_drop_zone):
+            dz._theme = t
+            dz._apply_style()
         self._scroll.setStyleSheet(
             "QScrollArea { background: transparent; border: none; }"
             "QScrollBar:vertical { width: 6px; background: transparent; }"

@@ -1,485 +1,455 @@
-# 新增 Tool 开发指南
+# 新增 Tool 开发指南（v4.0）
 
-> 面向：有一定 Python / PyQt 基础、但不熟悉本仓库的新贡献者。
-> 本文所有路径、类名、函数名、配置项均来自对当前代码库的实地调研（见文末「参考资料」）。
-> ⚠️ 标注「⚠️ 待确认」之处表示无法从现有代码确定，请勿凭空假设。
-
----
-
-## 0. 先理解三件事
-
-1. **本项目的 "Tool" 是什么？**
-   工具箱里的每一个功能面板（如「📑 题库转PPT」「🔍 试题查重」）在代码里就是被注册到左侧导航栏的一个 **`BaseView` 子类**，由对应的 **`ViewModel`**（胶水层）持有一个 **`core` 层的 Service**（纯业务逻辑）。
-   换句话说，"新增一个 Tool" = "新增一条 契约 → Service → ViewModel → View → 注册" 的链路。
-
-2. **分层是硬约束，不是建议。**
-   - `shared/`：前后端共享契约（Pydantic 模型）+ 统一异常。**零 Qt 依赖。**
-   - `core/`：纯 Python 后端业务。**零 Qt 依赖**（禁止 `import PySide6` / `Qt*`）。所有文件 IO、线程、UI 副作用都通过 **端口（Protocol）注入**。
-   - `ui/`：PySide6 前端。其中 `ui/infra/` 是端口的 Qt 实现（如 `QtTaskRunner` / `QtEventEmitter`），`ui/viewmodels/` 是胶水层，`ui/views/` 只负责渲染。
-
-3. **数据流是单向的。**
-   - UI → core：UI 构造一个 `Request`（Pydantic 模型）交给 ViewModel，ViewModel 经 `@async_task` 把同步 service 方法丢到后台线程。
-   - core → UI：core 通过 `EventEmitter.emit(DomainEvent)` 推送事件；ViewModel 把事件翻译为 Qt 信号供 View 绑定。
-   - **core 绝不持有、绝不返回任何 QWidget / QPixmap / Signal。**
-
-权威的内部设计说明见 `docs/architecture.md`，其中第 8 节「新增功能开发指南」已概述三步流程，本文是对它的可执行展开。
+> 配套文档：[项目架构书（v4.0）](./architecture.md)
+> 本文以「新增一个 `Demo` 工具」为例，给出从契约到注册的**全链路步骤、可复制代码模板与避坑清单**。所有 API 名、信号、方法签名均与 v4.0 真实代码一致。
 
 ---
 
-## 1. 前置准备
-
-### 1.1 技术栈约束（从真实配置提取）
-
-| 项目 | 约束 | 来源 |
-|------|------|------|
-| Python 版本 | **3.13** | `mypy.ini` 的 `python_version = 3.13`；现有 `.venv` 基于 miniconda 3.13.12 构建 |
-| 依赖管理 | `requirements.txt`，**固定次版本** | `python-docx==1.2.0`、`python-pptx==1.0.2`、`PySide6==6.11.1`、`pydantic>=2.5` |
-| 类型检查 | **mypy `--strict`**（核心项全开） | `mypy.ini`：`disallow_untyped_defs`、`disallow_incomplete_defs`、`no_implicit_optional`、`warn_return_any`、`no_implicit_reexport` 等 |
-| 契约载体 | Pydantic `BaseModel`（唯一新增依赖） | `shared/contracts.py` 顶部说明 |
-| 测试框架 | `unittest` 风格用例 + `pytest` 运行器 | 全部测试文件均为 `unittest.TestCase`，根目录无 `pytest.ini`/`pyproject.toml`，直接用 `pytest` 收集 |
-
-> ⚠️ 待确认：仓库根目录**未找到** `README.md` / `CONTRIBUTING.md` / `Makefile` / CI 工作流文件。若团队已有 onboarding 文档或 CI，请补充并链接到本文。
-
-### 1.2 环境搭建（从真实文件提取，未臆造）
-
-```bash
-# 1) 用 Python 3.13 建虚拟环境（命令为通用标准，与 mypy.ini 的版本号一致）
-python3 -m venv .venv
-
-# 2) 安装依赖（版本号来自 requirements.txt）
-.venv/bin/pip install -r requirements.txt
-
-# 3) 类型检查（core/ + shared/ 必须零报错，已实地验证通过）
-.venv/bin/mypy --strict shared core
-
-# 4) 跑测试（详见第 4 节；集成测试需 offscreen 平台）
-QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest --import-mode=importlib -q
-```
-
-> 注意：本仓库当前的 `.venv/bin/pytest` 的 shebang 指向一个已不存在的旧路径（`quiz2slide/.venv`）。**不要**直接执行 `.venv/bin/pytest`，请统一用 `.venv/bin/python -m pytest` 调用（已验证可运行）。
-
-### 1.3 目录结构与职责
+## 0. 一句话流程
 
 ```
-toolbox/
-├── shared/
-│   ├── contracts.py   # Request / Response / Event 定义（Pydantic），前后端唯一通信契约
-│   └── errors.py      # ToolboxError 统一异常体系（core 抛、ui 捕获）
-├── core/               # 纯 Python 后端，零 Qt
-│   ├── ports/         # Protocol 端口：services / events / tasks / io
-│   ├── services/      # 业务实现：slide_builder / similarity_service / _scorer / _question_parser
-│   ├── adapters/      # 外部依赖适配：docx_loader / pptx_writer（python-docx / python-pptx 封装）
-│   ├── models/        # 领域模型：question.py（Question dataclass）
-│   └── di.py         # Container：极简依赖注入容器
-├── ui/                # PySide6 前端
-│   ├── views/         # BaseView（抽象基类）+ SlideView / SimilarityView
-│   ├── viewmodels/    # SlideViewModel / SimilarityViewModel（QObject + Signal + @async_task）
-│   └── infra/        # 端口的 Qt 实现：qt_task_runner / qt_event_emitter / preview_escape
-├── tests/
-│   ├── unit/core/          # core 纯逻辑单测（无 Qt、无 offscreen）
-│   ├── integration/        # 前后端接线（ViewModel 层，需要 QApplication）
-│   └── test_*.py          # 根级回归（如 test_p2_tech_debt、test_generate_pptx）
-├── app.py              # 入口：Container.build → ViewModels → Views 注册到导航栏
-├── theme.py / theme.qss / widgets.py  # 主题与基础控件（前端辅助，允许 Qt）
-├── requirements.txt / mypy.ini
-└── docs/             # architecture.md 等架构/整改报告
+shared/contracts.py   Request / Result / EventType / 事件模型
+        ↓
+core/ports/          （可选）新增 Service / IO Protocol
+        ↓
+core/adapters/       封装第三方库（如需）
+        ↓
+core/services/        业务编排 + emitter.emit(进度/完成)
+        ↓
+core/services/__init__  补导出
+core/di.py            注册到容器
+        ↓
+ui/viewmodels/        ViewModel 胶水（命令转发 + 事件→信号）
+        ↓
+ui/views/             View 渲染（BaseView 子类 + 统一样式模式）
+        ↓
+app.py                装配 VM + 注册 View
 ```
+
+> 重要前提：**`core` / `shared` 零 Qt 依赖**。在 `core` 里 `import PySide6` 即为架构违规。
 
 ---
 
-## 2. 新建 Tool 标准流程（Step-by-Step）
+## 1. 后端契约（`shared/contracts.py`）
 
-> 以新增一个「文本字数统计」Tool 为例（最小可运行，基于真实代码简化）。
-> 每个真实构建块都标注了「参考自 …」，可直接对照源码。
-
-### Step 1 — 定义契约（`shared/contracts.py`）
-
-前后端只通过 Pydantic 模型通信，**禁止裸 dict**。
+在 `class EventType` 中新增**专属**三个成员（共用 emitter，必须唯一，否则串台）：
 
 ```python
-# 在 shared/contracts.py 末尾追加
-from typing import Literal
-from pydantic import BaseModel, Field
-
-class WordCountRequest(BaseModel):
-    """统计一段文本的字符或词数。"""
-    text: str = Field(..., min_length=1, description="待统计文本")
-    count_type: Literal["char", "word"] = Field("char", description="char=字符数, word=词数")
-
-class WordCountResult(BaseModel):
-    """统计结果。"""
-    count: int = Field(ge=0, description="统计值")
-    count_type: Literal["char", "word"] = "char"
+class EventType(str, Enum):
+    # ...既有...
+    DEMO_PROGRESS = "demo_progress"
+    DEMO_COMPLETED = "demo_completed"
+    DEMO_FAILED = "demo_failed"
 ```
 
-> 参考自 `shared/contracts.py` 的 `SimilarityRequest` / `GeneratePptxResult`：`Field(..., ge=0.0, le=1.0)` 等约束会在运行时自动校验，越界即抛 `ValidationError`。
-
-如果你的 Tool 需要向 UI 推送新类型的事件，还需：
-1. 在 `EventType`（同文件）新增枚举值；
-2. 新增一个事件类（继承 `_BaseEvent`）；
-3. 把事件类加入 `DomainEvent` 联合类型（按 `type` 判别）。
+新增 Request / Result（Pydantic `BaseModel`）：
 
 ```python
-class WordCountCompletedEvent(_BaseEvent):
-    type: Literal[EventType.WORD_COUNT_COMPLETED] = EventType.WORD_COUNT_COMPLETED
-    result: WordCountResult
-# 并把 WordCountCompletedEvent 加进文件底部的 DomainEvent 联合类型
+class DemoRequest(BaseModel):
+    input_path: str
+    output_path: str
+    threshold: float = 0.8
+
+
+class DemoResult(BaseModel):
+    output_path: str
+    item_count: int
 ```
 
-### Step 2 —（可选）声明端口（`core/ports/services.py`）
-
-如果 Tool 是新的一类业务能力，用 `@runtime_checkable Protocol` 声明端口：
+新增事件模型（失败事件建议**单独建类**，避免与 `FailedEvent` 的 `Literal` 冲突）：
 
 ```python
-# core/ports/services.py 末尾追加
+class DemoCompletedEvent(_BaseEvent):
+    type: Literal[EventType.DEMO_COMPLETED] = EventType.DEMO_COMPLETED
+    result: DemoResult
+
+
+class DemoFailedEvent(_BaseEvent):
+    type: Literal[EventType.DEMO_FAILED] = EventType.DEMO_FAILED
+    message: str
+```
+
+并把它们追加进 `DomainEvent` 的 `Union`（以 `type` 判别）：
+
+```python
+DomainEvent = Annotated[
+    Union[
+        # ...既有...
+        DemoCompletedEvent, DemoFailedEvent,
+        ProgressEvent,          # 进度复用通用 ProgressEvent，需把 DEMO_PROGRESS 加进其 Literal
+    ],
+    Field(discriminator="type"),
+]
+```
+
+若 `ProgressEvent` 的 `Literal` 未包含 `DEMO_PROGRESS`，请补上：
+
+```python
+class ProgressEvent(_BaseEvent):
+    type: Literal[
+        EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS,
+        EventType.EXAM_PROGRESS, EventType.PDF_PROGRESS,
+        EventType.DEMO_PROGRESS,
+    ] = EventType.CHECK_PROGRESS
+```
+
+> 若需 UI 按异常类型分流，在 `shared/errors.py` 新增继承 `ToolboxError` 的异常（如 `DemoReadError`）。
+
+---
+
+## 2. 端口（`core/ports/`）（如需要）
+
+**业务端口**（`services.py`）：新增 `@runtime_checkable Protocol`。
+
+```python
 @runtime_checkable
-class WordCountService(Protocol):
-    """文本统计服务。"""
-    def count(self, request: WordCountRequest) -> WordCountResult: ...
+class DemoService(Protocol):
+    def run(self, request: DemoRequest) -> DemoResult: ...
 ```
 
-> 参考自 `core/ports/services.py` 的 `SimilarityService` / `ExtractionService` / `PptxService`。
-> 该 Protocol 仅用于类型约束与可替换性；core 内部通过鸭子类型调用，**不强制继承**。
-
-### Step 3 — 实现 Service（`core/services/`）
-
-新建 `core/services/word_count_service.py`。**纯 Python，零 Qt，依赖通过构造器注入。**
+**IO 端口**（`io.py`，仅当要封装第三方库时）：
 
 ```python
-# core/services/word_count_service.py
-from __future__ import annotations
-from shared.contracts import EventType, WordCountRequest, WordCountResult, WordCountCompletedEvent
-from core.ports.events import EventEmitter
+@runtime_checkable
+class DemoWriter(Protocol):
+    def build(self, request: DemoRequest,
+              on_progress: Callable[[int, int], None]) -> DemoResult: ...
+```
 
-class WordCountServiceImpl:
-    """文本统计服务实现。"""
-    def __init__(self, emitter: EventEmitter) -> None:
+> Protocol 用结构化子类型，**适配器不继承任何基类**，仅方法签名匹配即可。`TaskHandle` / `TaskRunner` / `EventEmitter` 端口已存在，无需新增。
+
+---
+
+## 3. 适配器（`core/adapters/xxx.py`）（如需要）
+
+```python
+"""Demo 适配器：封装第三方库（零 Qt）。"""
+from __future__ import annotations
+from core.ports.io import DemoWriter
+from shared.contracts import DemoRequest, DemoResult
+
+
+class DemoWriterAdapter:
+    """实现 DemoWriter 端口。"""
+    def build(self, request: DemoRequest,
+              on_progress: Callable[[int, int], None]) -> DemoResult:
+        # TODO: 调用第三方库（如 docx/pptx/pymupdf）
+        on_progress(1, 1)
+        return DemoResult(output_path=request.output_path, item_count=0)
+```
+
+---
+
+## 4. 服务（`core/services/demo_service.py`）
+
+```python
+"""Demo 服务实现（零 Qt）。"""
+from __future__ import annotations
+from core.ports.events import EventEmitter
+from core.ports.io import DemoWriter
+from shared.contracts import (
+    DemoCompletedEvent, DemoRequest, DemoResult, EventType, ProgressEvent,
+)
+
+
+class DemoServiceImpl:
+    def __init__(self, writer: DemoWriter, emitter: EventEmitter) -> None:
+        self._writer = writer
         self._emitter = emitter
 
-    def count(self, request: WordCountRequest) -> WordCountResult:
-        if request.count_type == "word":
-            value = len([w for w in request.text.split() if w.strip()])
-        else:
-            value = len(request.text)
-        result = WordCountResult(count=value, count_type=request.count_type)
-        # 可选：推送完成事件（core → UI 的单向通道）
-        self._emitter.emit(WordCountCompletedEvent(result=result))
+    def run(self, request: DemoRequest) -> DemoResult:
+        total = 1
+        self._emitter.emit(ProgressEvent(
+            type=EventType.DEMO_PROGRESS, message="准备中...", current=0, total=total))
+        result = self._writer.build(request, self._on_progress)
+        self._emitter.emit(ProgressEvent(
+            type=EventType.DEMO_PROGRESS, message="完成", current=total, total=total))
+        self._emitter.emit(DemoCompletedEvent(result=result))
         return result
+
+    def _on_progress(self, cur: int, tot: int) -> None:
+        self._emitter.emit(ProgressEvent(
+            type=EventType.DEMO_PROGRESS,
+            message=f"处理 {cur}/{tot}", current=cur, total=tot))
 ```
 
-> 参考自 `core/services/slide_builder.py`（`ExtractionServiceImpl` / `PptxServiceImpl`）：
-> - 构造器只接收**端口**（`DocumentLoader`、`PptxWriter`、`EventEmitter`），不直接 `import python-docx` / `python-pptx`（那些被限制在 `core/adapters/`）。
-> - 凡涉及文件写入（如 PPT 生成），先校验路径再操作；`PptxServiceImpl.generate` 在 `output_path == template_path` 时抛 `OutputOverwriteError`，避免覆盖源文件。
-> 若你的 Tool 要读 Word 文档，复用 `DocumentLoader` 端口 + `core/adapters/docx_loader.py` 的 `DocxLoaderAdapter`，解析交给 `core/services/_question_parser.py:parse_questions`。
+> 失败以业务异常形式抛出（由 VM 的 `on_async_error` 桥接为失败信号），不要在服务里吞异常或重复发失败事件。
+> 路径保护类服务请校验「输出 ≠ 模板/源」，抛 `OutputOverwriteError`。
 
-### Step 4 — 实现 ViewModel（`ui/viewmodels/`）
-
-新建 `ui/viewmodels/word_count_viewmodel.py`。它是胶水层：持有 service，把 `DomainEvent` 桥接为 Qt 信号。
+### 4.1 补齐导出
+`core/services/__init__.py` **务必补导出**（现存两个服务已遗漏，别再漏）：
 
 ```python
-# ui/viewmodels/word_count_viewmodel.py
+from .demo_service import DemoServiceImpl
+__all__ = [..., "DemoServiceImpl"]
+```
+
+### 4.2 注册到容器（`core/di.py`）
+在 `Container.build` 中实例化并 `register`：
+
+```python
+from core.adapters.demo_writer import DemoWriterAdapter
+from core.services.demo_service import DemoServiceImpl
+# ...
+demo_writer = DemoWriterAdapter()
+c.register("demo", DemoServiceImpl(demo_writer, event_emitter))
+```
+
+> `register` 是裸 `dict` 查表，key 用约定字符串（如 `"demo"`）。
+
+---
+
+## 5. ViewModel（`ui/viewmodels/demo_viewmodel.py`）
+
+> **继承 `BaseViewModel`**（v4.0 抽取，见 `ui/viewmodels/base_viewmodel.py`）。基类已提供：构造时持有 `task_runner`/`event_emitter` 并订阅事件、`cancel_current()`、`_on_event` 模板方法（**内置 `_WATCHED` 串台防护**）。子类只需：① 声明类属性 `_WATCHED`；② 实现 `_dispatch` 与 `on_async_error`；③ 把业务 `service` 存到 `self._service`，并把 `_current_task` 存到 `self._current_task`。
+
+```python
 from __future__ import annotations
-from typing import Any
-from PySide6.QtCore import QObject, Signal
-from core.ports.events import EventEmitter
-from core.ports.services import WordCountService
-from core.ports.tasks import TaskRunner
-from shared.contracts import DomainEvent, EventType, WordCountRequest
+from PySide6.QtCore import Signal
+from core.ports.services import DemoService
+from core.ports.tasks import TaskHandle
+from shared.contracts import (
+    DemoCompletedEvent, DemoFailedEvent, DemoRequest, DomainEvent, EventType,
+    ProgressEvent,
+)
 from ui.infra.qt_task_runner import async_task
+from ui.viewmodels.base_viewmodel import BaseViewModel
 
-class WordCountViewModel(QObject):
-    completed = Signal(object)   # WordCountResult
-    failed = Signal(str)
 
-    def __init__(self, svc: WordCountService, task_runner: TaskRunner, event_emitter: EventEmitter) -> None:
-        super().__init__()
-        self._svc = svc
-        self._task_runner = task_runner
-        self._emitter = event_emitter
-        event_emitter.on_event(self._on_event)
+class DemoViewModel(BaseViewModel):
+    # _WATCHED 声明本 VM 关心的事件类型；基类按它过滤，避免与其它工具串台
+    _WATCHED = frozenset({
+        EventType.DEMO_PROGRESS,
+        EventType.DEMO_COMPLETED,
+        EventType.DEMO_FAILED,
+    })
 
-    # 后台异常回调（由 @async_task 触发，必须定义，否则异常被吞）
+    progress = Signal(str, int, int)       # message, current, total
+    completed = Signal(object)             # DemoResult
+    failed = Signal(object)                # 抛异常本体，供视图 isinstance 分流
+
+    def __init__(self, service: DemoService,
+                 task_runner,
+                 event_emitter) -> None:
+        # 基类负责：持有 task_runner/event_emitter、订阅事件、提供 cancel_current
+        super().__init__(event_emitter, task_runner)
+        self._service = service
+        self._task_runner = task_runner    # ⚠️ 字段必须叫 _task_runner（@async_task 用 getattr 找）
+        self._current_task: TaskHandle | None = None
+
     def on_async_error(self, exc: Exception) -> None:
-        self.failed.emit(str(exc))
+        # 后台异常（@async_task 触发）桥接为失败信号；建议发异常本体
+        self.failed.emit(exc)
 
-    # 供主窗口 closeEvent 清理后台线程
-    def cancel_current(self) -> None:
-        handle = getattr(self, "_current_task", None)
-        if handle is not None:
-            handle.cancel()
-
-    def _on_event(self, event: DomainEvent) -> None:
-        if event.type == EventType.WORD_COUNT_COMPLETED:
+    def _dispatch(self, event: DomainEvent) -> None:
+        # 基类已按 _WATCHED 过滤，这里只处理本工具关心的事件
+        if event.type == EventType.DEMO_PROGRESS:
+            self.progress.emit(event.message, event.current, event.total)
+        elif event.type == EventType.DEMO_COMPLETED:
             self.completed.emit(event.result)
+        elif event.type == EventType.DEMO_FAILED:
+            self.failed.emit(event.message)
 
     @async_task
-    def count(self, request: WordCountRequest) -> Any:
-        return self._svc.count(request)
+    def run(self, request: DemoRequest) -> DemoResult:
+        return self._service.run(request)
 ```
 
-> 参考自 `ui/viewmodels/similarity_viewmodel.py` 与 `ui/viewmodels/slide_viewmodel.py`：
-> - 必须定义 `on_async_error(self, exc)`，`@async_task` 在后台抛异常时会回调它。
-> - 必须定义 `cancel_current()`，供 `app.py` 的 `closeEvent` 关闭孤儿线程。
-> - 命令转发方法用 `@async_task` 装饰，签名与 service 方法一致。
+> ⚠️ `failed` 统一用 `Signal(object)`、`on_async_error` 发异常本体，供视图 `isinstance` 分流（以 `JsonExamViewModel` 为范本）。
+> ⚠️ 所有 VM 共用同一个 `QtEventEmitter`；基类 `_on_event` 已按 `_WATCHED` 过滤、只把关心的事件分发到 `_dispatch`。因此 §1 的专属 `EventType` 务必新增且唯一——配错 `_WATCHED` 会漏收或误收事件。
 
-### Step 5 — 实现 View（`ui/views/`）
+---
 
-新建 `ui/views/word_count_view.py`，继承 `BaseView`，实现 `get_name` / `get_nav_title` / `get_description`，并在 `__init__` 中接收 ViewModel。
+## 6. View（`ui/views/demo_view.py`）
+
+继承 `BaseView`，严格遵循统一构造与样式模式（以 `SimilarityView` 为范本，其 `_restyle_all` 最完整）。
 
 ```python
-# ui/views/word_count_view.py（仅示意核心骨架）
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QLabel, QPushButton
+from __future__ import annotations
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtGui import QPalette
 from ui.views.base_view import BaseView
-from ui.viewmodels.word_count_viewmodel import WordCountViewModel
+from ui.infra.preview_escape import escape_preview_line  # 需要预览 HTML 时
+from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification
+from theme import Theme
 
-class WordCountView(BaseView):
+
+class DemoView(BaseView):
     def get_name(self) -> str:
-        return "WordCount"
-    def get_nav_title(self) -> str:
-        return "🔢 字数统计"
-    def get_description(self) -> str:
-        return "统计文本字符数或词数。"
+        return "Demo"
 
-    def __init__(self, view_model: WordCountViewModel) -> None:
+    def get_nav_title(self) -> str:
+        return "🧩 Demo 示例"          # "<emoji> <中文>"
+
+    def get_description(self) -> str:
+        return "演示新增 Tool 的标准骨架。"   # 一句话，以 。结尾
+
+    def __init__(self, view_model) -> None:
         super().__init__()
         self._vm = view_model
+        self.theme = Theme()
+        # 业务状态字段 ...
+        self.settings = QSettings("Demo", "Demo")   # 两参数同名
+        self._field_labels: list = []
+        self._section_labels: list = []
+        self._module_cards: list = []
         self._setup_ui()
         self._connect_view_model()
+        self._load_settings()
+        QApplication.instance().styleHints().colorSchemeChanged.connect(
+            self._on_theme_changed)
 
-    def _setup_ui(self):
+    # ---- UI 构建 ----
+    def _setup_ui(self) -> None:
         root = QVBoxLayout(self)
-        self._input = QTextEdit()
-        self._output = QLabel("")
-        self._btn = QPushButton("开始统计")
-        self._btn.clicked.connect(self.on_count)
-        root.addWidget(self._input)
-        root.addWidget(self._btn)
-        root.addWidget(self._output)
+        root.setContentsMargins(24, 20, 24, 20)
+        root.setSpacing(0)
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        root.addWidget(self._scroll)
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(16)
+        self._scroll.setWidget(content)
 
-    def _connect_view_model(self):
-        self._vm.completed.connect(lambda r: self._output.setText(f"结果：{r.count}"))
-        self._vm.failed.connect(lambda m: self._output.setText(f"失败：{m}"))
+        self._make_module_card("模块")            # 复制标准实现
+        self.progress_bar = AnimatedProgressBar()
+        self.toast = ToastNotification(self, theme=self.theme)
+        self._update_demo_state()
+        self._restyle_all()
 
-    def on_count(self):
-        # 构造 Request 交给 ViewModel（UI → core 单向数据流）
-        from shared.contracts import WordCountRequest
-        self._vm.count(WordCountRequest(text=self._input.toPlainText(), count_type="char"))
+    def _make_module_card(self, title: str):
+        # 与既有 4 个 View 逐字相同：QFrame(objectName=module_card) + QVBoxLayout
+        # (20,16,20,16) spacing12 + QLabel(title, objectName=card_title)
+        # 追加到 _section_labels 与 _module_cards，return card, layout
+        ...
 
-    def stop_worker(self):
-        """供主窗口 closeEvent 调用。"""
+    def _make_labeled_field(self, label_text, widget):
+        # 透明 QWidget + QVBoxLayout(0,2) + label(入 _field_labels) + widget
+        ...
+
+    # ---- 信号绑定 ----
+    def _connect_view_model(self) -> None:
+        self._vm.progress.connect(self._on_progress)
+        self._vm.completed.connect(self._on_completed)
+        self._vm.failed.connect(self._on_failed)
+
+    # ---- 主题热切换 ----
+    def _on_theme_changed(self) -> None:
+        self.theme.refresh()
+        self._restyle_all()
+
+    def _restyle_all(self) -> None:
+        t = self.theme
+        pal = self.palette()
+        pal.setColor(QPalette.Window, t.window_solid_bg)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+        for card in self._module_cards:
+            card.setStyleSheet(t.qss_card())
+        for lbl in self._field_labels:
+            lbl.setStyleSheet(f"font-size:12px;color:{t.text_secondary};margin-bottom:2px;")
+        for lbl in self._section_labels:
+            lbl.setStyleSheet(t.qss_section_header())
+        self.progress_bar.setStyleSheet(t.qss_progress_bar())
+        # 所有 AppButton.set_theme(t)（按钮须存成实例属性！）
+        # 所有 StepperInput.set_theme(t)
+        # DropZone: dz._theme = t; dz._apply_style()   ← 别忘了
+        self._scroll.setStyleSheet(   # 复制既有 4 份逐字相同的滚动条样式块
+            f"QScrollBar:vertical{{width:6px;background:transparent;}}"
+            f"QScrollBar::handle:vertical{{background:{t.scrollbar_handle};"
+            f"border-radius:3px;min-height:30px;}}"
+            f"QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{{height:0;}}")
+
+    # ---- 持久化 ----
+    def _load_settings(self) -> None:
+        # blockSignals(True) 包裹全部 setText/setValue/setChecked，避免半载写回
+        ...
+
+    def _save_settings(self) -> None:
+        self.settings.setValue("threshold", 0.8)
+
+    # ---- 命令入口 ----
+    def on_run(self) -> None:
+        if self._run_btn._loading:
+            return
+        self._update_demo_state()
+        self._vm.run(DemoRequest(input_path=..., output_path=...))
+
+    def _update_demo_state(self) -> None:
+        self._run_btn.set_actionable(bool(self._input_path), "请先选择输入文件")
+
+    # ---- 事件处理 ----
+    def _on_progress(self, msg, cur, tot): ...
+    def _on_completed(self, result): ...
+    def _on_failed(self, msg):
+        # failed 载荷可能是 str（领域失败事件 message）或 Exception（on_async_error 透传）
+        text = msg if isinstance(msg, str) else str(msg)
+        self.toast.show_message(text, success=False)
+
+    # ---- 必须实现 stop_worker ----
+    def stop_worker(self) -> None:
         self._vm.cancel_current()
 ```
 
-> 参考自 `ui/views/base_view.py`（`BaseView` 抽象基类：约定 `get_name` / `get_description` 必须实现，`get_nav_title` 可重写，`on_activate` 可选重写）与 `ui/views/slide_view.py`（完整的 View 范例：模块卡片 `_make_module_card`、主题重绘 `_restyle_all`、QSettings 持久化）。
+### View 避坑清单
+1. **按钮必须存成实例属性**再 `set_theme`，否则 `_restyle_all` 刷不到（`SlideView.change_btn` 的教训）。
+2. **DropZone 的 `theme` 必传**：`theme=None` 会 `AttributeError`。
+3. **`StepperInput` 在 `QSpinBox` 模式下 `valueChanged` 不发射**，需手动把 ± 按钮 `clicked` 接到保存逻辑。
+4. **`AppButton.setEnabled` 被重写**为 `set_actionable(enabled, "")`，会清空已设禁用原因——禁用提示请用 `set_actionable(False, reason)`。
+5. 颜色/圆角一律走 `self.theme.*`，**禁止硬编码色值**（字号可保留 12/13px 现状）。
+6. 需要预览 HTML 时，正文用 `escape_preview_line()`，CSS 字体名用 `sanitize_font_name()`。
+7. **「打开文件夹」**统一用富文本链接，并在 `linkActivated` 回调里调用 `ui.infra.open_folder.open_folder(path)`（自动剥离 `folder:` 前缀、跨平台派发、不阻塞、失败仅 warning）：
+   `<a href="folder:{folder}" style="color:{theme.accent};text-decoration:underline;">打开文件夹</a>`，配合 `label.setTextFormat(Qt.RichText)` + `linkActivated.connect(self._open_output_folder)`。
 
 ---
 
-## 3. 注册与集成
-
-> 本仓库**没有自动发现（auto-discovery）机制**。新 Tool 需要手动：
-> 1. 在 DI 容器注册 service；
-> 2. 在 `app.py` 实例化 ViewModel + View 并加入导航栏。
-
-### 3.1 在 `core/di.py` 注册 service
+## 7. 注册（`app.py`）
 
 ```python
-# core/di.py —— 在 build() 内新增
-from core.services.word_count_service import WordCountServiceImpl
+from ui.viewmodels.demo_viewmodel import DemoViewModel
+from ui.views.demo_view import DemoView
 
-class Container:
-    @classmethod
-    def build(cls, *, task_runner, event_emitter):
-        ...
-        word_count = WordCountServiceImpl(event_emitter)   # 按构造器注入端口
-        c.register("word_count", word_count)
-        ...
+# 在 _apply_global_font 中造 VM：
+demo_vm = DemoViewModel(container.resolve("demo"), self._task_runner, self._event_emitter)
+
+# 在 _register_tools 中注册：
+self._add_tool(DemoView(demo_vm))
 ```
 
-> 参考自 `core/di.py` 的 `Container.build`：生产环境由 `app.py` 传入 `QtTaskRunner()` / `QtEventEmitter()`；测试环境用 `SyncTaskRunner` / `CollectingEmitter` 替身。
-
-### 3.2 在 `app.py` 接线并注册
-
-```python
-# app.py —— 顶部新增 import
-from ui.viewmodels.word_count_viewmodel import WordCountViewModel
-from ui.views.word_count_view import WordCountView
-
-# 在 ToolboxApp.__init__ 内，仿照 slide_vm / sim_vm：
-wc_vm = WordCountViewModel(
-    container.resolve("word_count"),
-    self._task_runner,
-    self._event_emitter,
-)
-
-# 在 _register_tools 内追加：
-def _register_tools(self, slide_vm, sim_vm, wc_vm):
-    self._add_tool(SlideView(slide_vm))
-    self._add_tool(SimilarityView(sim_vm))
-    self._add_tool(WordCountView(wc_vm))   # 新工具出现于导航栏
-```
-
-> 参考自 `app.py`：`_register_tools` → `_add_tool` 会把 View 加入左侧 `QListWidget` 导航栏与 `QStackedWidget` 主区，`nav_list.currentRowChanged` 触发 `_on_nav_changed` → 调用 `view.on_activate()`。
-> `closeEvent` 会遍历 `self._tools` 调 `stop_worker`（若存在），因此每个启动后台任务的 View 必须实现 `stop_worker()`。
-
-### 3.3 需要同步更新的元数据 / 文档字段
-
-| 位置 | 动作 |
-|------|------|
-| `shared/contracts.py` | 新增 `XxxRequest` / `XxxResult`；若新增事件，改 `EventType` + 事件类 + `DomainEvent` |
-| `core/ports/services.py` | 若为新业务类，新增 `XxxService(Protocol)` |
-| `core/di.py` | `Container.build` 内 `register("xxx", ...)` |
-| `app.py` | import + `_register_tools` 内 `_add_tool(XxxView(vm))` |
-| `ui/viewmodels/` + `ui/views/` | 新增 ViewModel / View 文件 |
-| `tests/unit/core/` + `tests/integration/` | 新增对应单测 / 集成测试（见第 4 节） |
-| `docs/architecture.md` §8 | ⚠️ 待确认：是否在此同步记录新 Tool；建议补充以便后人追溯 |
-
-> ⚠️ 待确认：仓库根目录无 `README.md` / `CONTRIBUTING.md`，没有统一的「已实现 Tool 清单」文档。如有，请在此处登记新 Tool 名称与职责。
+`_add_tool` 自动用 `get_nav_title()` 作导航项、`f"{get_name()}\n{get_description()}"` 作 tooltip；切换时调 `on_activate()`（如需初始化可重写，否则空实现即可）。
+`closeEvent` 会通过 `getattr(tool, 'stop_worker', None)` 鸭子类型调用你的 `stop_worker()`，**必须实现**。
 
 ---
 
-## 4. 测试与验证
+## 8. 端到端自检清单
 
-### 4.1 单元测试规范（core 层，无 Qt、无 offscreen）
-
-core 逻辑测试的核心是**用替身（fake）注入端口**，不碰真实文件系统与 GUI。项目里有两个现成范式：
-
-**范式 A — 纯 service 测试**（`tests/unit/core/test_similarity_service.py`）：
-- 用 `PathMapLoader`（实现 `DocumentLoader` 端口，按路径返回预设段落）替代 `DocxLoaderAdapter`；
-- 用 `CollectingEmitter`（实现 `EventEmitter` 端口，收集所有事件）替代 `QtEventEmitter`；
-- 断言服务返回值（如 `OneToManyResult.main_count`）与推送的事件类型（`CHECK_STARTED` / `CHECK_PROGRESS` / `CHECK_COMPLETED`）；
-- 断言异常路径（如 `NoQuestionsExtracted`）。
-
-```python
-# 真实用例节选（来自 tests/unit/core/test_similarity_service.py）
-class PathMapLoader:
-    def __init__(self, mapping):
-        self._mapping = {k: list(v) for k, v in mapping.items()}
-        self.calls = []
-    def load_paragraphs(self, path):
-        self.calls.append(path)
-        return list(self._mapping[path])
-
-class CollectingEmitter:
-    def __init__(self):
-        self.events = []
-        self._handlers = []
-    def emit(self, event):
-        self.events.append(event)
-        for h in self._handlers:
-            h(event)
-    def on_event(self, handler):
-        self._handlers.append(handler)
-
-def test_detects_duplicate_across_secondary(self):
-    svc = SimilarityServiceImpl(
-        PathMapLoader({"main.docx": MAIN_PARA, "dup.docx": DUP_PARA}),
-        CollectingEmitter(),
-    )
-    res = svc.check(SimilarityRequest(mode=SimilarityMode.ONE_TO_MANY, ...))
-    self.assertIsInstance(res, OneToManyResult)
-    self.assertEqual(res.duplicate_count, 1)
-```
-
-**范式 B — DI 容器测试**（`tests/unit/core/test_slide_builder.py`）：
-- 直接 `Container.build(task_runner=SyncTaskRunner(), event_emitter=CollectingEmitter())` 验证 `resolve("extraction")` 返回正确的 `ExtractionServiceImpl` 实例。
-
-### 4.2 集成测试规范（ViewModel 接线，需 QApplication）
-
-参考 `tests/integration/test_similarity_viewmodel.py`：
-- `setUp` 内 `self._app = QApplication.instance() or QApplication(sys.argv)`；
-- 用 `SyncTaskRunner`（同步立即执行，便于断言）+ `CollectingEmitter` + `FakeDocumentLoader` 组装；
-- `vm.started.connect(...)` / `vm.completed.connect(...)` / `vm.failed.connect(...)` 订阅信号；
-- 断言「UI 命令 → service → 事件 → Qt 信号」单向链路，以及异常经 `on_async_error` 桥接为 `failed` 信号。
-
-### 4.3 本地调试 / 运行命令（已实地验证）
-
-```bash
-# 跑全部测试（集成测试需 offscreen 平台；--import-mode=importlib 见下方坑点）
-QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest --import-mode=importlib -q
-
-# 只跑某个 core 单测（无需 offscreen）
-.venv/bin/python -m pytest tests/unit/core/test_similarity_service.py -q
-
-# 只跑某个集成测试
-QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest tests/integration/test_similarity_viewmodel.py -q
-
-# 类型检查（core/ + shared/ 必须零报错）
-.venv/bin/mypy --strict shared core
-
-# 启动工具箱本体做手动验证
-.venv/bin/python app.py
-```
-
-> 本机**实地验证结果**：`mypy --strict shared core` → `Success: no issues found in 20 source files`。
-> `pytest --import-mode=importlib` → **53 passed, 2 failed**（2 个失败均为测试文件自身的既有 bug，见第 5 节，非源码问题）。
-
-### 4.4 CI / Lint 检查要求（从真实代码与测试反推）
-
-| 规则 | 来源 / 验证方式 |
-|------|------------------|
-| `core/` 与 `shared/` **零 Qt 导入** | `docs/architecture.md` 反复强调；可用 `grep -rE "PySide|Qt" core shared` 复查 |
-| mypy `--strict` 对 `shared` + `core` 零报错 | `mypy.ini` 已开启 strict 核心项；已验证 20 文件通过 |
-| `core/` + `ui/` 源码**不得残留 `print(`** | 由 `tests/test_p2_tech_debt.py::test_no_print_calls_remain_in_core_and_ui` 强制，业务日志统一走 `logging` |
-| 前后端只经 `shared/contracts.py` 通信，禁止裸 dict | `shared/contracts.py` 文件头注释 + 全仓实践 |
-| 业务异常统一继承 `ToolboxError` | `shared/errors.py`；service 抛异常，由 ViewModel 桥接为 failed 信号 |
-| UI 样式统一复用 `Theme` / `widgets.py`，禁止硬编码颜色 | `docs/全局UI规范整改报告.md`；`Theme.qss_*` 片段语义由 `test_p2_tech_debt.py` 校验 |
+- [ ] `EventType` 新增 `DEMO_PROGRESS/COMPLETED/FAILED`，且唯一
+- [ ] `DomainEvent` 与 `ProgressEvent.Literal` 已纳入新类型
+- [ ] `core/ports` 新增 Protocol（如需要）
+- [ ] `core/adapters` 仅封装第三方库，零 Qt
+- [ ] `core/services/demo_service.py` 内 `emitter.emit(进度/完成)`
+- [ ] `core/services/__init__.py` 已补导出
+- [ ] `core/di.py` 已 `register("demo", ...)`
+- [ ] `ui/viewmodels` 继承 `BaseViewModel`，声明 `_WATCHED`，实现 `_dispatch` / `on_async_error` 与 `@async_task` 命令（`cancel_current` 已继承）
+- [ ] `ui/views` 继承 `BaseView`，含三列表、`_restyle_all`、`_load_settings(blockSignals)`、`stop_worker`
+- [ ] `app.py` 装配 VM + `_add_tool`
+- [ ] `pytest` 通过（core 层可脱离 Qt 单测）
 
 ---
 
-## 5. 常见坑点与 FAQ
+## 9. 常见错误（来自真实代码库）
 
-### Q1. 为什么我的 `QtXxxEmitter` 一继承 `EventEmitter` 就报错？
-`EventEmitter` 是 `@runtime_checkable Protocol`，而 `QObject`（Qt 基类）有不同元类，二者**不能同时作为基类**（元类冲突）。项目里 `QtEventEmitter` 的做法是**结构实现**：只继承 `QObject`，按规定提供 `emit(event)` 与 `on_event(handler)` 两个方法即可满足端口（见 `ui/infra/qt_event_emitter.py` 注释）。**新写 UI 侧的端口实现时，不要写 `class XxxEmitter(EventEmitter, QObject)`。**
-
-### Q2. 持久化（QSettings）时为什么把已存值覆盖了？
-`SlideView._load_settings()` 在加载期间用 `blockSignals(True)` 屏蔽了控件的 change 信号，加载完再 `blockSignals(False)`。原因：若不屏蔽，部分字段尚未载入时就触发 `_save_settings`，会把「半载状态」（如空字符串 `opt_prefix=""`）写回，覆盖已存值。**你新增带持久化的控件时务必复制这一模式**：先 `blockSignals(True)` → 设值 → `blockSignals(False)`。
-
-### Q3. `@async_task` 装饰的方法为什么异常没反应 / 任务取消不了？
-`ui/infra/qt_task_runner.py:async_task` 依赖两件事：
-- ViewModel 必须有 `self._task_runner`（否则装饰器退化为同步直调）；
-- ViewModel 必须定义 `on_async_error(self, exc)`，后台异常才会被桥接为失败信号，**否则异常被静默吞掉**；
-- 装饰器会把 `self._current_task` 设为 `TaskHandle`，`cancel_current()` 正是靠它取消。
-
-### Q4. 关闭窗口时程序崩溃（SIGABRT）？
-`QtTaskRunner` 持有 `_active` 强引用集合，并在 `finished` 时 `deleteLater`，避免后台线程仍在运行时 worker 被析构触发 SIGABRT（见 `qt_task_runner.py` 注释）。`QtTaskHandle.cancel()` 会 `quit()` + `wait()` **阻塞**等待线程终止。`app.py` 的 `closeEvent` 会遍历所有 Tool 调 `stop_worker()` → `cancel_current()`。**任何启动后台任务的 View 都必须实现 `stop_worker()`，否则关闭窗口可能留下孤儿线程或崩溃。**
-
-### Q5. 写文件时为什么抛 `OutputOverwriteError`？
-`PptxServiceImpl.generate` 在校验阶段用 `_same_path()`（规范化大小写与绝对路径后比较）判断 `output_path == template_path`，若相等直接抛 `OutputOverwriteError`。该异常**同时继承 `ValueError`**，以兼容旧契约/旧测试。涉及写文件的新 Tool 也请用这一模式保护源文件。
-
-### Q6. 枚举字符串对不上，逻辑失效？
-UI 用枚举成员（如 `SimilarityMode.ONE_TO_MANY`），其 `.value` 才是契约字符串 `"1_to_many"`；`LineSpacingType` 的 `"1 倍"` / `"1.5 倍"` / `"自定义"` 等字符串必须与 `core/adapters/pptx_writer.py:_resolve_line_spacing` 中的字面量**严格一致**，否则解析分支走错。
-
-### Q7. 全局 UI 配色 / 间距有什么规矩？
-所有颜色来自 `Theme._set_colors`，所有几何/排版来自 `_set_tokens`（`radius=6`、`spacing=16`/`8`、`page_pad=24/20`、字号 `14/13/12`）。新 View 的 QSS 应通过 `t.qss_card()` / `t.qss_progress_bar()` 等 `Theme` 片段与 `widgets.py` 复用，**禁止硬编码颜色**（由 `docs/全局UI规范整改报告.md` 与 `test_p2_tech_debt.py` 约束）。
-
-### Q8. 已知既有测试回归问题（非源码 bug，提交前请知悉）
-以下两个失败在当前 `main` 已存在，**与新增 Tool 无关**，但会让你本地 `pytest` 显示 2 failed：
-1. `tests/test_p1_settings_and_threads.py:222` 在 `test_check_button_text_recovers_after_completion` 中使用了 `QtTaskRunner()`，但**该文件未导入** `QtTaskRunner`（`NameError: name 'QtTaskRunner' is not defined`）。需补 `from ui.infra.qt_task_runner import QtTaskRunner`。
-2. `tests/unit/core/test_scorer.py:41` 断言 `self.assertIn("reason", result.reason)` 语义错误——把字段名当子串去匹配中文 reason（如 `"高度相似"`），应改为 `self.assertTrue(hasattr(result, "reason"))` 或检查 `result.reason` 非空。
-
-> ⚠️ 待确认：`docs/architecture.md` 声称「38 测试全绿（offscreen）」，但当前套件用 `--import-mode=importlib` 收集到 **55** 个测试且 2 个失败。文档计数与现状可能已过时，建议核实后更新。
-
-### Q9. 为什么不能直接跑 `pytest`，会报 collection error？
-当前 `tests/unit/core/__init__.py` 存在、但 `tests/__init__.py` / `tests/unit/__init__.py` 缺失，导致默认 `prepend` 导入模式下 pytest 把单测模块误判为 `core.test_xxx` 而收集失败。**已验证可行的调用是加 `--import-mode=importlib`**（见第 4.3 节命令）。⚠️ 待确认：团队 CI 是否用其它机制（如根 `conftest.py` 或补 `__init__.py`）——若有，请优先遵循团队命令。
-
----
-
-## 参考资料（本文调研所读取的真实文件）
-
-- `docs/architecture.md` —— 分层架构、契约/端口设计、第 8 节「新增功能开发指南」
-- `shared/contracts.py` —— Request / Response / Event 契约定义
-- `shared/errors.py` —— `ToolboxError` 统一异常体系
-- `core/di.py` —— `Container` 依赖注入
-- `core/ports/services.py` / `events.py` / `tasks.py` / `io.py` —— 四个端口 Protocol
-- `core/models/question.py` —— `Question` 领域模型
-- `core/services/slide_builder.py` / `similarity_service.py` / `_scorer.py` / `_question_parser.py` —— 业务实现
-- `core/adapters/docx_loader.py` / `pptx_writer.py` —— 外部依赖适配
-- `ui/viewmodels/slide_viewmodel.py` / `similarity_viewmodel.py` —— ViewModel 胶水层
-- `ui/views/base_view.py` / `slide_view.py` —— View 基类与范例
-- `ui/infra/qt_task_runner.py` / `qt_event_emitter.py` —— 端口的 Qt 实现（`@async_task`、结构实现 EventEmitter）
-- `app.py` —— 入口与 Tool 注册（`_register_tools` / `_add_tool` / `closeEvent`）
-- `tests/unit/core/test_similarity_service.py` / `test_slide_builder.py` / `test_scorer.py` —— core 单测范式
-- `tests/integration/test_similarity_viewmodel.py` —— ViewModel 集成测试范式
-- `tests/test_p2_tech_debt.py` —— 无 `print(`、QSS 语义等价等 Lint 回归
-- `tests/test_p1_settings_and_threads.py` / `tests/unit/core/test_scorer.py` —— 第 5 节 Q8 所述既有测试 bug 出处
-- `requirements.txt` / `mypy.ini` / `.gitignore` —— 依赖与类型检查约束
+| 错误 | 现象 | 修正 |
+| --- | --- | --- |
+| 忘记给新服务补 `__init__.py` 导出 | `di.py` 仅能从子模块 import，易漏 | 同步 `core/services/__init__.py` 的 import 与 `__all__` |
+| 复用既有 `EventType` | 多个 VM 串台、信号错乱 | 每个工具用专属 `EventType` |
+| VM 字段不叫 `_task_runner` | `@async_task` 退化成同步执行 | 固定命名为 `self._task_runner` |
+| 漏写 `on_async_error` | 后台异常被静默吞掉 | 必须实现，转成 `failed` 信号 |
+| View 按钮未存实例属性 | 主题切换后按钮不变色 | 存 `self._btn` 并在 `_restyle_all` 调 `set_theme` |
+| DropZone 传 `theme=None` | 构造即 `AttributeError` | 必传 theme |
+| 在 `core` 里 import PySide6 | 架构违规、无法脱离 Qt 单测 | 第三方库只放 `core/adapters` |

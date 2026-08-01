@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 
 from core.ports.events import EventEmitter
 from core.ports.services import SimilarityService
@@ -17,16 +17,24 @@ from shared.contracts import (
     DomainEvent, EventType, SimilarityRequest,
 )
 from ui.infra.qt_task_runner import async_task
+from ui.viewmodels.base_viewmodel import BaseViewModel
 
 
-class SimilarityViewModel(QObject):
+class SimilarityViewModel(BaseViewModel):
     """Similarity Checker 对应的视图模型。"""
 
     # ── UI 可绑定的信号 ──
     started = Signal(object)            # SimilarityMode
     progress = Signal(str, int, int)    # message, current, total
     completed = Signal(object)          # SimilarityResult
-    failed = Signal(str)                # error message
+    failed = Signal(object)             # str(消息) 或 异常对象（见 on_async_error）
+
+    _WATCHED = frozenset({
+        EventType.CHECK_STARTED,
+        EventType.CHECK_PROGRESS,
+        EventType.CHECK_COMPLETED,
+        EventType.CHECK_FAILED,
+    })
 
     def __init__(
         self,
@@ -34,25 +42,17 @@ class SimilarityViewModel(QObject):
         task_runner: TaskRunner,
         event_emitter: EventEmitter,
     ) -> None:
-        super().__init__()
+        super().__init__(event_emitter, task_runner)
         self._similarity = similarity
-        self._task_runner = task_runner
-        self._emitter = event_emitter
-        # 订阅领域事件，统一桥接到 Qt 信号
-        event_emitter.on_event(self._on_event)
 
     # ── 后台异常回调（由 @async_task 触发） ──
     def on_async_error(self, exc: Exception) -> None:
-        self.failed.emit(str(exc))
-
-    def cancel_current(self) -> None:
-        """取消最近一次后台任务（供窗口关闭时清理线程）。"""
-        handle = getattr(self, "_current_task", None)
-        if handle is not None:
-            handle.cancel()
+        # 透传异常对象（而非字符串），与 JsonExamViewModel 保持一致，
+        # 使视图可按异常类型分流。
+        self.failed.emit(exc)
 
     # ── 事件 → 信号桥接（单向数据流：core → UI） ──
-    def _on_event(self, event: DomainEvent) -> None:
+    def _dispatch(self, event: DomainEvent) -> None:
         etype = event.type
         if etype == EventType.CHECK_STARTED:
             self.started.emit(event.mode)

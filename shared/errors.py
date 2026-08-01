@@ -32,6 +32,14 @@ class PptxGenerationError(ToolboxError):
     """PPT 生成失败。"""
 
 
+class PdfReadError(ToolboxError):
+    """PDF 文档读取/解析失败。"""
+
+
+class TemplateInvalidError(ToolboxError):
+    """PPT 模板非法（如模板中没有幻灯片，无法确定参考版式）。"""
+
+
 class OutputWriteError(ToolboxError):
     """试卷（题本 / 解析）写出失败（输出目录无写入权限、磁盘满等）。
 

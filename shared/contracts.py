@@ -37,7 +37,15 @@ class ExamLineSpacingType(str, Enum):
 
 
 class EventType(str, Enum):
-    """后端向前端推送的事件类型。"""
+    """后端向前端推送的事件类型。
+
+    ⚠️ **专属约定（重要）**：每个 ``EventType`` 值**只属于一个工具**，不得跨工具复用。
+    所有 ViewModel 共用同一个 ``QtEventEmitter``，若两个工具复用同一 ``EventType``，
+    会造成事件串台（一个工具的事件被另一个工具的 VM 误处理）。
+    历史上 ``SlideViewModel`` 曾误监听 ``CHECK_FAILED``（属 SimilarityChecker），
+    已解耦（见 docs/architecture.md §8 问题 #3）。新增工具时务必新增专属类型
+    （如 ``MYTOOL_PROGRESS``），切勿借用既有类型。
+    """
     CHECK_STARTED = "check_started"
     CHECK_PROGRESS = "check_progress"
     CHECK_COMPLETED = "check_completed"
@@ -50,6 +58,9 @@ class EventType(str, Enum):
     EXAM_PROGRESS = "exam_progress"
     EXAM_COMPLETED = "exam_completed"
     EXAM_FAILED = "exam_failed"
+    PDF_PROGRESS = "pdf_progress"
+    PDF_COMPLETED = "pdf_completed"
+    PDF_FAILED = "pdf_failed"
 
 
 # ---------------------------------------------------------------------------
@@ -191,6 +202,34 @@ class GenerateExamResult(BaseModel):
     )
 
 
+class ConvertPdfRequest(BaseModel):
+    """将 PDF 文档转换为可编辑文字的 PPTX（以模板母版为底）。
+
+    转换策略（与 docs/pdf2pptx_final.py 定版管线一致）：
+    - 以模板第 1 页所用版式为每页底子，继承母版/主题/图片背景；
+    - 页面上只放可编辑文字框（保留字体/字号/颜色/粗斜体/坐标），不生成图片、
+      不触碰页面级背景；
+    - 坐标按 (slide 尺寸 / PDF 页面尺寸) 动态缩放，兼容任意尺寸 PDF。
+    """
+
+    pdf_path: str = Field(..., min_length=1, description="输入 PDF 文件路径")
+    template_path: str = Field(..., min_length=1, description="PPT 模板路径（.pptx）")
+    output_path: str = Field(..., min_length=1, description="输出 PPTX 文件路径")
+
+
+class ConvertPdfResult(BaseModel):
+    """PDF → PPTX 转换结果统计。"""
+
+    output_path: str
+    page_count: int = Field(ge=0, description="生成的幻灯片页数")
+    textbox_count: int = Field(0, ge=0, description="生成的文本框总数")
+    run_count: int = Field(0, ge=0, description="生成的文字 run 总数")
+    empty_pages: List[int] = Field(
+        default_factory=list,
+        description="源 PDF 中无文字的页码（1-based，如纯图片封面页）",
+    )
+
+
 # 查重结果联合类型（按 mode 判别）
 SimilarityResult = Annotated[
     Union[OneToManyResult, ManyToManyResult], Field(discriminator="mode")
@@ -208,7 +247,8 @@ class _BaseEvent(BaseModel):
 class ProgressEvent(_BaseEvent):
     """通用进度事件（查重/提取/PPT生成/试卷生成复用）。"""
     type: Literal[
-        EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS, EventType.EXAM_PROGRESS
+        EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS,
+        EventType.EXAM_PROGRESS, EventType.PDF_PROGRESS,
     ] = EventType.CHECK_PROGRESS
     message: str = ""
     current: int = 0
@@ -248,6 +288,18 @@ class ExamCompletedEvent(_BaseEvent):
     result: GenerateExamResult
 
 
+class PdfCompletedEvent(_BaseEvent):
+    """PDF → PPTX 转换完成事件。"""
+    type: Literal[EventType.PDF_COMPLETED] = EventType.PDF_COMPLETED
+    result: ConvertPdfResult
+
+
+class PdfFailedEvent(_BaseEvent):
+    """PDF → PPTX 转换失败事件。"""
+    type: Literal[EventType.PDF_FAILED] = EventType.PDF_FAILED
+    message: str
+
+
 class ExamFailedEvent(_BaseEvent):
     """试卷生成失败事件。"""
     type: Literal[EventType.EXAM_FAILED] = EventType.EXAM_FAILED
@@ -259,6 +311,7 @@ DomainEvent = Annotated[
     Union[
         CheckStartedEvent, CheckCompletedEvent, ExtractCompletedEvent,
         PptxCompletedEvent, ExamCompletedEvent, ExamFailedEvent,
+        PdfCompletedEvent, PdfFailedEvent,
         ProgressEvent, FailedEvent,
     ],
     Field(discriminator="type"),

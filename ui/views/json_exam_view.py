@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -33,6 +32,7 @@ from shared.errors import DocumentReadError, OutputWriteError
 from core.services._exam_layout import WORD_FONT_SIZE_NAMES
 from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
 from ui.views.base_view import BaseView
+from ui.infra.open_folder import open_folder
 
 logger = logging.getLogger(__name__)
 
@@ -318,7 +318,7 @@ class JsonExamView(BaseView):
                 detail="\n".join(result.failed_images),
             )
 
-    def _on_failed(self, exc):
+    def _on_failed(self, exc: object):
         self._set_loading(False)
         self.progress_bar.setVisible(False)
         msg = str(exc)
@@ -404,15 +404,7 @@ class JsonExamView(BaseView):
             return
         if isinstance(link, str) and link.startswith("folder:"):
             folder = link[7:]
-        try:
-            if sys.platform == "darwin":
-                os.system(f"open '{folder}'")
-            elif sys.platform == "win32":
-                os.system(f"explorer '{folder}'")
-            else:
-                os.system(f"xdg-open '{folder}'")
-        except Exception:  # pragma: no cover - 系统调用
-            pass
+        open_folder(folder)
 
     def _validate(self):
         if not self._json_path:

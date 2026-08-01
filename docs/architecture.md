@@ -1,627 +1,309 @@
-# Toolbox 前后端分离架构重构 — 设计文档
+# Toolbox 项目架构书（v4.0）
 
-> 阶段定位：**阶段1-4 全部落地**（契约层设计 + Word→Slide 样板 + 相似度检测迁移 + 遗留清理与界面重建）。全部回归测试通过（55 测试全绿，offscreen），`core/`+`shared/` mypy `--strict` 零报错。
-> 作者视角：项目首席架构师
-> 依据：现有 `similarity_checker.py` / `word_2_slide_tool.py` / `utils.py` / `base_tool.py` 真实代码
-
----
-
-## 0. 目标与约束
-
-| 目标 | 实现手段 |
-|------|----------|
-| 后端零 UI 依赖 | `core/` 禁止 import 任何 `PySide6`/`Qt*`；所有外部副作用（文件IO、系统调用、线程）通过 **port（Protocol）注入** |
-| 单向数据流 | UI → core 走 **Request 命令**；core → UI 走 **Event 事件**；core 永不直接触碰控件 |
-| 契约优先 | 前后端交互全部用 `shared/contracts.py` 的 Pydantic 模型 / `core/ports/` 的 Protocol 约束，禁止裸 dict |
-| 可测试性 | `core/services/` 在 pytest + offscreen 下零 Qt 依赖通过；文件IO/线程通过 mock 注入 |
-| 渐进式（Strangler Fig） | 新旧并存，按模块迁移，每步可运行、回归不丢功能 |
-
-**唯一新增依赖**：`pydantic`（用于契约校验与序列化）。`core/` 不依赖它做业务，仅 `shared/` 用它定义契约（pydantic 本身零 Qt 依赖，不影响"core 无 Qt 导入"验收项）。
+> 适用范围：本架构书描述截至 **v4.0** 的 `toolbox` 桌面工具箱整体结构、分层职责、运行时数据流与编码规约。
+> 配套文档：[新增 Tool 开发指南（v4.0）](./新增Tool开发指南.md)
+> 历史整改/阶段报告与早期原型已移至 `docs/archive/`（仅供追溯，不参与当前架构）。
 
 ---
 
-## 1. 目标目录结构
+## 0. 概览
 
-```
-project_root/
-├── shared/                      # 前后端共享契约（零 Qt 依赖）
-│   ├── __init__.py
-│   ├── contracts.py             # Request/Response/Event 定义（Pydantic）
-│   └── errors.py                # 统一异常体系
-├── core/                        # 纯 Python 后端核心（零 Qt 依赖）
-│   ├── __init__.py
-│   ├── models/
-│   │   ├── question.py          # Question 等领域模型
-│   │   └── report.py            # 查重报告领域模型
-│   ├── ports/                   # 对外接口（Protocol）
-│   │   ├── services.py          # SimilarityService / ExtractionService / PptxService
-│   │   ├── events.py            # EventEmitter（core→UI 推送端口）
-│   │   ├── tasks.py             # TaskRunner（异步执行端口）
-│   │   └── io.py                # DocumentLoader / PptxWriter（文件IO端口）
-│   ├── services/                # 业务实现
-│   │   ├── similarity_service.py        # SimilarityServiceImpl
-│   │   └── slide_builder.py     # Extraction + Pptx 实现
-│   ├── adapters/                # 外部依赖适配（python-docx / python-pptx 封装）
-│   │   ├── docx_loader.py
-│   │   └── pptx_writer.py
-│   └── di.py                    # 依赖注入容器（纯 Python，无 Qt）
-├── ui/                          # PySide6 前端层
-│   ├── views/                   # 仅渲染 + 事件转发（零业务规则）
-│   │   ├── base_view.py         # BaseView(QWidget)：get_name/get_description/on_activate
-│   │   ├── slide_view.py        # Quiz2SlideView：提取→预览确认→生成 + QSettings 持久化
-│   │   └── similarity_view.py   # SimilarityView：1对多/多对多查重 + 阈值持久化 + 报告导出
-│   ├── viewmodels/              # 持有 core service，胶水逻辑，发射 Qt 信号
-│   │   ├── similarity_viewmodel.py
-│   │   └── slide_viewmodel.py
-│   ├── infra/                   # Qt 版 port 实现
-│   │   ├── qt_task_runner.py    # TaskRunner 的 QThread 实现 + @async_task + QtTaskHandle
-│   │   ├── qt_event_emitter.py  # EventEmitter → Qt Signal 桥接（结构上实现 EventEmitter 端口）
-│   │   └── preview_escape.py    # 预览 HTML 安全转义（纯函数，零 Qt）
-│   └── app.py                   # 启动时用 di 组装 services→viewmodels→views
-├── tests/
-│   ├── unit/core/               # 后端纯逻辑（无 Qt）
-│   ├── integration/             # 前后端集成（ViewModel 接线 / 端到端）
-│   ├── test_preview_escape.py   # P0#2 预览注入防护回归
-│   ├── test_p1_settings_and_threads.py  # P1#4 阈值接线 + P1#5 线程管理回归
-│   ├── test_p2_tech_debt.py     # P2 技术债扫描（零 print / QSS 等价）
-│   └── test_generate_pptx.py    # P0#3 生成 PPTX 场景回归
-├── app.py                       # DI 接线入口（QtTaskRunner + QtEventEmitter → ViewModels → Views）
-├── theme.py / widgets.py        # 主题与基础控件（前端辅助，允许 Qt）
-```
+`toolbox` 是一个基于 **PySide6** 的本地桌面工具箱，采用**分层 + 端口与适配器（Ports & Adapters / 六边形架构）**风格组织。
+核心理念：**业务核心（`core`）零 Qt 依赖、可被独立测试；所有 GUI 与第三方库都被限制在边界（UI 层 / `adapters`）之内。**
 
-> 注：阶段4 已**删除**遗留 `similarity_checker.py` / `word_2_slide_tool.py` / `base_tool.py` / `utils.py`，
-> 其逻辑全部由 `core/` 后端 + `ui/views/` 新界面承接；旧测试 `test_similarity_logic.py` 与
-> `test_similarity_legacy_parity.py` 一并下线（保真已由 `core` 单测 + 集成测试覆盖）。
+v4.0 内置 4 个工具（Tool）：
+
+| 工具名（`get_name`） | 导航标题（`get_nav_title`） | 能力 |
+| --- | --- | --- |
+| `Quiz2Slide` | 📑 题库转PPT | Word 题目文档 → 可编辑 PowerPoint |
+| `SimilarityChecker` | 🔍 试题查重 | 主文档 vs 多副文档 / 多文档两两查重，导出报告 |
+| `JsonExam` | 📝 试卷生成 | JSON 题目数据 → Word 题本 + 解析文档 |
+| `Pdf2Slide` | 📄 PDF转PPT | PDF 逐页 → 保留可编辑文字的 PowerPoint |
+
+技术栈：Python 3.13 / PySide6 / python-docx / python-pptx / PyMuPDF / Pydantic（契约层）。
 
 ---
 
-## 2. shared/contracts.py — 完整接口定义（草案）
+## 1. 总体架构
 
-```python
-"""前后端共享通信契约（零 Qt 依赖）。
-
-所有 Request/Response 均为 Pydantic BaseModel，带完整类型提示与文档字符串。
-前后端禁止直接传递裸 dict —— 一律通过本模块定义的模型。
-"""
-from __future__ import annotations
-
-from enum import Enum
-from typing import Annotated, List, Literal, Union
-
-from pydantic import BaseModel, Field
-
-
-# ────────────────────────────────────────────────────────────────────
-# 枚举
-# ────────────────────────────────────────────────────────────────────
-
-class SimilarityMode(str, Enum):
-    """查重模式。"""
-    ONE_TO_MANY = "1_to_many"      # 主文档 vs 多个副文档
-    MANY_TO_MANY = "many_to_many"  # 所有文档两两比对
-
-
-class LineSpacingType(str, Enum):
-    """行间距类型（与现有 UI 下拉一致）。"""
-    SINGLE = "1 倍"
-    ONE_HALF = "1.5 倍"
-    CUSTOM = "自定义"
-
-
-class EventType(str, Enum):
-    """后端向前端推送的事件类型。"""
-    CHECK_STARTED = "check_started"
-    CHECK_PROGRESS = "check_progress"
-    CHECK_COMPLETED = "check_completed"
-    CHECK_FAILED = "check_failed"
-    EXTRACT_COMPLETED = "extract_completed"
-    EXTRACT_FAILED = "extract_failed"
-    PPTX_PROGRESS = "pptx_progress"
-    PPTX_COMPLETED = "pptx_completed"
-    PPTX_FAILED = "pptx_failed"
-
-
-# ────────────────────────────────────────────────────────────────────
-# Request（UI → core 命令）
-# ────────────────────────────────────────────────────────────────────
-
-class SimilarityRequest(BaseModel):
-    """发起一次题目查重。"""
-    mode: SimilarityMode
-    threshold: float = Field(0.8, ge=0.0, le=1.0, description="相似度判定阈值")
-    num_pattern: str = Field("1.", description="题号格式示例或原始正则；空串启用内置宽泛匹配")
-    opt_prefix: str = Field("A.", description="选项前缀示例或原始正则；空串启用内置宽泛匹配")
-    main_path: str = Field("", description="1对多模式主文档路径")
-    secondary_paths: List[str] = Field(default_factory=list, description="1对多模式副文档路径")
-    all_paths: List[str] = Field(default_factory=list, description="多对多模式全部文档路径")
-
-
-class ExtractQuestionsRequest(BaseModel):
-    """从 Word 文档提取题目。"""
-    doc_path: str
-    num_pattern: str = "1."
-    opt_prefix: str = "A."
-
-
-class GeneratePptxRequest(BaseModel):
-    """基于模板为题目生成 PPT。"""
-    template_path: str
-    questions: List[List[str]] = Field(description="每道题为行列表（题干+选项行）")
-    font_name: str
-    font_size: int = Field(18, ge=9, le=72)
-    output_path: str
-    line_spacing_type: LineSpacingType = LineSpacingType.SINGLE
-    line_spacing_value: float = 1.0
-    first_line_indent: bool = True
-
-
-# ────────────────────────────────────────────────────────────────────
-# Response（core → UI 结果，替代原裸 dict）
-# ────────────────────────────────────────────────────────────────────
-
-class QuestionScore(BaseModel):
-    """单对题目的相似度评分（替代 score_question_pair 返回的裸 dict）。"""
-    score: float = Field(..., ge=0.0, le=1.0)
-    reason: str
-    stem_ratio: float
-    option_ratio: float
-    full_ratio: float
-    token_ratio: float
-    bigram_ratio: float
-
-
-class SimilaritySource(BaseModel):
-    """1对多模式下，某题命中的副文档来源。"""
-    file: str
-    score: float
-    reason: str
-
-
-class SimilarityDetail(BaseModel):
-    """1对多模式下，主文档中一道重复题及其来源。"""
-    index: int
-    text: List[str]
-    sources: List[SimilaritySource]
-
-
-class OneToManyResult(BaseModel):
-    """1对多查重结果。"""
-    mode: Literal[SimilarityMode.ONE_TO_MANY] = SimilarityMode.ONE_TO_MANY
-    main_count: int
-    duplicate_count: int
-    details: List[SimilarityDetail]
-
-
-class SimilarityPair(BaseModel):
-    """多对多模式下的一对重复题。"""
-    q1_file: str
-    q1_index: int
-    q1_text: List[str]
-    q2_file: str
-    q2_index: int
-    q2_text: List[str]
-    score: float
-    reason: str
-    pair_type: Literal["internal", "cross"]
-
-
-class ManyToManyResult(BaseModel):
-    """多对多查重结果。"""
-    mode: Literal[SimilarityMode.MANY_TO_MANY] = SimilarityMode.MANY_TO_MANY
-    total_questions: int
-    document_count: int
-    doc_questions: dict[str, int]
-    duplicate_pairs: List[SimilarityPair]
-    duplicate_rate: float
-
-
-class ExtractQuestionsResult(BaseModel):
-    """题目提取结果。"""
-    questions: List[List[str]]
-
-
-class GeneratePptxResult(BaseModel):
-    """PPT 生成结果。"""
-    output_path: str
-    page_count: int
-
-
-SimilarityResult = Annotated[
-    Union[OneToManyResult, ManyToManyResult], Field(discriminator="mode")
-]
-
-
-# ────────────────────────────────────────────────────────────────────
-# Event（core → UI 推送，统一事件通道）
-# ────────────────────────────────────────────────────────────────────
-
-class _BaseEvent(BaseModel):
-    type: EventType
-
-
-class ProgressEvent(_BaseEvent):
-    """通用进度事件（查重/提取/PPT生成复用）。"""
-    type: Literal[EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS] = EventType.CHECK_PROGRESS
-    message: str = ""
-    current: int = 0
-    total: int = 0
-
-
-class CheckStartedEvent(_BaseEvent):
-    type: Literal[EventType.CHECK_STARTED] = EventType.CHECK_STARTED
-    mode: SimilarityMode
-
-
-class CheckCompletedEvent(_BaseEvent):
-    type: Literal[EventType.CHECK_COMPLETED] = EventType.CHECK_COMPLETED
-    result: SimilarityResult
-
-
-class ExtractCompletedEvent(_BaseEvent):
-    type: Literal[EventType.EXTRACT_COMPLETED] = EventType.EXTRACT_COMPLETED
-    result: ExtractQuestionsResult
-
-
-class FailedEvent(_BaseEvent):
-    type: Literal[
-        EventType.CHECK_FAILED, EventType.EXTRACT_FAILED, EventType.PPTX_FAILED
-    ] = EventType.CHECK_FAILED
-    message: str
-
-
-class PptxCompletedEvent(_BaseEvent):
-    type: Literal[EventType.PPTX_COMPLETED] = EventType.PPTX_COMPLETED
-    result: GeneratePptxResult
-
-
-# 事件联合类型（按 type 判别）
-DomainEvent = Annotated[
-    Union[
-        CheckStartedEvent, CheckCompletedEvent, ExtractCompletedEvent,
-        PptxCompletedEvent, ProgressEvent, FailedEvent,
-    ],
-    Field(discriminator="type"),
-]
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                              UI 层 (PySide6)                            │
+│                                                                        │
+│  app.py ── 装配 + 主窗口 (ToolboxApp)                                  │
+│     │                                                                  │
+│     ├── views/  BaseView + 4 个 View（仅渲染/事件绑定）                │
+│     │       └── 订阅 ViewModel 的 Signal                              │
+│     ├── viewmodels/  4 个 ViewModel（胶水：命令转发 + 事件→信号）      │
+│     ├── theme.py / theme.qss / widgets.py  （主题 & 可复用控件）       │
+│     └── infra/    QtTaskRunner · QtEventEmitter · preview_escape       │
+└───────────────┬───────────────────────────┬──────────────────────────┘
+                │ 命令(Request)              │ 事件(DomainEvent)
+                ▼                            ▲
+┌──────────────────────────────────────────────────────────────────────┐
+│                    core 业务核心（零 Qt 依赖，可单测）                   │
+│                                                                        │
+│  services/  5 个 ServiceImpl（业务编排，emit 事件）                     │
+│     │  依赖                              ┌── ports/ (Protocol 端口)    │
+│     ▼                                    │   services.py / io.py      │
+│  adapters/  4 个适配器（封装 python-docx / pptx / pymupdf）             │
+│                                        │   tasks.py / events.py       │
+│  models/   Question · ExamQuestion     └── DI 容器 (core/di.py)        │
+└──────────────────────────────────────────────────────────────────────┘
+                ▲
+                │ 共享契约
+┌──────────────────────────────────────────────────────────────────────┐
+│  shared/  contracts.py（Pydantic Request/Result/Event）· errors.py     │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-### 使用示例（契约层即可单测）
+### 1.1 分层职责
 
-```python
-from shared.contracts import SimilarityRequest, SimilarityMode
+| 层 | 目录 | 职责 | 允许依赖 |
+| --- | --- | --- | --- |
+| 契约 | `shared/` | 前后端通信的 Pydantic 模型、异常体系 | 仅标准库 / pydantic |
+| 业务核心 | `core/` | 业务规则、编排、端口定义 | `shared`、`core` 内部 |
+| UI 层 | `ui/` + `app.py` + `theme.py` + `widgets.py` | 渲染、事件绑定、后台线程调度 | 以上全部 + PySide6 |
+| 入口 | `app.py` | 依赖装配、主窗口、工具注册 | 以上全部 |
 
-req = SimilarityRequest(
-    mode=SimilarityMode.ONE_TO_MANY,
-    threshold=0.8,
-    main_path="main.docx",
-    secondary_paths=["a.docx", "b.docx"],
-)
-assert req.threshold == 0.8          # 类型校验 + 范围约束
-assert req.mode == SimilarityMode.ONE_TO_MANY
+### 1.2 关键设计原则
+
+1. **`core` 零 Qt 依赖**：`core/` 与 `shared/` 绝不 `import PySide6`。GUI 线程、信号、调色板全部在 `ui/` 解决。
+2. **端口与适配器（有意为之，不是基类）**：第三方库（docx/pptx/pymupdf）只出现在 `core/adapters/`。Service 依赖的是 `core/ports/` 中的 **`@runtime_checkable Protocol`**，而非具体类，便于 mock 测试。
+3. **依赖注入**：`core/di.py` 的 `Container.build()` 负责把 `adapters → services` 串起来，并以字符串 key 注册。`app.py` 在启动时 `Container.build(...)` 并 `resolve(...)`。
+4. **单一事件通道**：所有后台进度/完成/失败都封装成 `DomainEvent`，经由**唯一的** `QtEventEmitter` 实例推送；ViewModel 订阅该 emitter，按 `EventType` 过滤后转成 Qt `Signal`。
+5. **单一任务运行器**：所有耗时操作经 `@async_task` 装饰器提交给 `QtTaskRunner`（`QThread` 封装），不在 UI 线程执行。
+
+---
+
+## 2. 目录结构
+
+```
+toolbox/
+├── app.py                 # 入口：装配 + 主窗口 + 工具注册
+├── theme.py / theme.qss   # 主题（颜色/令牌/QSS 片段）
+├── widgets.py             # 可复用控件（按钮/进度条/拖放区/Toast/...）
+├── shared/
+│   ├── contracts.py       # Pydantic 契约：Request/Result/Event/EventType
+│   └── errors.py          # ToolboxError 异常体系
+├── core/
+│   ├── ports/             # Protocol 端口：services/io/tasks/events
+│   ├── models/            # Question · ExamQuestion（领域模型）
+│   ├── adapters/          # 第三方库封装（docx/pptx/pymupdf）
+│   ├── services/          # 业务服务实现（编排 + emit 事件）
+│   └── di.py              # 依赖注入容器
+├── ui/
+│   ├── views/             # BaseView + 4 个 View
+│   ├── viewmodels/        # 4 个 ViewModel（胶水层）
+│   └── infra/             # QtTaskRunner · QtEventEmitter · preview_escape
+├── tests/                 # pytest 用例（含对 core 的纯单元测试）
+├── docs/                  # 本文档与开发指南（v4.0）
+└── assets/                # 图标/logo
 ```
 
 ---
 
-## 3. shared/errors.py — 统一异常体系
+## 3. 核心分层详解
 
-```python
-"""统一异常体系。core 抛出这些异常，ui 层捕获并转换为 FailedEvent / Toast。"""
-from __future__ import annotations
+### 3.1 `shared/` —— 契约与异常
 
+**`shared/contracts.py`**（约 310 行）
+- 所有 Request / Result 均为 **Pydantic `BaseModel`**（带类型与文档字符串）；前后端禁止直接传裸 `dict`。
+- `EventType(str, Enum)`：后端→前端事件类型。当前成员：
+  `CHECK_*`(STARTED/PROGRESS/COMPLETED/FAILED)、`EXTRACT_*`(COMPLETED/FAILED)、
+  `PPTX_*`(PROGRESS/COMPLETED/FAILED)、`EXAM_*`(PROGRESS/COMPLETED/FAILED)、
+  `PDF_*`(PROGRESS/COMPLETED/FAILED)。
+- **事件模型**：`_BaseEvent(type)` → 各具体事件（`ProgressEvent` / `CheckStartedEvent` / `CheckCompletedEvent` / `ExtractCompletedEvent` / `PptxCompletedEvent` / `ExamCompletedEvent` / `PdfCompletedEvent` / `FailedEvent` / `ExamFailedEvent` / `PdfFailedEvent`）。
+  - `ProgressEvent` 被 4 个工具复用（其 `type` 为 `Literal[CHECK_PROGRESS, PPTX_PROGRESS, EXAM_PROGRESS, PDF_PROGRESS]`）。
+  - `DomainEvent` 是上述事件的 `Union`（以 `type` 作判别字段），供 `EventEmitter.emit` 统一推送。
+- ⚠️ **不对称点**：`CHECK_/EXTRACT_/PPTX_FAILED` 共用 `FailedEvent`；而 `EXAM_FAILED`、`PDF_FAILED` 各自有 `ExamFailedEvent`/`PdfFailedEvent`。新增工具时建议为失败事件单独建类，避免与既有判别冲突。
 
-class ToolboxError(Exception):
-    """所有业务异常的基类。"""
+**`shared/errors.py`**（约 51 行）
+- `ToolboxError`（基类）→ 业务异常族，例如 `OutputOverwriteError`、`NoQuestionsExtracted`、`DocumentReadError`、`OutputWriteError` 等。
+- 需要 View 按类型分流时，在此新增继承 `ToolboxError` 的异常。
 
+### 3.2 `core/` —— 业务核心（零 Qt）
 
-class DocumentReadError(ToolboxError):
-    """Word/PPT 文档读取失败。"""
+#### 3.2.1 `core/ports/`（Protocol 端口，非基类）
+| 文件 | Protocol | 关键方法签名 |
+| --- | --- | --- |
+| `services.py` | `SimilarityService` / `ExtractionService` / `PptxService` / `PdfSlideService` / `ExamGeneratorService` | `check(request)` / `extract(request)` / `generate(request)` / `convert(request)` |
+| `io.py` | `DocumentLoader` / `PptxWriter` / `PdfSlideConverter` / `ExamDocxWriter` | `load_paragraphs(path)` / `build(...)` / `convert(request, on_progress)` |
+| `tasks.py` | `TaskHandle`(`cancel`/`is_running`) · `TaskRunner`(`submit(...)`) | 调度抽象 |
+| `events.py` | `EventEmitter`(`emit`/`on_event`) | 事件通道抽象 |
 
+> 均为 `@runtime_checkable Protocol`；适配器**不继承任何基类**，仅靠方法签名结构化匹配（鸭子类型）。
 
-class NoQuestionsExtracted(ToolboxError):
-    """未从文档中提取到任何题目。"""
+#### 3.2.2 `core/models/`
+- `Question`（`question.py`）：题目领域模型（`lines` / `source_file` / `index` 等）。
+- `ExamQuestion`（`exam_question.py`）：试卷题目（含 `images` 等），供 JSON→Word 流程。
 
+#### 3.2.3 `core/adapters/`（4 个，封装第三方库）
+| 适配器 | 文件 | 实现的端口 | 第三方库 |
+| --- | --- | --- | --- |
+| `DocxLoaderAdapter` | `docx_loader.py` | `DocumentLoader` | python-docx |
+| `PptxWriterAdapter` | `pptx_writer.py` | `PptxWriter` | python-pptx |
+| `DocxExamWriterAdapter` | `docx_exam_writer.py` | `ExamDocxWriter` | python-docx |
+| `PdfSlideConverterAdapter` | `pdf_slide_converter.py` | `PdfSlideConverter` | PyMuPDF + python-pptx |
 
-class SimilarityThresholdError(ToolboxError):
-    """阈值参数非法。"""
+#### 3.2.4 `core/services/`（5 个服务实现）
+| 服务 | 文件 | 端口 | 关键行为 |
+| --- | --- | --- | --- |
+| `ExtractionServiceImpl` | `slide_builder.py` | `ExtractionService` | `loader.load_paragraphs → parse_questions → emit(ExtractCompletedEvent)` |
+| `PptxServiceImpl` | `slide_builder.py` | `PptxService` | 校验（输出≠模板）→ 进度事件 → `writer.build` → `PptxCompletedEvent`；`_same_path` 防覆盖 |
+| `SimilarityServiceImpl` | `similarity_service.py` | `SimilarityService` | 1对多 / 多对多查重；`score_questions` 打分；失败抛 `NoQuestionsExtracted` |
+| `JsonToWordServiceImpl` | `json_to_word_service.py` | `ExamGeneratorService` | 解析→并发预下载图片（有限并发）→生成题本+解析；图片失败不中断，汇总 `failed_images` |
+| `PdfSlideServiceImpl` | `pdf_slide_service.py` | `PdfSlideService` | 校验（输出≠模板/源）→ `converter.convert` → `PdfCompletedEvent` |
 
+> ⚠️ `core/services/__init__.py` **导出不完整**：仅导出 `SimilarityServiceImpl / ExtractionServiceImpl / PptxServiceImpl`，漏了 `JsonToWordServiceImpl` 与 `PdfSlideServiceImpl`（它们由 `core/di.py` 直接 import）。新增服务时务必补齐 `__init__.py` 与 `__all__`。
 
-class OutputOverwriteError(ToolboxError):
-    """输出路径与模板路径相同，拒绝以避免损坏模板。"""
+#### 3.2.5 `core/di.py`
+`Container.build(*, task_runner, event_emitter) -> Container`：
+- 实例化 4 个适配器 → 5 个服务（注入 loader/writer/emitter）。
+- 以字符串 key 注册：`extraction` / `pptx` / `similarity` / `exam` / `pdf_slide` / `task_runner` / `event_emitter`。
+- API：`register(key, instance)` / `resolve(key)`（裸 `dict` 查表，**无类型安全**）。
 
+### 3.3 `ui/` —— UI 层
 
-class PptxGenerationError(ToolboxError):
-    """PPT 生成失败。"""
-```
+#### 3.3.1 `ui/infra/`
+- `QtTaskRunner`（`qt_task_runner.py`，约 126 行）：`QThread` 封装；`submit(func, *, args, kwargs, on_progress, on_result, on_error) -> QtTaskHandle`。
+  - **`@async_task` 装饰器**：仅挂 `on_error`（回调 `ViewModel.on_async_error`）；结果与进度全部走事件通道。
+  - `QtTaskHandle.cancel()` = `worker.quit() + wait()`（阻塞）。
+- `QtEventEmitter`（`qt_event_emitter.py`，约 30 行）：结构实现 `EventEmitter` 端口（`emit` / `on_event`），跨线程时 Qt 自动 `QueuedConnection` 排到 UI 线程。
+- `preview_escape`（`preview_escape.py`，约 35 行，零 Qt）：
+  - `escape_preview_line(text)`：`html.escape` 后，用白名单正则把 `<b>/<i>/<u>/<br>`（含闭合/`/` 形式）还原。
+  - `sanitize_font_name(name)`：剔除 `{ } " ' \` ;` 等可脱离 CSS 的字符后转义。
+  - **白名单仅 4 个标签**，且不允许任何属性；其余标签与所有属性永久转义（防 XSS/样式注入）。
 
----
+#### 3.3.2 `ui/viewmodels/`（胶水层，无基类）
+- 4 个 ViewModel 各自直接继承 `QObject`，**没有统一的基类**（靠复制粘贴保持一致的模板）。详见[开发指南](./新增Tool开发指南.md)。
+- 每个 VM 持有 service + `task_runner` + `event_emitter`，定义业务 `Signal`，并实现 `on_async_error` / `cancel_current` / `_on_event` 与 `@async_task` 命令方法。
+- ⚠️ **信号载荷不一致**：`JsonExamViewModel.failed` 是 `Signal(object)`（发异常本体，供 `isinstance` 分流），其余 3 个发 `str(exc)`。
+- ⚠️ **共享 emitter 陷阱**：4 个 VM 共用同一个 `QtEventEmitter` 实例，全部 `_on_event` 都会收到所有事件，靠 `EventType` 过滤。**新增工具必须新增专属 `EventType`**，否则会串台（`SlideViewModel` 已把 `CHECK_FAILED` 也映射到 `pptx_failed`，属历史耦合）。
 
-## 4. core/ports/ — Protocol 设计草案
+#### 3.3.3 `ui/views/`
+- `BaseView(QWidget)`（`base_view.py`，约 38 行）：定义 `get_name()` / `get_nav_title()` / `get_description()`（后两者有默认），可选重写 `on_activate()`。`get_name`/`get_description` 为抽象（抛 `NotImplementedError`）。
+- 4 个 View 遵循统一的构造与样式模式（见 §6）。
 
-> 设计要点：core 仅依赖这些 Protocol，**绝不直接 import PySide6**。
-> Qt 版实现（QThread/Signal 桥接）放在 `ui/infra/`，由 DI 注入。
-
-```python
-# core/ports/services.py
-from __future__ import annotations
-from typing import Protocol, runtime_checkable
-
-from shared.contracts import (
-    SimilarityRequest, SimilarityResult,
-    ExtractQuestionsRequest, ExtractQuestionsResult,
-    GeneratePptxRequest, GeneratePptxResult,
-)
-
-
-@runtime_checkable
-class SimilarityService(Protocol):
-    """题目查重服务。"""
-    def check(self, request: SimilarityRequest) -> SimilarityResult:
-        """同步执行查重，返回结构化结果。禁止返回任何 UI 对象。"""
-        ...
-
-
-@runtime_checkable
-class ExtractionService(Protocol):
-    """Word 题目提取服务。"""
-    def extract(self, request: ExtractQuestionsRequest) -> ExtractQuestionsResult:
-        ...
-
-
-@runtime_checkable
-class PptxService(Protocol):
-    """PPT 生成服务。"""
-    def generate(self, request: GeneratePptxRequest) -> GeneratePptxResult:
-        ...
-```
-
-```python
-# core/ports/events.py
-from __future__ import annotations
-from typing import Callable, Protocol, runtime_checkable
-
-from shared.contracts import DomainEvent
-
-
-@runtime_checkable
-class EventEmitter(Protocol):
-    """core → UI 的事件推送端口。core 只调用 emit()，不关心下游是 Qt 还是 CLI。"""
-    def emit(self, event: DomainEvent) -> None:
-        ...
-
-    def on_event(self, handler: Callable[[DomainEvent], None]) -> None:
-        """订阅事件（由具体实现注册到传输层）。"""
-        ...
-```
-
-```python
-# core/ports/tasks.py
-from __future__ import annotations
-from typing import Any, Callable, Generic, Optional, Protocol, TypeVar
-
-T = TypeVar("T")
-
-
-@runtime_checkable
-class TaskRunner(Protocol):
-    """异步执行端口。ViewModel 调用 submit() 把同步 service 方法放到后台线程，
-    通过回调（普通 Callable，非 Qt Signal）回传进度/结果/错误，保持 core 无 Qt。"""
-
-    def submit(
-        self,
-        func: Callable[..., T],
-        *,
-        args: tuple = (),
-        kwargs: Optional[dict] = None,
-        on_progress: Optional[Callable[[str, int, int], None]] = None,
-        on_result: Optional[Callable[[T], None]] = None,
-        on_error: Optional[Callable[[Exception], None]] = None,
-    ) -> "TaskHandle":
-        ...
-
-
-@runtime_checkable
-class TaskHandle(Protocol):
-    def cancel(self) -> None: ...
-    def is_running(self) -> bool: ...
-```
-
-```python
-# core/ports/io.py  —— 文件IO端口，便于 mock 注入
-from __future__ import annotations
-from typing import List, Protocol, runtime_checkable
-
-
-@runtime_checkable
-class DocumentLoader(Protocol):
-    """加载 Word 文档段落文本（适配 python-docx）。"""
-    def load_paragraphs(self, path: str) -> List[str]: ...
-
-
-@runtime_checkable
-class PptxWriter(Protocol):
-    """PPT 写操作（适配 python-pptx）。"""
-    def build(self, template_path: str, questions: List[List[str]],
-              font_name: str, font_size: int, output_path: str,
-              line_spacing: float, first_line_indent: bool,
-              on_progress: Callable[[int, int], None]) -> int:
-        """返回生成页数。"""
-        ...
-```
+#### 3.3.4 `theme.py` / `theme.qss` / `widgets.py`
+见 §7 主题系统。
 
 ---
 
-## 5. 交互时序图
+## 4. 数据流与运行时
 
-### 5.1 题目查重（1对多）
-
-```
-UI(View)          ViewModel            SimilarityService      EventEmitter        UI(Bridge)
-   |                  |                       |                    |                  |
-   |-- check(req) -->|                       |                    |                  |
-   |                  |-- check(req) ------->|                    |                  |
-   |                  |                       |-- emit(STARTED) -->|                  |
-   |                  |                       |                    |-- signal ------->| (进度条)
-   |                  |                       |-- emit(PROGRESS) ->|--> signal ------->| (日志)
-   |                  |                       |-- compute ...      |                  |
-   |                  |<-- OneToManyResult ---|                    |                  |
-   |                  |                       |-- emit(COMPLETED)>|--> signal ------->| (渲染摘要)
-   |<-(更新状态)------|                       |                    |                  |
-```
-
-### 5.2 Word → Slide
+### 4.1 一次命令的完整链路（以「题库转PPT」为例）
 
 ```
-UI(View)    ViewModel     ExtractionService   PptxService    EventEmitter    UI(Bridge)
-   |            |               |                |              |               |
-   |--convert->|               |                |              |               |
-   |            |-- extract -->|                |              |               |
-   |            |               |-- emit(COMPLETED:questions) ->|--> signal --->| (预览弹窗)
-   |            |<-- questions -|                |              |               |
-   |<- 预览确认弹窗 -----------|                |              |               |
-   |-- confirm->|               |                |              |               |
-   |            |               |-- generate --->|              |               |
-   |            |               |                |-- emit(PROGRESS) -> signal ->| (进度条)
-   |            |               |                |-- emit(COMPLETED) -> signal ->| (Toast)
+用户点击「开始转换」
+  → SlideView.on_convert()                      [UI 线程]
+  → SlideViewModel.extract(request)             [@async_task 装饰]
+  → QtTaskRunner.submit(_run)  → QThread 后台    [后台线程]
+  → ExtractionServiceImpl.extract()
+       └─ loader.load_paragraphs + parse_questions
+       └─ emitter.emit(ExtractCompletedEvent)     [跨线程 → 排到 UI 线程]
+  → SlideViewModel._on_event → self.extracted.emit(result)
+  → SlideView._on_extracted() → 预览确认弹窗
+  → 用户确认 → SlideViewModel.generate(request)
+  → PptxServiceImpl.generate() → 进度事件序列 → PptxCompletedEvent
+  → SlideView._on_pptx_completed() → 写入文件 + Toast
 ```
+
+要点：
+- 业务结果/进度 **只经事件通道返回**，`@async_task` 不挂 `on_result`。
+- 后台异常由 `QtTaskRunner` 调 `ViewModel.on_async_error` → 转成 `failed` 信号。
+- 线程清理：`ToolboxApp.closeEvent` 遍历 `_tools`，对每个可调用 `stop_worker` 的视图调之 → `vm.cancel_current()` → `handle.cancel()`。
+
+### 4.2 主题热切换
+- 检测源：`QApplication.styleHints().colorScheme()` 与 `Qt.ColorScheme.Dark` 比较（**不读 QSettings/环境变量，无手动开关**）。
+- 主窗口与每个 View 都各自 `connect(styleHints().colorSchemeChanged, ...)`，回调里 `theme.refresh() + _restyle_all()`。
+- ⚠️ **Theme 不是单例**：运行时存在 ≥5 个独立 `Theme` 实例（`app.py` + 4 个 View 各一个，控件在 `theme=None` 时还会再造），各自刷新各自同步。
+
+### 4.3 工具注册
+`app.py`：`Container.build` → 造 4 个 VM → `_register_tools(...)` → 逐个 `_add_tool(View)`。
+`_add_tool` 用 `get_nav_title()` 作导航项文本、`f"{get_name()}\n{get_description()}"` 作 tooltip。
+`_on_nav_changed` 切换时调 `tool.on_activate()`（当前 4 个 View 均未重写，为空实现）。
 
 ---
 
-## 6. 依赖注入容器（core/di.py 草案）
+## 5. 四大内置工具对照表
 
-纯 Python，无 Qt。组装顺序：`ports 实现 → services → (注入 TaskRunner/EventEmitter 的 Qt 实现) → viewmodels → views`。
-
-```python
-# core/di.py（仅示意骨架，实现阶段落地）
-class Container:
-    def __init__(self) -> None:
-        self._services: dict = {}
-
-    def register(self, key: str, instance) -> None: ...
-    def resolve(self, key: str): ...
-
-    @classmethod
-    def build(cls, *, task_runner, event_emitter):
-        """生产环境：task_runner / event_emitter 由 ui/infra 提供 Qt 实现。
-        测试环境：传入 FakeTaskRunner / CollectingEmitter 即可无 GUI 单测。"""
-        c = cls()
-        c.register("extraction", DocxExtractionService(loader=DocxLoaderAdapter()))
-        c.register("similarity", SimilarityServiceImpl())
-        c.register("pptx", PptxServiceImpl(writer=PptxWriterAdapter()))
-        c.register("task_runner", task_runner)
-        c.register("event_emitter", event_emitter)
-        return c
-```
-
-**测试替换示例**：
-```python
-fake = CollectingEmitter()
-container = Container.build(task_runner=SyncTaskRunner(), event_emitter=fake)
-svc = container.resolve("similarity")
-res = svc.check(SimilarityRequest(mode=..., main_path="x.docx", ...))
-assert isinstance(res, OneToManyResult)
-```
+| 工具 | Service(impl) | Adapter | ViewModel | View | 关键 Request/Result |
+| --- | --- | --- | --- | --- | --- |
+| Quiz2Slide | `ExtractionServiceImpl` + `PptxServiceImpl` | `DocxLoaderAdapter` + `PptxWriterAdapter` | `SlideViewModel` | `SlideView` | `ExtractQuestionsRequest`/`Result` · `GeneratePptxRequest`/`Result` |
+| SimilarityChecker | `SimilarityServiceImpl` | `DocxLoaderAdapter` | `SimilarityViewModel` | `SimilarityView` | `SimilarityRequest`/`Result`(`OneToMany`/`ManyToMany`) |
+| JsonExam | `JsonToWordServiceImpl` | `DocxExamWriterAdapter` | `JsonExamViewModel` | `JsonExamView` | `GenerateExamRequest`/`Result` |
+| Pdf2Slide | `PdfSlideServiceImpl` | `PdfSlideConverterAdapter` | `PdfSlideViewModel` | `PdfSlideView` | `ConvertPdfRequest`/`Result` |
 
 ---
 
-## 7. 异步任务框架（ui/infra 草案）
+## 6. 视图通用规范（UI 一致性）
 
-```python
-# ui/infra/qt_task_runner.py
-class QtTaskRunner:
-    """TaskRunner 的 QThread 实现。把同步 func 丢到后台线程，
-    通过回调（非 Signal）转发，由 ViewModel 桥接到 Qt Signal。"""
-    def submit(self, func, *, args=(), kwargs=None, on_progress=None,
-               on_result=None, on_error=None):
-        worker = _QtWorker(func, args, kwargs, on_progress)
-        worker.done.connect(lambda r: on_result(r) if on_result else None)
-        worker.error.connect(lambda e: on_error(e) if on_error else None)
-        worker.start()
-        return worker
+4 个 View 高度同构，新视图应以 `SimilarityView` 为范本（其 `_restyle_all` 最完整）。通用模式：
 
+1. **构造顺序**（`__init__`）：
+   `self._vm = view_model` → `self.theme = Theme()` → 业务状态字段 → `self.settings = QSettings("<AppName>", "<AppName>")`（两参同名）→ `_setup_ui()` → `_connect_view_model()` → `_load_settings()` → `colorSchemeChanged.connect(self._on_theme_changed)`。
+2. **三列表**：`_setup_ui` 开头初始化 `self._field_labels` / `self._section_labels` / `self._module_cards`，供 `_restyle_all` 统一刷新。
+3. **卡片/字段**：复制 `_make_module_card(title)`（含 `setObjectName("module_card")`/`"card_title"`）与 `_make_labeled_field(label_text, widget)`。
+4. **根布局**：`QVBoxLayout(self)`，`setContentsMargins(24,20,24,20)`，`setSpacing(0)`；内容包在 `QScrollArea(widgetResizable, H:AlwaysOff, V:AsNeeded)` 中（`self._scroll`）；内容 `spacing=16`。
+5. **`_setup_ui` 末尾三连**：`self.toast = ToastNotification(self, theme=self.theme)` → `self._update_xxx_state()` → `self._restyle_all()`。
+6. **`_restyle_all()` 必须覆盖**：palette(`window_solid_bg`) → 卡片 `qss_card()` → `_field_labels`(12px/`text_secondary`) → `_section_labels` `qss_section_header()` → 进度条 `qss_progress_bar()` → 所有 `AppButton.set_theme(t)`（**按钮须存成实例属性**；SlideView 的 `change_btn` 已与 SimilarityView 对齐，在 `_restyle_all` 调 `set_theme`）→ 所有 `StepperInput.set_theme(t)` → **DropZone `dz._theme = t; dz._apply_style()`**（SlideView 已对齐 SimilarityView）→ 结尾复制 `_scroll` 滚动条样式块。
+7. **`stop_worker()`**：4 个 View 均实现为 `self._vm.cancel_current()`（1 行）。`on_activate()` 均未重写。
+8. **QSettings 持久化**：`blockSignals(True)` 包裹 `_load_settings` 的全部赋值，避免半载状态被 `_save_settings` 写回。
+9. **门禁方法**：首行 `if self.<btn>._loading: return`，再按输入完备度 `set_actionable(False, "请先选择 XXX")`。
+10. **「打开文件夹」富文本链接**：`label.setTextFormat(Qt.RichText)` + `linkActivated.connect(...)` + `<a href="folder:{folder}" style="color:{theme.accent};text-decoration:underline;">打开文件夹</a>`。
 
-def async_task(method):
-    """装饰器：将 ViewModel 中的同步方法自动转为非阻塞调用，
-    进度/取消/错误经标准化事件传递。"""
-    ...
-```
+> ⚠️ **已知不一致（供重构参考）**：① ~~SlideView 的 `_restyle_all` 漏刷 DropZone 与 `change_btn`~~ ✅ **已修复（v4.0，已对齐 SimilarityView）**；② 同一概念「题号格式」在 SlideView 存 `question_num_fmt`，SimilarityView 存 `num_pattern`；③ `first_line_indent` 在 QSettings 中以**字符串** `"true"/"false"` 存储，读取时 `== "true"` 比较；④ ~~三种「打开文件夹」实现（`subprocess` / `os.system` / 兼容 `folder:` 前缀）不统一~~ ✅ **已修复（v4.0，Phase 2，已抽 `ui/infra/open_folder.py`）**；⑤ 部分设计令牌（`spacing`/`page_pad_*`/`font_*`）在 View 中未被引用，布局仍是硬编码。
 
 ---
 
-## 8. 新增功能开发指南（验收标准②的落地形态）
+## 7. 主题系统
 
-新增一个业务功能只需三步，**无需改动任何现有 UI 组件**：
+**`theme.py`**（`Theme` 类，约 231 行）：
+- **颜色**：`_set_colors()` 定义 37 个颜色属性（浅/深两套一一对应），如 `accent`(#1677ff/#3b93ff)、`text_primary`、`window_bg`、`card_bg`、`danger`、`nav_selected_bg` 等。
+- **设计令牌** `_set_tokens()`（10 个，跨深浅恒定）：`radius=6`、`spacing=16`、`control_spacing=8`、`page_pad_x=24`、`page_pad_y=20`、`font_family`、`font_page_title=14`、`font_module_title=13`、`font_body=12`、`font_hint=12`。其中 `font_module_title` 被 `theme.qss` 的 `# section_header` 块使用；其余多数令牌在 View 中未实际消费。
+- **QSS 片段方法**（4 个，每次调用都重读 `theme.qss` 文件 → 改 QSS 后下次 `_restyle_all` 即生效）：
+  - `qss_card()` → `# card` 块；`qss_divider()` / `qss_section_header()` 返回**裸 CSS 属性串**（无选择器，只能给单个控件 `setStyleSheet`，不能当全局样式表）；
+  - `qss_progress_bar()` → `# progress_bar` 块（含 `height:6px`）。
+- 私有支撑：`_read_qss()`（`OSError` 时回退内置 `_EMBEDDED_QSS`）、`_qss_block(name)`（`string.Template` 替换 `$var`，特判 `radius→"6px"`）。
+- **暗色检测**：`refresh()` 读 `QApplication.styleHints().colorScheme()`，不读 QSettings/环境变量，无手动开关。
+- **非单例**：见 §4.2。
 
-1. **定义契约** — 在 `shared/contracts.py` 加 `XxxRequest` / `XxxResult` / 必要时 `XxxEvent`。
-2. **实现 service** — 在 `core/services/` 写 `XxxServiceImpl(SomePort)`，纯 Python 无 Qt，pytest 单测。
-3. **绑定 ViewModel** — 在 `ui/viewmodels/` 新建 `XxxViewModel`，注入 service + runner + emitter，发射 Qt 信号；`ui/app.py` 注册新 view。
+**`theme.qss`**（17 行）：4 个块（`# card` / `# divider` / `# progress_bar` / `# section_header`），用 `$var`/`${var}` 模板语法（`string.Template`）。
 
-> 现有 `views/`（Quiz2SlideView / SimilarityView）**完全不改动**。
+**`widgets.py`**（约 871 行，8 个可复用控件）：`AppButton`（圆角/primary|secondary/禁用原因 tooltip/加载态）、`AnimatedButton`(AppButton+按压高度动画)、`AnimatedProgressBar`(300ms 平滑过渡)、`StepperInput`(−/输入/+)、`ToastNotification`(顶部滑入)、`DropZone`(单文件拖放)、`MultiDropZone`(多文件拖放)、`ErrorDialog`(全局错误弹窗，含 `extraClicked` 信号)。
 
----
-
-## 9. 迁移计划（Strangler Fig，按阶段）
-
-- **阶段1**：落地 `shared/` + `core/ports/` + 本文档。无行为变化。（已完成）
-- **阶段2（样板）**：把 `word_2_slide_tool.py` 的 `extract_questions` / `generate_pptx` 迁到 `core/services/slide_builder.py`，经 `DocxLoaderAdapter` 读文件；新建 `SlideViewModel` 跑通端到端，回归测试通过。（已完成）
-- **阶段3（本次）**：把 `similarity_checker.py` 的 `score_question_pair` + 1对多/多对多比对循环迁到 `core/`；引入结构化 `Question` 领域模型；`SimilarityServiceImpl` 经 `DocumentLoader` + `parse_questions` 注入，发射 `CheckStarted/Progress/Completed` 事件；新建 `SimilarityViewModel` 桥接。遗留 `similarity_checker.py` 暂不改动（Strangler Fig）。（已完成）
-- **阶段4（本次完成）**：删除遗留 `utils.py`/`base_tool.py`/`similarity_checker.py`/`word_2_slide_tool.py` 中已迁移逻辑，并用新 `SimilarityViewModel` / `SlideViewModel` 重建 `ui/views/` 真实界面（`SlideView` / `SimilarityView` / `BaseView`），替换 legacy `SimilarityCheckerTool` / `Word2SlideTool`；旧测试 `test_similarity_logic.py` 与 `test_similarity_legacy_parity.py` 下线；定稿本文档。`app.py` 改为 DI 接线（`Container.build(QtTaskRunner(), QtEventEmitter())` → ViewModels → Views），`closeEvent` 经 `stop_worker` 取消后台线程。验收：55 测试全绿（offscreen），`core/`+`shared/` mypy `--strict` 零报错。
-
----
-
-## 10. 待你确认的关键决策
-
-1. **Pydantic 作为契约载体**（新增 1 个依赖）是否接受？备选：纯 `dataclass` + `TypedDict`（零新依赖，但失去运行时校验/序列化）。
-2. **Question 是否升级为领域模型**（stem + options 结构化）？当前为最小风险，契约先用 `List[List[str]]`（与现有 `score_question_pair` 完全一致），结构化留到阶段3。
-3. 阶段2 是否以**相似度检测**作为样板（你原话建议），还是以更纯粹的 `word_2_slide` 提取逻辑优先？
-```
-
-> 本文件为**设计稿**，尚未创建任何 `shared/` `core/` `ui/` 运行时代码。确认后进入实现。
+> ⚠️ **控件坑**：① `AppButton.setEnabled` 被重写为 `set_actionable(enabled, "")`，会清空已设禁用原因；② `StepperInput` 在 `QSpinBox` 模式下 `valueChanged` **永不发射**（须手动把 ± 按钮 `clicked` 接到保存逻辑）；③ `DropZone`/`MultiDropZone` 的 `theme=None` 会 `AttributeError`（theme 事实上必传）；④ `MultiDropZone` 没有 `file_cleared` 信号。
 
 ---
 
-## 实施进度（截至 2026-07-15）
+## 8. 编码规约与已知技术债
 
-- **阶段1 契约层**：已落地。`shared/contracts.py`（Pydantic Request/Response/EventType/DomainEvent）、`shared/errors.py`、`core/ports/`（services/events/tasks/io 四个 Protocol）。`core/`+`shared/` 经 `grep` 确认**零 Qt 导入**；mypy `--strict` 无报错。
-- **阶段2 Word→Slide 样板**：已落地并跑通。
-  - `core/services/_question_parser.py`：纯解析（无文件 IO）。
-  - `core/adapters/`：`DocxLoaderAdapter`（python-docx）、`PptxWriterAdapter`（python-pptx）。
-  - `core/services/slide_builder.py`：`ExtractionServiceImpl` / `PptxServiceImpl`（经端口注入，发射事件）。
-  - `core/di.py`：极简 DI 容器。
-  - `ui/infra/`：`QtTaskRunner` + `@async_task`、`QtEventEmitter`（Qt Signal 桥接）。
-  - `ui/viewmodels/slide_viewmodel.py`：胶水层，单向数据流验证通过。
-  - `utils.py` 在阶段2退化为兼容薄壳，**旧模块 + 旧测试符号不变**（37 测试全绿，含 `test_same_path_raises_value_error`），**该文件已于阶段4删除**（见下）。
-  - 新增测试：`tests/unit/core/test_slide_builder.py`（mock 注入）、`tests/integration/test_slide_viewmodel.py`（ViewModel 接线）、`tests/integration/test_slide_e2e.py`（真实适配器端到端）。
-- **阶段4 遗留清理与界面重建**：已落地并完成验收。
-  - **删除遗留源**：`similarity_checker.py` / `word_2_slide_tool.py` / `base_tool.py` / `utils.py`；其逻辑由 `core/`（后端）+ `ui/views/`（新界面）承接。
-  - **新界面**：`ui/views/base_view.py`（`BaseView`）、`ui/views/slide_view.py`（`SlideView`：提取→预览确认→生成 + QSettings 持久化 + Toast + 主题热切换）、`ui/views/similarity_view.py`（`SimilarityView`：1对多/多对多查重 + 阈值持久化 + .docx 报告导出）。
-  - **接口层复用**：`ui/infra/preview_escape.py`（从 legacy 迁来的纯函数转义）、`QtTaskRunner`/`QtEventEmitter`（结构实现 `EventEmitter` 端口，避免 Protocol 元类冲突）、`widgets.py` 的 `MultiDropZone`（从 legacy 迁入）。
-  - **DI 接线**：`app.py` 由 `Container.build(QtTaskRunner(), QtEventEmitter())` 组装 `SlideViewModel`/`SimilarityViewModel` → `SlideView`/`SimilarityView`；`closeEvent` 调 `stop_worker` → `cancel_current` 阻塞等待后台线程终止（修复 SIGABRT）。
-  - **测试迁移**：`tests/test_preview_escape.py`、`tests/test_p1_settings_and_threads.py`、`tests/test_p2_tech_debt.py`、`tests/test_generate_pptx.py` 改为直测 `core`/`ui.infra`；新增 `tests/unit/core/test_scorer.py`。下线 `tests/test_similarity_logic.py` 与 `tests/integration/test_similarity_legacy_parity.py`。
-  - **修复的关键问题**：`QtEventEmitter(QObject, EventEmitter)` 元类冲突（改为结构实现）；`SimilarityView` 缺 `QPushButton`/`QSizePolicy` 导入；`_load_settings` 加载时触发 `_save_settings` 把半载状态（`opt_prefix=""`）写回（加载期间 `blockSignals`）；`QtTaskRunner` 后台线程销毁时仍运行导致 SIGABRT（`_active` 强引用 + `finished→deleteLater` + `join()/cancel()` 容错）。
-  - **验收**：55 测试全绿（offscreen，无 SIGABRT）；`core/`+`shared/` mypy `--strict` 零报错；`core/`、`shared/` 零 Qt 导入复查通过。
+| # | 事项 | 建议 |
+| --- | --- | --- |
+| 1 | `core/services/__init__.py` 导出不全 | ✅ **已修复（v4.0）**：补齐 `JsonToWordServiceImpl`/`PdfSlideServiceImpl` 导出 |
+| 2 | ViewModel 无基类、4 份复制 | ✅ **已修复（v4.0）**：抽 `BaseViewModel`，内置 `_WATCHED` 串台防护，4 个 VM 继承之 |
+| 3 | 适配器无基类（Protocol 有意） | 保持；勿强行加基类 |
+| 4 | 共享 `QtEventEmitter`，EventType 须专属 | 新增工具务必加 `XXX_PROGRESS/COMPLETED/FAILED`；`contracts.py` 的 `EventType` 已加「专属约定」注释。`SlideViewModel` 原误监听 `CHECK_FAILED`→`pptx_failed` 的历史耦合 ✅ **已解耦（v4.0，Phase 2）**：`SlideViewModel` 不再监听 `CHECK_FAILED`（`CHECK_*` 属 SimilarityChecker） |
+| 5 | `failed` 信号载荷不一致（str vs object） | ✅ **已修复（v4.0，Phase 2）**：四个 VM 的失败信号统一为 `Signal(object)`，`on_async_error` 透传异常对象（以 `JsonExamViewModel` 为范本），视图侧统一 `msg = message if isinstance(message, str) else str(message)` 处理 |
+| 6 | `Theme` 非单例、≥5 实例 | 若需全局一致，可改单例或集中刷新 |
+| 7 | 设计令牌多数未消费，布局硬编码 | View 中统一改用令牌（如 `spacing`/`page_pad_*`） |
+| 8 | QSettings key 命名不一致 | 约定统一的命名规范 |
+| 9 | `first_line_indent` 以字符串存布尔 | 改为真布尔或用 `toBool()` |
+| 10 | 视图 `_restyle_all` 覆盖不一致 | 以 SimilarityView 为准统一 |
+| 11 | 四处「打开文件夹」实现不统一（subprocess / os.system / `folder:` 前缀） | ✅ **已修复（v4.0，Phase 2）**：抽 `ui/infra/open_folder.py` 的 `open_folder()`，四个 View 统一调用，自动剥离 `folder:` 前缀、跨平台派发 |
 
 ---
 
-## 阶段3 交付明细（相似度检测迁移）
+## 9. 如何新增一个 Tool
 
-### 新增 / 修改文件
-| 文件 | 角色 | 说明 |
-|------|------|------|
-| `core/models/question.py` | 领域模型 | 结构化 `Question`（lines / source_file / index），替代裸 `List[str]` 在查重链路隐式传递 |
-| `core/services/_scorer.py` | 纯打分逻辑 | 从 legacy `score_question_pair` **逐行移植**公式与阈值分支，输出 `QuestionScore`（零 Qt / 零 IO） |
-| `core/services/similarity_service.py` | 业务服务 | `SimilarityServiceImpl` 实现 1对多 / 多对多查重，经注入的 `DocumentLoader` + `parse_questions` 读题，发射事件 |
-| `core/di.py` | DI 容器 | 注册 `similarity` 服务 |
-| `ui/viewmodels/similarity_viewmodel.py` | 视图模型 | 持有 `SimilarityService`，`@async_task` 转发 `check`，桥接事件为 Qt 信号（started/progress/completed/failed） |
-| `tests/unit/core/test_similarity_service.py` | 单元测试 | mock `DocumentLoader`/`EventEmitter`，验证 1对多命中、多对多 cross/internal、阈值门控、异常、事件 |
-| `tests/integration/test_similarity_viewmodel.py` | 集成测试 | `SyncTaskRunner` + `CollectingEmitter` 验证 ViewModel 单向数据流与异常转失败信号 |
-| `tests/integration/test_similarity_legacy_parity.py` | 保真测试 | 新 `score_questions` 与 legacy `score_question_pair` 对多组题对数值完全等价 |
+完整步骤、代码模板与避坑清单见 **[新增 Tool 开发指南（v4.0）](./新增Tool开发指南.md)**。
+一句话流程：`shared/contracts.py`（Request/Result/EventType/Event） → `core/ports`（Protocol） → `core/adapters`（封装库） → `core/services`（编排+emit） → `core/di.py`（注册） → `ui/viewmodels`（胶水） → `ui/views`（渲染） → `app.py`（装配+注册）。
 
-### 验收对照
-- **core/ 零 Qt 导入**：`grep` 复查 `core/`、`shared/` 均无 `PySide/Qt*`（已验证）。
-- **单向数据流**：UI → `SimilarityRequest` 命令；core → `CheckStarted/Progress/Completed` 事件 → Qt 信号。
-- **契约优先**：前后端交互全部为 `shared/contracts.py` 的 Pydantic 模型，无裸 dict。
-- **可测试性**：`core/services` 在 pytest + offscreen 下零 Qt 依赖；文件IO 经 mock 注入。
-- **零功能丢失**：`test_similarity_legacy_parity.py` 锁定打分语义与 legacy 逐字段一致；遗留 `similarity_checker.py` 完全未改，旧回归测试 `tests/test_similarity_logic.py` 仍有效。
+---
 
-### 阶段3 未做项（已在阶段4 完成）
-- **`ui/views/` 真实 QWidget 界面**：已在阶段4 以 `BaseView` / `SlideView` / `SimilarityView` 重建，legacy `SimilarityCheckerTool` / `Word2SlideTool` 已删除。
-- **git 提交**：阶段1-4 成果已在提交 `16a2b24`（refactor: 前后端分离架构重构）中落库；本文档及测试修复为后续新增的工作区改动，待评审后提交。
+## 10. 测试
+
+- `tests/` 下为 pytest 用例，覆盖 core 纯逻辑（`parse_questions` / `score_questions` / services / `preview_escape` 等）与部分 UI。
+- `conftest.py` 提供 fixtures；`core` 层可脱离 Qt 单独跑（依赖以 mock 注入）。
+- 运行：`pytest`（建议在隔离 venv 中执行，详见项目根 `requirements.txt`）。

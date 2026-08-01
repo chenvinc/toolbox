@@ -111,7 +111,7 @@ class SlideViewModelTests(unittest.TestCase):
             )
         )
         self.assertEqual(len(self.failed), 1)
-        self.assertIn("相同", self.failed[0])
+        self.assertIn("相同", str(self.failed[0]))
 
 
 if __name__ == "__main__":
