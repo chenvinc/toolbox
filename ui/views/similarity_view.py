@@ -27,6 +27,7 @@ from shared.contracts import (
 from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
+from ui.infra.settings_keys import SimilarityKeys
 
 logger = logging.getLogger(__name__)
 
@@ -476,7 +477,7 @@ class SimilarityView(BaseView):
         self._threshold_spin.setRange(0.5, 1.0)
         self._threshold_spin.setSingleStep(0.01)
         self._threshold_spin.setDecimals(2)
-        self._threshold_spin.setValue(float(self.settings.value("threshold", 0.8)))
+        self._threshold_spin.setValue(float(self.settings.value(SimilarityKeys.THRESHOLD, 0.8)))
         self._threshold_spin.setFixedHeight(36)
         self._num_edit = QLineEdit()
         self._num_edit.setPlaceholderText("如 1.")
@@ -657,17 +658,17 @@ class SimilarityView(BaseView):
         self._num_edit.blockSignals(True)
         self._opt_edit.blockSignals(True)
         self._threshold_spin.blockSignals(True)
-        self._num_edit.setText(self.settings.value("num_pattern", "1."))
-        self._opt_edit.setText(self.settings.value("opt_prefix", "A."))
-        self._threshold_spin.setValue(float(self.settings.value("threshold", 0.8)))
+        self._num_edit.setText(self.settings.value(SimilarityKeys.NUM_PATTERN, "1."))
+        self._opt_edit.setText(self.settings.value(SimilarityKeys.OPT_PREFIX, "A."))
+        self._threshold_spin.setValue(float(self.settings.value(SimilarityKeys.THRESHOLD, 0.8)))
         self._num_edit.blockSignals(False)
         self._opt_edit.blockSignals(False)
         self._threshold_spin.blockSignals(False)
 
     def _save_settings(self):
-        self.settings.setValue("threshold", self._threshold_spin.value())
-        self.settings.setValue("num_pattern", self._num_edit.text())
-        self.settings.setValue("opt_prefix", self._opt_edit.text())
+        self.settings.setValue(SimilarityKeys.THRESHOLD, self._threshold_spin.value())
+        self.settings.setValue(SimilarityKeys.NUM_PATTERN, self._num_edit.text())
+        self.settings.setValue(SimilarityKeys.OPT_PREFIX, self._opt_edit.text())
 
     def _on_reset_settings(self):
         self._threshold_spin.setValue(0.8)

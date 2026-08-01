@@ -26,6 +26,7 @@ from shared.contracts import ConvertPdfRequest
 from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
+from ui.infra.settings_keys import PdfSlideKeys
 
 logger = logging.getLogger(__name__)
 
@@ -333,7 +334,7 @@ class PdfSlideView(BaseView):
     # ── QSettings 持久化（记住上次使用的模板路径） ──
     def _load_settings(self):
         # 加载期间不触发保存回写，避免半载状态覆盖已存值（见开发指南 Q2）。
-        tpl = self.settings.value("template_path", "")
+        tpl = self.settings.value(PdfSlideKeys.TEMPLATE_PATH, "")
         if tpl and os.path.exists(tpl):
             self.ppt_drop_zone.blockSignals(True)
             if self.ppt_drop_zone.set_file(tpl):
@@ -342,7 +343,7 @@ class PdfSlideView(BaseView):
             self._update_convert_state()
 
     def _save_settings(self):
-        self.settings.setValue("template_path", self._tpl_path)
+        self.settings.setValue(PdfSlideKeys.TEMPLATE_PATH, self._tpl_path)
 
     def _open_output_folder(self):
         if not self._out_path:

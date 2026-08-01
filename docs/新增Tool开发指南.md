@@ -290,7 +290,7 @@ class DemoView(BaseView):
         self._vm = view_model
         self.theme = Theme()
         # 业务状态字段 ...
-        self.settings = QSettings("Demo", "Demo")   # 两参数同名
+        self.settings = QSettings("Demo", "Demo")   # 两参数同名；键名集中到 ui/infra/settings_keys.py 的 DemoKeys 常量
         self._field_labels: list = []
         self._section_labels: list = []
         self._module_cards: list = []
@@ -371,7 +371,8 @@ class DemoView(BaseView):
         ...
 
     def _save_settings(self) -> None:
-        self.settings.setValue("threshold", 0.8)
+        # 键名用 ui/infra/settings_keys.py 的常量；布尔直接存真 bool，勿存 "true"/"false" 字符串
+        self.settings.setValue(DemoKeys.THRESHOLD, self._threshold_spin.value())
 
     # ---- 命令入口 ----
     def on_run(self) -> None:

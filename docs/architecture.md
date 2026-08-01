@@ -288,8 +288,8 @@ toolbox/
 | 5 | `failed` 信号载荷不一致（str vs object） | ✅ **已修复（v4.0，Phase 2）**：四个 VM 的失败信号统一为 `Signal(object)`，`on_async_error` 透传异常对象（以 `JsonExamViewModel` 为范本），视图侧统一 `msg = message if isinstance(message, str) else str(message)` 处理 |
 | 6 | `Theme` 非单例、≥5 实例 | 若需全局一致，可改单例或集中刷新 |
 | 7 | 设计令牌多数未消费，布局硬编码 | View 中统一改用令牌（如 `spacing`/`page_pad_*`） |
-| 8 | QSettings key 命名不一致 | 约定统一的命名规范 |
-| 9 | `first_line_indent` 以字符串存布尔 | 改为真布尔或用 `toBool()` |
+| 8 | QSettings key 命名不一致 | ✅ **已修复（v4.0，Phase 3）**：抽 `ui/infra/settings_keys.py` 按工具集中常量，保持原字符串值不变（不破坏已有用户持久化），消除拼写/命名不一致隐患 |
+| 9 | `first_line_indent` 以字符串存布尔 | ✅ **已修复（v4.0，Phase 3）**：`json_exam_view` 改为真布尔存储；读取兼容旧 `"true"/"false"` 字符串值（`raw if isinstance(raw, bool) else str(raw) == "true"`） |
 | 10 | 视图 `_restyle_all` 覆盖不一致 | 以 SimilarityView 为准统一 |
 | 11 | 四处「打开文件夹」实现不统一（subprocess / os.system / `folder:` 前缀） | ✅ **已修复（v4.0，Phase 2）**：抽 `ui/infra/open_folder.py` 的 `open_folder()`，四个 View 统一调用，自动剥离 `folder:` 前缀、跨平台派发 |
 

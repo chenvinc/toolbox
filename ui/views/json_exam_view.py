@@ -33,6 +33,7 @@ from core.services._exam_layout import WORD_FONT_SIZE_NAMES
 from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
+from ui.infra.settings_keys import JsonExamKeys
 
 logger = logging.getLogger(__name__)
 
@@ -428,14 +429,16 @@ class JsonExamView(BaseView):
         self.line_spacing_value.blockSignals(True)
         self.first_line_indent.blockSignals(True)
 
-        self.font_name.setCurrentText(self.settings.value("font_name", "宋体/Times New Roman"))
-        self.font_size.setCurrentText(self.settings.value("font_size_name", "五号"))
-        self.line_spacing_type.setCurrentText(self.settings.value("line_spacing_type", "1.5倍行距"))
-        self.line_spacing_value.setText(self.settings.value("line_spacing_value", "1.5"))
+        self.font_name.setCurrentText(self.settings.value(JsonExamKeys.FONT_NAME, "宋体/Times New Roman"))
+        self.font_size.setCurrentText(self.settings.value(JsonExamKeys.FONT_SIZE_NAME, "五号"))
+        self.line_spacing_type.setCurrentText(self.settings.value(JsonExamKeys.LINE_SPACING_TYPE, "1.5倍行距"))
+        self.line_spacing_value.setText(self.settings.value(JsonExamKeys.LINE_SPACING_VALUE, "1.5"))
+        # 兼容旧版本以字符串 "true"/"false" 存储的值
+        _indent_raw = self.settings.value(JsonExamKeys.FIRST_LINE_INDENT, True)
         self.first_line_indent.setChecked(
-            self.settings.value("first_line_indent", "true") == "true"
+            _indent_raw if isinstance(_indent_raw, bool) else str(_indent_raw) == "true"
         )
-        self._out_dir = self.settings.value("output_dir", "")
+        self._out_dir = self.settings.value(JsonExamKeys.OUTPUT_DIR, "")
 
         self.font_name.blockSignals(False)
         self.font_size.blockSignals(False)
@@ -451,12 +454,12 @@ class JsonExamView(BaseView):
             self.out_dir_label.setText(self._out_dir)
 
     def _save_settings(self):
-        self.settings.setValue("font_name", self.font_name.currentText())
-        self.settings.setValue("font_size_name", self.font_size.currentText())
-        self.settings.setValue("line_spacing_type", self.line_spacing_type.currentText())
-        self.settings.setValue("line_spacing_value", self.line_spacing_value.text())
-        self.settings.setValue("first_line_indent", "true" if self.first_line_indent.isChecked() else "false")
-        self.settings.setValue("output_dir", self._out_dir)
+        self.settings.setValue(JsonExamKeys.FONT_NAME, self.font_name.currentText())
+        self.settings.setValue(JsonExamKeys.FONT_SIZE_NAME, self.font_size.currentText())
+        self.settings.setValue(JsonExamKeys.LINE_SPACING_TYPE, self.line_spacing_type.currentText())
+        self.settings.setValue(JsonExamKeys.LINE_SPACING_VALUE, self.line_spacing_value.text())
+        self.settings.setValue(JsonExamKeys.FIRST_LINE_INDENT, self.first_line_indent.isChecked())
+        self.settings.setValue(JsonExamKeys.OUTPUT_DIR, self._out_dir)
 
     def _on_theme_changed(self):
         self.theme.refresh()

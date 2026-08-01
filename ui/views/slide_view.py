@@ -29,6 +29,7 @@ from shared.contracts import (
 from core.adapters.pptx_writer import _resolve_line_spacing
 from ui.infra.preview_escape import escape_preview_line, sanitize_font_name
 from ui.infra.open_folder import open_folder
+from ui.infra.settings_keys import SlideKeys
 from ui.viewmodels.slide_viewmodel import SlideViewModel
 from ui.views.base_view import BaseView
 
@@ -505,17 +506,17 @@ class SlideView(BaseView):
         self.question_num_fmt.blockSignals(True)
         self.option_prefix.blockSignals(True)
         self.font_name.blockSignals(True)
-        self.question_num_fmt.setText(self.settings.value("question_num_fmt", "1."))
-        self.option_prefix.setText(self.settings.value("opt_prefix", "A."))
-        self.font_name.setCurrentText(self.settings.value("font_name", "微软雅黑"))
+        self.question_num_fmt.setText(self.settings.value(SlideKeys.QUESTION_NUM_FMT, "1."))
+        self.option_prefix.setText(self.settings.value(SlideKeys.OPT_PREFIX, "A."))
+        self.font_name.setCurrentText(self.settings.value(SlideKeys.FONT_NAME, "微软雅黑"))
         self.question_num_fmt.blockSignals(False)
         self.option_prefix.blockSignals(False)
         self.font_name.blockSignals(False)
 
     def _save_settings(self):
-        self.settings.setValue("question_num_fmt", self.question_num_fmt.text())
-        self.settings.setValue("opt_prefix", self.option_prefix.text())
-        self.settings.setValue("font_name", self.font_name.currentText())
+        self.settings.setValue(SlideKeys.QUESTION_NUM_FMT, self.question_num_fmt.text())
+        self.settings.setValue(SlideKeys.OPT_PREFIX, self.option_prefix.text())
+        self.settings.setValue(SlideKeys.FONT_NAME, self.font_name.currentText())
 
     def _open_output_folder(self):
         if not self._out_path:
