@@ -34,6 +34,7 @@ from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
 from ui.infra.settings_keys import JsonExamKeys
+from ui.infra.safe_settings import read_bool, read_str
 
 logger = logging.getLogger(__name__)
 
@@ -427,16 +428,15 @@ class JsonExamView(BaseView):
         self.line_spacing_value.blockSignals(True)
         self.first_line_indent.blockSignals(True)
 
-        self.font_name.setCurrentText(self.settings.value(JsonExamKeys.FONT_NAME, "宋体/Times New Roman"))
-        self.font_size.setCurrentText(self.settings.value(JsonExamKeys.FONT_SIZE_NAME, "五号"))
-        self.line_spacing_type.setCurrentText(self.settings.value(JsonExamKeys.LINE_SPACING_TYPE, "1.5倍行距"))
-        self.line_spacing_value.setText(self.settings.value(JsonExamKeys.LINE_SPACING_VALUE, "1.5"))
+        self.font_name.setCurrentText(read_str(self.settings, JsonExamKeys.FONT_NAME, "宋体/Times New Roman"))
+        self.font_size.setCurrentText(read_str(self.settings, JsonExamKeys.FONT_SIZE_NAME, "五号"))
+        self.line_spacing_type.setCurrentText(read_str(self.settings, JsonExamKeys.LINE_SPACING_TYPE, "1.5倍行距"))
+        self.line_spacing_value.setText(read_str(self.settings, JsonExamKeys.LINE_SPACING_VALUE, "1.5"))
         # 兼容旧版本以字符串 "true"/"false" 存储的值
-        _indent_raw = self.settings.value(JsonExamKeys.FIRST_LINE_INDENT, True)
         self.first_line_indent.setChecked(
-            _indent_raw if isinstance(_indent_raw, bool) else str(_indent_raw) == "true"
+            read_bool(self.settings, JsonExamKeys.FIRST_LINE_INDENT, True)
         )
-        self._out_dir = self.settings.value(JsonExamKeys.OUTPUT_DIR, "")
+        self._out_dir = read_str(self.settings, JsonExamKeys.OUTPUT_DIR, "")
 
         self.font_name.blockSignals(False)
         self.font_size.blockSignals(False)

@@ -6,11 +6,14 @@
 from __future__ import annotations
 
 import functools
+import logging
 from typing import Any, Callable, Optional
 
 from PySide6.QtCore import QThread, Signal
 
 from core.ports.tasks import TaskHandle, TaskRunner
+
+logger = logging.getLogger(__name__)
 
 
 class _Worker(QThread):
@@ -29,6 +32,9 @@ class _Worker(QThread):
             result = self._func(*self._args, **self._kwargs)
             self.result_ready.emit(result)
         except Exception as exc:  # 后台异常经信号传回 UI 线程
+            # 无论调用方是否挂了 on_error 回调，先把异常记入日志，
+            # 避免「无回调时异常被静默丢弃、事后无可追溯性」（R-5 后台线程兜底）。
+            logger.exception("后台任务异常")
             self.error_ready.emit(exc)
 
 

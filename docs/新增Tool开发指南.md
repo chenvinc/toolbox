@@ -371,8 +371,20 @@ class DemoView(BaseView):
 
     # ---- 持久化 ----
     def _load_settings(self) -> None:
-        # blockSignals(True) 包裹全部 setText/setValue/setChecked，避免半载写回
-        ...
+        # 外部输入不可信：一律走 safe_settings 助手，禁止裸 float()/int() 转换
+        from ui.infra.safe_settings import read_float, read_bool, read_str
+        # blockSignals 包裹读取，避免「半载即写回」污染持久化
+        self._threshold_spin.blockSignals(True)
+        self._num_edit.blockSignals(True)
+        try:
+            self._threshold_spin.setValue(
+                read_float(self.settings, DemoKeys.THRESHOLD,
+                           default=0.8, lo=0.0, hi=1.0))
+            self._num_edit.setText(
+                read_str(self.settings, DemoKeys.NUM_PATTERN, default="1."))
+        finally:
+            self._threshold_spin.blockSignals(False)
+            self._num_edit.blockSignals(False)
 
     def _save_settings(self) -> None:
         # 键名用 ui/infra/settings_keys.py 的常量；布尔直接存真 bool，勿存 "true"/"false" 字符串
@@ -403,9 +415,9 @@ class DemoView(BaseView):
 
 ### View 避坑清单
 1. **按钮必须存成实例属性**再 `set_theme`，否则 `_restyle_all` 刷不到（`SlideView.change_btn` 的教训）。
-2. **DropZone 的 `theme` 必传**：`theme=None` 会 `AttributeError`。
-3. **`StepperInput` 在 `QSpinBox` 模式下 `valueChanged` 不发射**，需手动把 ± 按钮 `clicked` 接到保存逻辑。
-4. **`AppButton.setEnabled` 被重写**为 `set_actionable(enabled, "")`，会清空已设禁用原因——禁用提示请用 `set_actionable(False, reason)`。
+2. **DropZone / MultiDropZone 的 `theme` 可省略**：`theme=None` 时自动回落 `Theme()` 单例（v4.x 已修复早期 `AttributeError`）。仍建议显式传入以明确意图。
+3. **`StepperInput` 在 `QSpinBox`/`QDoubleSpinBox` 模式下 `valueChanged` 已自动透传为 `float`**（v4.x 已修复早期不发射问题）。调用方直接连 `stepper.valueChanged` 即可，无需再接内部 spin。
+4. **`AppButton` 禁用原因用 `set_actionable(False, reason)` 管理，不要重写 `setEnabled`**（v4.x 已用 `changeEvent` 钩子取代 `setEnabled` 重写）。约定：`setEnabled(False)` 只翻状态、不动 reason；reason 仅由 `set_actionable` 写入/清空。
 5. 颜色/圆角一律走 `self.theme.*`，**禁止硬编码色值**（字号可保留 12/13px 现状）。
 6. 需要预览 HTML 时，正文用 `escape_preview_line()`，CSS 字体名用 `sanitize_font_name()`。
 7. **「打开文件夹」**统一用富文本链接，并在 `linkActivated` 回调里调用 `ui.infra.open_folder.open_folder(path)`（自动剥离 `folder:` 前缀、跨平台派发、不阻塞、失败仅 warning）：
@@ -455,9 +467,14 @@ self._add_tool(DemoView(demo_vm))
 | 复用既有 `EventType` | 多个 VM 串台、信号错乱 | 每个工具用专属 `EventType` |
 | `task_runner` 未注入 / 非 `TaskRunner` 协议 | 构造即抛 `TypeError`（含类名与实收类型） | `BaseViewModel` 已在构造期强制注入并校验，子类无需手动写 `self._task_runner` |
 | 子类忘记 `super().__init__(task_runner=...)` | 调用 `@async_task` 方法时抛 `RuntimeError` | 子类 `__init__` 必须 `super().__init__(event_emitter, task_runner)` |
-| 漏写 `on_async_error` | 后台异常被静默吞掉 | 必须实现，转成 `failed` 信号 |
+| 漏写 `on_async_error` | 后台异常被静默吞掉 | 必须实现，转成 `failed` 信号；此外 `QtTaskRunner._Worker.run()` 已对后台异常 `logger.exception` 留痕，即使漏写也能从日志追溯（但仍应实现以保证 UI 反馈） |
+| `settings.value()` 直接 `float()`/`int()` 转换 | 脏值（崩溃残留/手改/跨版本格式变更）致 View 构造抛 `ValueError`、应用打不开 | 一律改用 `ui/infra/safe_settings.py` 的 `read_float`/`read_bool`/`read_str`（含 clamp + nan/inf 兜底），禁止裸转换 |
 | View 按钮未存实例属性 | 主题切换后按钮不变色 | 存 `self._btn` 并在 `_restyle_all` 调 `set_theme` |
-| DropZone 传 `theme=None` | 构造即 `AttributeError` | 必传 theme |
+| DropZone 传 `theme=None` | （历史）早期版本构造即 `AttributeError` | 已修复（v4.x）：`theme=None` 自动回落 `Theme()` 单例。仍建议显式传入以明确意图 |
 | 在 `core` 里 import PySide6 | 架构违规、无法脱离 Qt 单测 | 第三方库只放 `core/adapters` |
 
 > 💡 **历史教训（v4.x）**：已消除 `_task_runner` 魔法字段陷阱。早期 `@async_task` 用 `getattr(self, "_task_runner", None)` 静默回退同步执行，拼写错/漏注入会悄无声息卡死 UI 且极难调试。现改为 `BaseViewModel.__init__` **构造函数强制注入 + `TaskRunner` 端口协议校验**——未传或非协议对象会在**实例化时立即抛出 `TypeError`**（含子类名与实收类型）；若子类忘记调 `super().__init__(task_runner=...)`，调用 `@async_task` 方法时抛 `RuntimeError` 并提示补调用。不要再写 `getattr` 兜底的写法。
+>
+> **外部输入不可信（N-02 根因）**：`QSettings` 等持久化值属于外部输入，必须假设会被写脏。任何 `float()`/`int()` 转换都要走 `safe_settings` 助手并兜底默认，禁止裸转换——否则脏值会让应用**启动即崩溃、用户无自救途径**。（详见 `docs/第三方架构评审-核实与整改.md` 的 N-02。）
+>
+> **方法职责单一（N-01 根因）**：装配逻辑（DI / VM 构造 / 布局 / 工具注册）不应藏在名为「字体」的方法里。新增方法时以职责命名，避免「先跑起来再说」式的持续膨胀。`app.py` 的 `_apply_global_font` 已在核实文档中标记为 **N-01**，待 R-8 拆分（先零风险地把非字体逻辑迁回 `__init__`，再抽 `ui/composition.py`）。

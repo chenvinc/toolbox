@@ -13,6 +13,9 @@ on_async_error 桥接为失败信号，与 SimilarityServiceImpl / PptxServiceIm
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import Dict, List, Optional
 
 from shared.contracts import (
@@ -38,6 +41,7 @@ class JsonToWordServiceImpl:
 
     def generate(self, request: GenerateExamRequest) -> GenerateExamResult:
         """同步生成题本与解析文档，返回输出路径；失败抛业务异常。"""
+        logger.info("开始生成试卷：输入=%s 输出目录=%s", request.input_path, request.output_dir)
         # 步骤一：解析（即时反馈，进度条尚不知总数，先用占位 total=1）
         self._emitter.emit(ProgressEvent(
             type=EventType.EXAM_PROGRESS,

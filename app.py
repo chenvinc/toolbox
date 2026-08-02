@@ -11,6 +11,8 @@
 import os
 import sys
 import logging
+import threading
+import faulthandler
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QStackedWidget,
@@ -201,14 +203,117 @@ class ToolboxApp(QMainWindow):
             stop = getattr(tool, 'stop_worker', None)
             if callable(stop):
                 stop()
+        shutdown_logging()
         super().closeEvent(event)
 
 
-if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+# 模块级句柄/守卫：configure_logging 持有 crash.log 文件对象，正常退出由
+# shutdown_logging 关闭；_qt_handler_guard 防止 Qt 消息处理器重入死循环。
+_qt_handler_guard = threading.local()
+_crash_log_fh = None
+
+
+def configure_logging() -> str:
+    """配置根日志：RotatingFileHandler 落盘到用户数据目录 logs/toolbox.log
+    （跨平台，不污染项目目录），保留 stderr 便于开发期观测；并安装
+    sys.excepthook 把未捕获异常写入日志（A-05 整改：补齐文件 handler + 崩溃兜底）。
+
+    返回日志文件绝对路径，便于自检 / 测试。
+    """
+    import logging.handlers
+
+    from PySide6.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType
+
+    _log_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+    if not _log_dir:
+        _log_dir = os.path.dirname(os.path.abspath(__file__))
+    _log_dir = os.path.join(_log_dir, "logs")
+    os.makedirs(_log_dir, exist_ok=True)
+    _log_path = os.path.join(_log_dir, "toolbox.log")
+
+    _root = logging.getLogger()
+    _root.setLevel(logging.INFO)
+    _fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    _rfh = logging.handlers.RotatingFileHandler(
+        _log_path, maxBytes=2 * 1024 * 1024, backupCount=3, encoding="utf-8"
     )
+    _rfh.setFormatter(_fmt)
+    _root.addHandler(_rfh)
+    _sh = logging.StreamHandler(sys.stderr)
+    _sh.setFormatter(_fmt)
+    _root.addHandler(_sh)
+
+    def _excepthook(exc_type, exc_value, exc_tb):
+        """记录未捕获异常到日志，避免崩溃后无迹可寻。"""
+        logging.getLogger("uncaught").critical(
+            "未捕获异常", exc_info=(exc_type, exc_value, exc_tb)
+        )
+        sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+    sys.excepthook = _excepthook
+
+    # Qt 内部消息（qWarning/qCritical）转发到 logging，避免 C++ 层报错只在
+    # stderr 闪现、打包为 GUI 后被丢弃（R-5 补充：sys.excepthook 仅覆盖主线程）。
+    # 加重入保护：若日志轮转/写入过程中再次触发 Qt 消息，直接丢弃，避免
+    # 「Qt 警告 → logging → RotatingFileHandler 轮转 → 又触发 Qt 警告」的死循环。
+    def _qt_message_handler(mode, context, message):
+        if getattr(_qt_handler_guard, "active", False):
+            return
+        _qt_handler_guard.active = True
+        try:
+            level = {
+                QtMsgType.QtDebugMsg: logging.DEBUG,
+                QtMsgType.QtInfoMsg: logging.INFO,
+                QtMsgType.QtWarningMsg: logging.WARNING,
+                QtMsgType.QtCriticalMsg: logging.ERROR,
+                QtMsgType.QtFatalMsg: logging.CRITICAL,
+            }.get(mode, logging.WARNING)
+            logging.getLogger("qt").log(level, "%s (%s:%d)", message, context.file, context.line)
+        finally:
+            _qt_handler_guard.active = False
+
+    qInstallMessageHandler(_qt_message_handler)
+
+    # 原生崩溃（segfault 等）最低限度留痕到 crash.log（R-5 补充）。
+    # 句柄由模块级 _crash_log_fh 持有，正常退出时由 shutdown_logging() 关闭，
+    # 避免未关闭句柄在 Windows 上阻塞日志目录清理/移动；重复调用本函数时先
+    # disable + 关闭旧句柄，杜绝「两个句柄指向同一文件」。
+    global _crash_log_fh
+    if _crash_log_fh is not None:
+        faulthandler.disable()
+        try:
+            _crash_log_fh.close()
+        except Exception:
+            pass
+        _crash_log_fh = None
+    _crash_log = os.path.join(_log_dir, "crash.log")
+    _crash_log_fh = open(_crash_log, "a", encoding="utf-8")
+    faulthandler.enable(file=_crash_log_fh)
+    logging.getLogger("toolbox").info("崩溃留痕已启用：%s", _crash_log)
+
+    return _log_path
+
+
+def shutdown_logging() -> None:
+    """正常退出时释放日志资源：先 disable faulthandler（停止写 fd），再关闭
+    crash.log 句柄，避免进程退出后仍持有未关闭的文件句柄（Windows 上会阻止
+    目录清理/移动）。与 configure_logging 对称。"""
+    global _crash_log_fh
+    try:
+        faulthandler.disable()
+    except Exception:
+        pass
+    if _crash_log_fh is not None:
+        try:
+            _crash_log_fh.close()
+        except Exception:
+            pass
+        _crash_log_fh = None
+
+
+if __name__ == "__main__":
+    log_path = configure_logging()
+    logging.getLogger("toolbox").info("应用启动，日志写入 %s", log_path)
     app = QApplication(sys.argv)
     window = ToolboxApp()
     window.show()

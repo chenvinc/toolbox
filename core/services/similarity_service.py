@@ -7,6 +7,9 @@
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 import os
 from typing import Dict, List, Literal, Tuple
 
@@ -37,6 +40,7 @@ class SimilarityServiceImpl:
 
     def check(self, request: SimilarityRequest) -> SimilarityResult:
         """同步执行查重，返回结构化结果；失败抛业务异常。"""
+        logger.info("查重开始：mode=%s", request.mode)
         self._emitter.emit(CheckStartedEvent(mode=request.mode))
         if request.mode == SimilarityMode.MANY_TO_MANY:
             return self._check_many_to_many(request)

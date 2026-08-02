@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox, QSpinBox, QLineEdit, QDialog, QPlainTextEdit,
 )
 from PySide6.QtCore import (
-    Qt, Signal, QTimer,
+    Qt, Signal, QTimer, QEvent,
     QPropertyAnimation, QEasingCurve, QVariantAnimation, QPoint,
 )
 
@@ -39,6 +39,8 @@ class AppButton(QPushButton):
         self._loading = False
         self._original_text = text
         self._loading_text = loading_text
+        # 样式依赖的属性已就绪，此后 changeEvent 才可安全同步
+        self._style_ready = True
         self._update_cursor()
         self.update_style()
 
@@ -47,19 +49,49 @@ class AppButton(QPushButton):
         self.update_style()
 
     def set_actionable(self, actionable, reason=""):
-        """设置按钮是否可操作，并在不可操作时保存提示原因。"""
-        self._can_click = actionable
-        self._disabled_reason = reason
-        super().setEnabled(actionable)
+        """设置按钮是否可操作，并在不可操作时给出提示原因。
+
+        reason 会同步为 tooltip：Qt **不向 disabled 控件派发鼠标事件**，
+        因此点击弹提示的老做法在真正禁用时永远不会触发；而 ToolTip 事件
+        仍会派发给 disabled 控件，悬停提示才是禁用原因唯一可靠的呈现方式。
+        """
+        self._disabled_reason = "" if actionable else reason
+        if self.isEnabled() == actionable:
+            # enabled 未变化时 Qt 不会发 EnabledChange，需手动同步（如仅更新 reason）
+            self._sync_enabled_state()
+        else:
+            self.setEnabled(actionable)  # 经 changeEvent 统一同步
+
+    def _sync_enabled_state(self):
+        """把 Qt 原生 enabled 状态同步到内部视觉状态（光标 / 样式 / 禁用原因提示）。
+
+        设计约定：``setEnabled(False)`` 只翻转可用态、**不改动** ``_disabled_reason``；
+        reason 的生命周期完全由 ``set_actionable`` 管理（仅在 ``set_actionable(False, reason)``
+        时写入、在重新 ``set_actionable(True)`` 或 enabled 变回 True 时清空）。这样外部直接
+        ``setEnabled(False)`` 不会意外清空上一次留下的禁用原因，行为可预期。
+        """
+        self._can_click = self.isEnabled()
+        if self._can_click:
+            # 已可用则不存在“禁用原因”
+            self._disabled_reason = ""
+        self.setToolTip(self._disabled_reason)
         self._update_cursor()
         self.update_style()
+
+    def changeEvent(self, event):
+        """响应 Qt 原生 enabled 变化，保持视觉状态与 enabled 一致。
+
+        取代此前对 ``setEnabled`` 的重写——那会把调用方的禁用原因静默清空，
+        且违反 Qt API 契约（``setEnabled`` 非虚函数语义被改写）。改用本钩子
+        被动同步后，任何调用方（含 Qt 内部、QWidget 级联禁用）都能正确生效。
+        """
+        if event.type() == QEvent.EnabledChange and getattr(self, "_style_ready", False):
+            self._sync_enabled_state()
+        super().changeEvent(event)
 
     def _update_cursor(self):
         self.setCursor(Qt.PointingHandCursor if self._can_click else Qt.ArrowCursor)
         self.setFocusPolicy(Qt.StrongFocus if self._can_click else Qt.NoFocus)
-
-    def setEnabled(self, enabled):
-        self.set_actionable(enabled, "")
 
     def update_style(self):
         t = self._theme
@@ -214,6 +246,14 @@ class StepperInput(QWidget):
             spin = QDoubleSpinBox()
         self._spin = spin
         self._spin.setFocusPolicy(Qt.StrongFocus)
+        # SpinBox 模式下 ± 按钮走 stepUp/stepDown，只会触发内部控件的信号；
+        # 若不桥接，外层 valueChanged 永不发射（键盘输入同理），监听方收不到任何回调。
+        # 桥接后两种模式（SpinBox / QLineEdit）对外行为一致，调用方无需感知内部实现。
+        if isinstance(self._spin, (QDoubleSpinBox, QSpinBox)):
+            # 以 self 作为 context 连接：StepperInput 销毁时连接自动断开，
+            # 规避 lambda 隐式持有 self 在半销毁态被信号触发的风险
+            # （PySide6 的 lambda 连接不随 receiver 销毁自动断开）。
+            self._spin.valueChanged.connect(self._relay_value, self)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -232,6 +272,11 @@ class StepperInput(QWidget):
         layout.addWidget(self.plus_button)
 
         self.set_theme(self._theme)
+
+    def _relay_value(self, v):
+        # QDoubleSpinBox 发射 float、QSpinBox 发射 int，统一转 float 对外，
+        # 使 valueChanged 契约（Signal(float)）在两种模式下一致。
+        self.valueChanged.emit(float(v))
 
     # ── 主题 ──
     def set_theme(self, theme):
@@ -409,7 +454,9 @@ class DropZone(QFrame):
         两种变体在 hover / 拖拽时均切换为主色实线边框 + 悬浮底色。
         """
         super().__init__()
-        self._theme = theme
+        # theme 省略时回退全局单例：签名允许 None，实现就必须真的支持 None
+        # （此前样式代码只对部分令牌做了兜底，theme=None 会在 t.radius 处崩溃）。
+        self._theme = theme if theme is not None else Theme()
         self.setAcceptDrops(True)
         self._compact = compact
         self._file_filter = file_filter
@@ -457,27 +504,23 @@ class DropZone(QFrame):
 
     def _del_btn_style(self):
         t = self._theme
-        bg = t.secondary_bg if t else "#f0f0f3"
-        fg = t.text_secondary if t else "#8E8E93"
-        hover = t.danger if t else "#FF3B30"
         return (
-            f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
-            f"border-radius: 10px; font-size: 12px; }}"
-            f"QPushButton:hover {{ color: white; background: {hover}; }}"
+            f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_secondary}; "
+            f"border: none; border-radius: 10px; font-size: 12px; }}"
+            f"QPushButton:hover {{ color: white; background: {t.danger}; }}"
         )
 
     def _apply_style(self):
         """根据当前主题与 variant 应用正常/拖拽样式，同时更新标签与删除按钮。"""
         t = self._theme
-        ib = t.input_bg if t else "#ffffff"
         if self._variant == "primary":
             # 主文档：主色虚线边框，凸显“主”的地位
             normal_border = f"2px dashed {t.accent}"
         else:
             # 辅助：中性虚线边框，弱化以形成主次对比
-            normal_border = f"2px dashed {t.dashed_border if t else '#d9d9d9'}"
+            normal_border = f"2px dashed {t.dashed_border}"
         self._normal_style = (
-            f"QFrame {{ background: {ib}; border: {normal_border}; "
+            f"QFrame {{ background: {t.input_bg}; border: {normal_border}; "
             f"border-radius: {t.radius}px; }}"
             f"QFrame:hover {{ border-color: {t.accent}; "
             f"background: {t.hover_blue}; }}"
@@ -490,15 +533,14 @@ class DropZone(QFrame):
         self._del_btn.setStyleSheet(self._del_btn_style())
 
         if self._file_path:
-            ac = t.drop_file_text if t else "#007AFF"
             self._text_label.setStyleSheet(
-                f"color: {ac}; font-size: 13px; font-weight: bold; "
+                f"color: {t.drop_file_text}; font-size: 13px; font-weight: bold; "
                 "background: transparent; border: none;"
             )
         else:
-            tc = t.drop_text if t else "#8E8E93"
             self._text_label.setStyleSheet(
-                f"color: {tc}; font-size: 13px; background: transparent; border: none;"
+                f"color: {t.drop_text}; font-size: 13px; "
+                "background: transparent; border: none;"
             )
 
     def mousePressEvent(self, event):
@@ -573,6 +615,11 @@ class MultiDropZone(QFrame):
 
     每次文件集合变化（新增 / 删除 / 清空）均广播 files_selected(当前完整列表)；
     单个文件格式不合规时广播 invalid_file（由视图层弹轻量 Toast）。
+
+    注意：与 DropZone 的 API 不对称——本类**没有**独立的 ``file_cleared`` 信号，
+    清空事件统一通过 ``files_selected([])``（空列表）表达。调用方若需区分
+    「用户主动清空」与「程序调用 clear_all()」，应据此约定自行判断，而非期待
+    独立信号。此处刻意不为对称性补信号，避免引入冗余 API。
     """
 
     files_selected = Signal(list)
@@ -581,7 +628,8 @@ class MultiDropZone(QFrame):
     def __init__(self, placeholder_text, file_filter="", compact=False, theme=None,
                  variant="secondary"):
         super().__init__()
-        self._theme = theme
+        # 同 DropZone：theme 省略时回退全局单例，保证签名与实现一致。
+        self._theme = theme if theme is not None else Theme()
         self.setAcceptDrops(True)
         self._compact = compact
         self._file_filter = file_filter
@@ -634,13 +682,12 @@ class MultiDropZone(QFrame):
 
     def _apply_style(self):
         t = self._theme
-        ib = t.input_bg if t else "#ffffff"
         if self._variant == "primary":
             normal_border = f"2px dashed {t.accent}"
         else:
-            normal_border = f"2px dashed {t.dashed_border if t else '#d9d9d9'}"
+            normal_border = f"2px dashed {t.dashed_border}"
         self._normal_style = (
-            f"QFrame {{ background: {ib}; border: {normal_border}; "
+            f"QFrame {{ background: {t.input_bg}; border: {normal_border}; "
             f"border-radius: {t.radius}px; }}"
             f"QFrame:hover {{ border-color: {t.accent}; background: {t.hover_blue}; }}"
         )
@@ -650,28 +697,25 @@ class MultiDropZone(QFrame):
         )
         self.setStyleSheet(self._normal_style)
         self._placeholder_label.setStyleSheet(
-            f"color: {t.drop_text if t else '#8E8E93'}; font-size: 13px; "
+            f"color: {t.drop_text}; font-size: 13px; "
             "background: transparent; border: none;"
         )
 
     def _row_style(self):
         t = self._theme
         return (
-            f"QFrame {{ background: {t.secondary_bg if t else '#f2f2f7'}; "
+            f"QFrame {{ background: {t.secondary_bg}; "
             f"border: none; border-radius: {t.radius}px; padding: 6px 10px; }}"
-            f"QLabel {{ color: {t.text_primary if t else '#1d1d1f'}; "
+            f"QLabel {{ color: {t.text_primary}; "
             f"font-size: 13px; background: transparent; border: none; }}"
         )
 
     def _del_btn_style(self):
         t = self._theme
-        bg = t.secondary_bg if t else "#f0f0f3"
-        fg = t.text_secondary if t else "#8E8E93"
-        hover = t.danger if t else "#FF3B30"
         return (
-            f"QPushButton {{ background: {bg}; color: {fg}; border: none; "
-            f"border-radius: 10px; font-size: 12px; }}"
-            f"QPushButton:hover {{ color: white; background: {hover}; }}"
+            f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_secondary}; "
+            f"border: none; border-radius: 10px; font-size: 12px; }}"
+            f"QPushButton:hover {{ color: white; background: {t.danger}; }}"
         )
 
     def _refresh(self):

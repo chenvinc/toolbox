@@ -6,6 +6,9 @@
 """
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
 from typing import TYPE_CHECKING
 
 from shared.contracts import (
@@ -31,6 +34,7 @@ class ExtractionServiceImpl:
         self._emitter = emitter
 
     def extract(self, request: ExtractQuestionsRequest) -> ExtractQuestionsResult:
+        logger.info("开始提取题目：%s", request.doc_path)
         paragraphs = self._loader.load_paragraphs(request.doc_path)
         questions = parse_questions(paragraphs, request.num_pattern, request.opt_prefix)
         result = ExtractQuestionsResult(questions=questions)
@@ -46,6 +50,7 @@ class PptxServiceImpl:
         self._emitter = emitter
 
     def generate(self, request: GeneratePptxRequest) -> GeneratePptxResult:
+        logger.info("开始生成 PPTX：%s → %s", request.template_path, request.output_path)
         if _same_path(request.template_path, request.output_path):
             raise OutputOverwriteError(
                 f"输出路径不能与模板路径相同，否则会覆盖并损坏模板文件：{request.output_path}"

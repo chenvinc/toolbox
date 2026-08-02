@@ -28,6 +28,7 @@ from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
 from ui.infra.settings_keys import SimilarityKeys
+from ui.infra.safe_settings import read_float, read_str
 
 logger = logging.getLogger(__name__)
 
@@ -475,7 +476,7 @@ class SimilarityView(BaseView):
         self._threshold_spin.setRange(0.5, 1.0)
         self._threshold_spin.setSingleStep(0.01)
         self._threshold_spin.setDecimals(2)
-        self._threshold_spin.setValue(float(self.settings.value(SimilarityKeys.THRESHOLD, 0.8)))
+        self._threshold_spin.setValue(read_float(self.settings, SimilarityKeys.THRESHOLD, 0.8, lo=0.5, hi=1.0))
         self._threshold_spin.setFixedHeight(36)
         self._num_edit = QLineEdit()
         self._num_edit.setPlaceholderText("如 1.")
@@ -489,12 +490,6 @@ class SimilarityView(BaseView):
         self._threshold_stepper = StepperInput(
             spin=self._threshold_spin, theme=t, minus_text="−", plus_text="+"
         )
-        self._threshold_stepper.minus_button.clicked.connect(
-            lambda: (self._threshold_spin.stepDown(), self._save_settings())
-        )
-        self._threshold_stepper.plus_button.clicked.connect(
-            lambda: (self._threshold_spin.stepUp(), self._save_settings())
-        )
 
         params_row.addWidget(self._make_labeled_field("相似度阈值", self._threshold_stepper))
         params_row.addWidget(self._make_labeled_field("题号格式", self._num_edit))
@@ -507,7 +502,11 @@ class SimilarityView(BaseView):
         params_row.addWidget(self._reset_btn, alignment=Qt.AlignVCenter)
         content_layout.addLayout(params_row)
 
-        self._threshold_spin.valueChanged.connect(self._save_settings)
+        # 连 StepperInput 对外信号而非内部 QDoubleSpinBox：
+        # 既覆盖 ± 按钮与键盘输入两条路径，也不再依赖控件内部实现（消除封装泄漏）。
+        # 此前此处额外给 ± 按钮接了一份 stepUp/stepDown，与 StepperInput 内置接线
+        # 叠加导致每次点击步进两格（0.8 → 0.82），已随之修复。
+        self._threshold_stepper.valueChanged.connect(self._save_settings)
         self._num_edit.textChanged.connect(self._save_settings)
         self._opt_edit.textChanged.connect(self._save_settings)
 
@@ -656,9 +655,9 @@ class SimilarityView(BaseView):
         self._num_edit.blockSignals(True)
         self._opt_edit.blockSignals(True)
         self._threshold_spin.blockSignals(True)
-        self._num_edit.setText(self.settings.value(SimilarityKeys.NUM_PATTERN, "1."))
-        self._opt_edit.setText(self.settings.value(SimilarityKeys.OPT_PREFIX, "A."))
-        self._threshold_spin.setValue(float(self.settings.value(SimilarityKeys.THRESHOLD, 0.8)))
+        self._num_edit.setText(read_str(self.settings, SimilarityKeys.NUM_PATTERN, "1."))
+        self._opt_edit.setText(read_str(self.settings, SimilarityKeys.OPT_PREFIX, "A."))
+        self._threshold_spin.setValue(read_float(self.settings, SimilarityKeys.THRESHOLD, 0.8, lo=0.5, hi=1.0))
         self._num_edit.blockSignals(False)
         self._opt_edit.blockSignals(False)
         self._threshold_spin.blockSignals(False)
