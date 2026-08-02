@@ -274,7 +274,6 @@ from PySide6.QtGui import QPalette
 from ui.views.base_view import BaseView
 from ui.infra.preview_escape import escape_preview_line  # 需要预览 HTML 时
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification
-from theme import get_theme
 
 
 class DemoView(BaseView):
@@ -290,18 +289,16 @@ class DemoView(BaseView):
     def __init__(self, view_model) -> None:
         super().__init__()
         self._vm = view_model
-        self.theme = get_theme()                  # 全局单例（推荐），或 Theme()
         # 业务状态字段 ...
         self.settings = QSettings("Demo", "Demo")   # 两参数同名；键名集中到 ui/infra/settings_keys.py 的 DemoKeys 常量
-        self._field_labels: list = []
-        self._section_labels: list = []
-        self._module_cards: list = []
         self._setup_ui()
         self._connect_view_model()
         self._load_settings()
         # 集中刷新：app.py 保留唯一 colorSchemeChanged 接线触发 theme.refresh()，
         # refresh() 会广播 Theme.theme_changed，各 View 订阅它即可（无需各自连 OS 信号）
         self.theme.theme_changed.connect(self._on_theme_changed)
+        # 注：self.theme / _field_labels / _section_labels / _module_cards
+        # 已由 BaseView.__init__ 统一初始化，子类无需再声明（R-9 加厚 BaseView）。
 
     # ---- UI 构建 ----
     def _setup_ui(self) -> None:
@@ -320,22 +317,11 @@ class DemoView(BaseView):
         content_layout.setSpacing(self.theme.spacing)
         self._scroll.setWidget(content)
 
-        self._make_module_card("模块")            # 复制标准实现
+        self._make_module_card("模块")            # 继承自 BaseView，无需定义（R-9 已上提）
         self.progress_bar = AnimatedProgressBar()
         self.toast = ToastNotification(self, theme=self.theme)
         self._update_demo_state()
         self._restyle_all()
-
-    def _make_module_card(self, title: str):
-        # 与既有 4 个 View 逐字相同：QFrame(objectName=module_card) + QVBoxLayout
-        # setContentsMargins(theme.page_pad_y, theme.spacing, theme.page_pad_y, theme.spacing)
-        # + QLabel(title, objectName=card_title)
-        # 追加到 _section_labels 与 _module_cards，return card, layout
-        ...
-
-    def _make_labeled_field(self, label_text, widget):
-        # 透明 QWidget + QVBoxLayout(0,2) + label(入 _field_labels) + widget
-        ...
 
     # ---- 信号绑定 ----
     def _connect_view_model(self) -> None:
@@ -363,11 +349,7 @@ class DemoView(BaseView):
         # 所有 AppButton.set_theme(t)（按钮须存成实例属性！）
         # 所有 StepperInput.set_theme(t)
         # DropZone: dz._theme = t; dz._apply_style()   ← 别忘了
-        self._scroll.setStyleSheet(   # 复制既有 4 份逐字相同的滚动条样式块
-            f"QScrollBar:vertical{{width:6px;background:transparent;}}"
-            f"QScrollBar::handle:vertical{{background:{t.scrollbar_handle};"
-            f"border-radius:3px;min-height:30px;}}"
-            f"QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical{{height:0;}}")
+        self._scroll.setStyleSheet(t.qss_scrollbar())   # 继承自 BaseView 的 Theme 片段，四工具共用（R-9 已上提）
 
     # ---- 持久化 ----
     def _load_settings(self) -> None:
@@ -455,7 +437,7 @@ self._add_tool(DemoView(demo_vm))
 - [ ] `core/services/__init__.py` 已补导出
 - [ ] `core/di.py` 已 `register("demo", ...)`
 - [ ] `ui/viewmodels` 继承 `BaseViewModel`，声明 `_WATCHED`，实现 `_dispatch` / `on_async_error` 与 `@async_task` 命令（`cancel_current` 已继承；`task_runner` 由基类构造注入并校验，子类无需手写 `self._task_runner`）
-- [ ] `ui/views` 继承 `BaseView`，含三列表、`_restyle_all`、`_load_settings(blockSignals)`、`stop_worker`
+- [ ] `ui/views` 继承 `BaseView`，三列表（`_field_labels`/`_section_labels`/`_module_cards`）由基类提供、`_restyle_all`、`_load_settings(blockSignals)`、`stop_worker`
 - [ ] `app.py` 装配 VM + `_add_tool`
 - [ ] `pytest` 通过（core 层可脱离 Qt 单测）
 

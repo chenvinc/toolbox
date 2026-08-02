@@ -20,7 +20,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
 from PySide6.QtGui import QPalette
 
-from theme import Theme
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone
 from shared.contracts import ConvertPdfRequest
 from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
@@ -47,7 +46,6 @@ class PdfSlideView(BaseView):
     def __init__(self, view_model: PdfSlideViewModel):
         super().__init__()
         self._vm = view_model
-        self.theme = Theme()
         self.setWindowTitle("Pdf2Slide")
 
         self._pdf_path = ""
@@ -64,9 +62,6 @@ class PdfSlideView(BaseView):
     # ── UI 构建 ──
     def _setup_ui(self):
         t = self.theme
-        self._field_labels: list = []
-        self._section_labels: list = []
-        self._module_cards: list = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
@@ -177,20 +172,6 @@ class PdfSlideView(BaseView):
         self.toast = ToastNotification(self, theme=self.theme)
         self._update_convert_state()
         self._restyle_all()
-
-    def _make_module_card(self, title):
-        """创建带加粗小标题的浅灰圆角模块卡片，返回 (卡片, 内容布局)。"""
-        card = QFrame()
-        card.setObjectName("module_card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
-        layout.setSpacing(12)
-        header = QLabel(title)
-        header.setObjectName("card_title")
-        self._section_labels.append(header)
-        layout.addWidget(header)
-        self._module_cards.append(card)
-        return card, layout
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
     def _connect_view_model(self):
@@ -378,13 +359,7 @@ class PdfSlideView(BaseView):
         self.convert_btn.set_theme(t)
         self._open_out_btn.set_theme(t)
         self._change_btn.set_theme(t)
-        self._scroll.setStyleSheet(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { width: 6px; background: transparent; }"
-            f"QScrollBar::handle:vertical {{ background: {t.scrollbar_handle}; "
-            "border-radius: 3px; min-height: 30px; }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-        )
+        self._scroll.setStyleSheet(t.qss_scrollbar())
 
     def showEvent(self, event):
         super().showEvent(event)

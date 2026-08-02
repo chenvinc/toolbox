@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
 from PySide6.QtGui import QPalette, QDoubleValidator
 
-from theme import Theme, _get_system_fonts
+from theme import _get_system_fonts
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, StepperInput
 from shared.contracts import (
     ExtractQuestionsRequest, GeneratePptxRequest, LineSpacingType,
@@ -52,7 +52,6 @@ class SlideView(BaseView):
     def __init__(self, view_model: SlideViewModel):
         super().__init__()
         self._vm = view_model
-        self.theme = Theme()
         self.setWindowTitle("Quiz2Slide")
         self.resize(700, 700)
         self.setMinimumSize(680, 600)
@@ -73,9 +72,6 @@ class SlideView(BaseView):
     # ── QtSettings helper（避免与 typing 冲突） ──
     def _setup_ui(self):
         t = self.theme
-        self._field_labels: list = []
-        self._section_labels: list = []
-        self._module_cards: list = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
@@ -246,20 +242,6 @@ class SlideView(BaseView):
         self.toast = ToastNotification(self, theme=self.theme)
         self._update_convert_state()
         self._restyle_all()
-
-    def _make_module_card(self, title):
-        """创建带加粗小标题的浅灰圆角模块卡片，返回 (卡片, 内容布局)。"""
-        card = QFrame()
-        card.setObjectName("module_card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
-        layout.setSpacing(12)
-        header = QLabel(title)
-        header.setObjectName("card_title")
-        self._section_labels.append(header)
-        layout.addWidget(header)
-        self._module_cards.append(card)
-        return card, layout
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
     def _connect_view_model(self):
@@ -485,18 +467,6 @@ class SlideView(BaseView):
     def _on_theme_changed(self):
         self._restyle_all()
 
-    def _make_labeled_field(self, label_text, widget):
-        wrapper = QWidget()
-        wrapper.setStyleSheet("background: transparent;")
-        layout = QVBoxLayout(wrapper)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        label = QLabel(label_text)
-        self._field_labels.append(label)
-        layout.addWidget(label)
-        layout.addWidget(widget)
-        return wrapper
-
     # ── QSettings 持久化（阈值/格式/字体） ──
     def _load_settings(self):
         # 加载期间屏蔽 change 信号，避免部分字段尚未载入时触发 _save_settings
@@ -581,13 +551,7 @@ class SlideView(BaseView):
         for dz in (self.word_drop_zone, self.ppt_drop_zone):
             dz._theme = t
             dz._apply_style()
-        self._scroll.setStyleSheet(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { width: 6px; background: transparent; }"
-            f"QScrollBar::handle:vertical {{ background: {t.scrollbar_handle}; "
-            "border-radius: 3px; min-height: 30px; }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-        )
+        self._scroll.setStyleSheet(t.qss_scrollbar())
 
     def showEvent(self, event):
         super().showEvent(event)

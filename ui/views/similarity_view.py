@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QPalette
 
-from theme import Theme
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, MultiDropZone, StepperInput
 from shared.contracts import (
     SimilarityMode, SimilarityRequest, OneToManyResult, ManyToManyResult,
@@ -48,7 +47,6 @@ class SimilarityView(BaseView):
     def __init__(self, view_model: SimilarityViewModel):
         super().__init__()
         self._vm = view_model
-        self.theme = Theme()
         self._main_path = ""
         self._secondary_paths: list = []
         self._all_paths: list = []
@@ -384,9 +382,6 @@ class SimilarityView(BaseView):
     # ── UI 构建 ──
     def _setup_ui(self):
         t = self.theme
-        self._section_labels = []
-        self._field_labels = []
-        self._module_cards = []
         root = QVBoxLayout(self)
         root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
         root.setSpacing(0)
@@ -561,32 +556,6 @@ class SimilarityView(BaseView):
         self._update_check_state()
         self._restyle_all()
 
-    def _make_module_card(self, title):
-        """创建带加粗小标题的浅灰圆角模块卡片，返回 (卡片, 内容布局)。"""
-        card = QFrame()
-        card.setObjectName("module_card")
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
-        layout.setSpacing(12)
-        header = QLabel(title)
-        header.setObjectName("card_title")
-        self._section_labels.append(header)
-        layout.addWidget(header)
-        self._module_cards.append(card)
-        return card, layout
-
-    def _make_labeled_field(self, label_text, widget):
-        wrapper = QWidget()
-        wrapper.setStyleSheet("background: transparent;")
-        layout = QVBoxLayout(wrapper)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        label = QLabel(label_text)
-        self._field_labels.append(label)
-        layout.addWidget(label)
-        layout.addWidget(widget)
-        return wrapper
-
     def _on_mode_changed(self, button):
         if button == self._radio_1toN:
             self._mode = SimilarityMode.ONE_TO_MANY
@@ -744,13 +713,7 @@ class SimilarityView(BaseView):
         else:
             self._show_result_placeholder()
 
-        self._scroll.setStyleSheet(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { width: 6px; background: transparent; }"
-            f"QScrollBar::handle:vertical {{ background: {t.scrollbar_handle}; "
-            "border-radius: 3px; min-height: 30px; }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-        )
+        self._scroll.setStyleSheet(t.qss_scrollbar())
 
     def stop_worker(self):
         """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""

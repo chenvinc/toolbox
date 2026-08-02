@@ -22,6 +22,12 @@ QProgressBar::chunk { background: $progress_chunk; border-radius: $radius; }
 
 # section_header
 font-size: ${font_module_title}px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
+
+# scrollbar
+QScrollArea { background: transparent; border: none; }
+QScrollBar:vertical { width: 6px; background: transparent; }
+QScrollBar::handle:vertical { background: $scrollbar_handle; border-radius: 3px; min-height: 30px; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 """
 
 _QSS_PATH = Path(__file__).with_name("theme.qss")
@@ -257,3 +263,11 @@ class Theme(QObject):
     def qss_section_header(self) -> str:
         """区块标题样式（两工具共用，原内联重复片段）。"""
         return self._qss_block("section_header")
+
+    def qss_scrollbar(self) -> str:
+        """滚动区域样式（四工具共用，原内联重复片段）。
+
+        R-9 将各 View ``_restyle_all`` 中逐字相同的滚动条样式块集中于此，
+        与 ``qss_card`` / ``qss_divider`` 等保持一致（热加载、按主题色替换）。
+        """
+        return self._qss_block("scrollbar")

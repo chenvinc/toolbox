@@ -15,3 +15,9 @@ QProgressBar::chunk { background: $progress_chunk; border-radius: $radius; }
 
 # section_header
 font-size: ${font_module_title}px; font-weight: bold; color: $card_header_color; background: transparent; padding: 0;
+
+# scrollbar
+QScrollArea { background: transparent; border: none; }
+QScrollBar:vertical { width: 6px; background: transparent; }
+QScrollBar::handle:vertical { background: $scrollbar_handle; border-radius: 3px; min-height: 30px; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }

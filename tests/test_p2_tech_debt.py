@@ -88,11 +88,24 @@ class QssEquivalenceTests(unittest.TestCase):
             )
             self.assertEqual(_norm(t.qss_section_header()), _norm(expected), f"header dark={dark}")
 
+    def test_qss_scrollbar_matches_inline(self):
+        for dark in (False, True):
+            t = self._theme_for(dark)
+            expected = (
+                "QScrollArea { background: transparent; border: none; } "
+                "QScrollBar:vertical { width: 6px; background: transparent; } "
+                f"QScrollBar::handle:vertical {{ background: {t.scrollbar_handle}; "
+                "border-radius: 3px; min-height: 30px; } "
+                "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
+            )
+            self.assertEqual(_norm(t.qss_scrollbar()), _norm(expected), f"scrollbar dark={dark}")
+
     def test_theme_qss_file_loads(self):
         self.assertTrue((ROOT / "theme.qss").exists())
         t = self._theme_for(False)
         self.assertTrue(t.qss_card())
         self.assertTrue(t.qss_progress_bar())
+        self.assertTrue(t.qss_scrollbar())
 
 
 if __name__ == "__main__":
