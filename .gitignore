@@ -38,3 +38,11 @@ Thumbs.db
 # ---- Runtime artifacts ----
 *.tmp
 *.log
+
+# ---- Project-local exclusions (intentionally not committed) ----
+# WorkBuddy 项目记忆/工作区数据，含项目笔记，不应入库
+.workbuddy/
+# 生成产物（示例 docx 等）
+生成示例/
+# 历史残留测试文件（macOS 自动命名的临时目录）
+tests/新建文件夹 (3)/
