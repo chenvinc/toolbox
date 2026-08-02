@@ -428,13 +428,15 @@ class DemoView(BaseView):
 ## 7. 注册（`app.py`）
 
 ```python
-from ui.viewmodels.demo_viewmodel import DemoViewModel
+from ui.composition import build_view_models
 from ui.views.demo_view import DemoView
 
-# 在 _apply_global_font 中造 VM：
-demo_vm = DemoViewModel(container.resolve("demo"), self._task_runner, self._event_emitter)
-
-# 在 _register_tools 中注册：
+# 1) 在 ui/composition.build_view_models 中追加你的 VM 构造
+#    （DI / VM 装配已集中于此，app.py 不再内联）：
+#    demo_vm = DemoViewModel(container.resolve("demo"), task_runner, event_emitter)
+#    return slide_vm, sim_vm, exam_vm, pdf_vm, demo_vm
+#
+# 2) 在 _register_tools 中注册 View（VM 由 build_view_models 返回并传入）：
 self._add_tool(DemoView(demo_vm))
 ```
 
@@ -477,4 +479,4 @@ self._add_tool(DemoView(demo_vm))
 >
 > **外部输入不可信（N-02 根因）**：`QSettings` 等持久化值属于外部输入，必须假设会被写脏。任何 `float()`/`int()` 转换都要走 `safe_settings` 助手并兜底默认，禁止裸转换——否则脏值会让应用**启动即崩溃、用户无自救途径**。（详见 `docs/第三方架构评审-核实与整改.md` 的 N-02。）
 >
-> **方法职责单一（N-01 根因）**：装配逻辑（DI / VM 构造 / 布局 / 工具注册）不应藏在名为「字体」的方法里。新增方法时以职责命名，避免「先跑起来再说」式的持续膨胀。`app.py` 的 `_apply_global_font` 已在核实文档中标记为 **N-01**，待 R-8 拆分（先零风险地把非字体逻辑迁回 `__init__`，再抽 `ui/composition.py`）。
+> **方法职责单一（N-01 根因）**：装配逻辑（DI / VM 构造 / 布局 / 工具注册）不应藏在名为「字体」的方法里。新增方法时以职责命名，避免「先跑起来再说」式的持续膨胀。`app.py` 的 `_apply_global_font` **已在 R-8 拆分完成**：现仅做字体，非字体装配（DI / VM 构造）已抽至 `ui/composition.build_view_models`，窗口布局留在 `app.py` 的 `__init__`，三者职责单一、互不藏匿。

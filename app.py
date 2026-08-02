@@ -24,13 +24,9 @@ from PySide6.QtGui import QPalette, QIcon, QFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core.di import Container
 from ui.infra.qt_task_runner import QtTaskRunner
 from ui.infra.qt_event_emitter import QtEventEmitter
-from ui.viewmodels.slide_viewmodel import SlideViewModel
-from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
-from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
-from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
+from ui.composition import build_view_models
 from ui.views.slide_view import SlideView
 from ui.views.similarity_view import SimilarityView
 from ui.views.json_exam_view import JsonExamView
@@ -42,53 +38,20 @@ class ToolboxApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.theme = Theme()
-        self._apply_global_font()
+        self._apply_global_font()  # 仅字体
         QApplication.setWindowIcon(QIcon("./assets/images/logo.png"))
-
-    def _apply_global_font(self):
-        """全局统一字体：微软雅黑（含跨平台回退），基准 12px。"""
-        font = QFont()
-        font.setFamilies([
-            "Microsoft YaHei", "PingFang SC", "Microsoft YaHei UI",
-            "SimHei", "Heiti SC", "sans-serif",
-        ])
-        font.setPointSize(12)
-        app = QApplication.instance()
-        if app is not None:
-            app.setFont(font)
         self.setWindowTitle("ALL IN ONE TOOLBOX")
         self.resize(960, 660)
         self.setMinimumSize(800, 550)
 
-        # ── 依赖装配：core 服务图 + UI 层 TaskRunner / EventEmitter ──
+        # ── 依赖装配（DI / VM 构造已抽至 ui/composition.build_view_models） ──
         self._task_runner = QtTaskRunner()
         self._event_emitter = QtEventEmitter()
-        container = Container.build(
-            task_runner=self._task_runner,
-            event_emitter=self._event_emitter,
-        )
-        slide_vm = SlideViewModel(
-            container.resolve("extraction"),
-            container.resolve("pptx"),
-            self._task_runner,
-            self._event_emitter,
-        )
-        sim_vm = SimilarityViewModel(
-            container.resolve("similarity"),
-            self._task_runner,
-            self._event_emitter,
-        )
-        exam_vm = JsonExamViewModel(
-            container.resolve("exam"),
-            self._task_runner,
-            self._event_emitter,
-        )
-        pdf_vm = PdfSlideViewModel(
-            container.resolve("pdf_slide"),
-            self._task_runner,
-            self._event_emitter,
+        slide_vm, sim_vm, exam_vm, pdf_vm = build_view_models(
+            self._task_runner, self._event_emitter
         )
 
+        # ── 窗口布局（导航 + 堆栈） ──
         self._tools = []
 
         central = QWidget()
@@ -131,6 +94,21 @@ class ToolboxApp(QMainWindow):
             self._on_theme_changed
         )
         self._on_theme_changed()
+
+    def _apply_global_font(self):
+        """全局统一字体：微软雅黑（含跨平台回退），基准 12px。
+
+        仅负责字体；依赖装配与窗口布局见 ``__init__`` / ``ui/composition``（N-01 根因）。
+        """
+        font = QFont()
+        font.setFamilies([
+            "Microsoft YaHei", "PingFang SC", "Microsoft YaHei UI",
+            "SimHei", "Heiti SC", "sans-serif",
+        ])
+        font.setPointSize(12)
+        app = QApplication.instance()
+        if app is not None:
+            app.setFont(font)
 
     def _on_theme_changed(self):
         self.theme.refresh()
