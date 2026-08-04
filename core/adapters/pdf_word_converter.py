@@ -1,8 +1,17 @@
 """PDF → Word 转换适配器（封装 PyMuPDF + python-docx）。
 
-实现 core/ports/io.PdfWordConverter。把 PDF 文字按阅读顺序重排为普通段落，
-行内 run 保留字体 / 字号 / 颜色 / 粗斜体；可选 .docx 模板作基底文档复用其样式
-（清空模板原有正文，写入转换结果）。首版纯文字，不提取图片（与 PdfSlideConverter
+实现 core/ports/io.PdfWordConverter。把 PDF 文字按阅读顺序重排为「语义段落」，
+而非「逐视觉行」。段落重建两阶段：
+
+1. 块内合并（block-internal）：PyMuPDF 的 ``block`` 本身是连贯文本区，块内多行
+   只是同一段落的视觉换行，因此块内所有行无条件合并为一个候选段落。
+2. 块间智能合并（smart merge）：相邻候选段落若「垂直间距 ≤ 1.3× 行高中位数」且
+   「无首行缩进跳变（≥0.5× 字号）」且「字号未显著突变」，则视为同一段落继续合并。
+   这可还原被 PyMuPDF 拆成多块的跨块段落，同时避免把标题/不同段落误并。
+
+行间接续规则（connection rule）：上一行末字符或下一行首字符任一侧为 CJK/中文标点
+则不加空格；两侧皆为拉丁字母/数字才补一个空格——以此修复英文跨行连写与中文
+「无词间空格」导致的错位。首版纯文字，不提取图片（与 PdfSlideConverter
 的「不栅格化」哲学一致）。
 
 字体归一 / 粗斜体判定复用 PdfSlideConverter 的纯函数（clean_font / is_bold /
@@ -10,12 +19,13 @@ is_italic），避免重复实现。
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List
+import statistics
+from dataclasses import dataclass, field
+from typing import Callable, List, Optional
 
 import fitz  # PyMuPDF
 from docx import Document
 from docx.document import Document as _Document
-from docx.oxml.ns import qn
 from docx.shared import Pt
 from docx.text.run import Run
 
@@ -27,6 +37,54 @@ from core.adapters.pdf_slide_converter import (
 from core.ports.io import PdfWordConverter
 from shared.contracts import ConvertPdfToWordRequest, ConvertPdfToWordResult
 from shared.errors import PdfReadError, TemplateInvalidError
+
+
+# ---------------------------------------------------------------- 数据结构
+
+
+@dataclass
+class _Span:
+    """一个文本 span 的最小化表示。"""
+
+    text: str
+    font: Optional[str]
+    size: float
+    color: Optional[int]
+    flags: int
+
+
+@dataclass
+class _Line:
+    """一行（视觉换行）的几何与内容。"""
+
+    y0: float
+    y1: float
+    x0: float
+    spans: List[_Span] = field(default_factory=list)
+
+    @property
+    def text(self) -> str:
+        return "".join(s.text for s in self.spans)
+
+    @property
+    def start_char(self) -> Optional[str]:
+        t = self.text
+        return t[0] if t else None
+
+    @property
+    def end_char(self) -> Optional[str]:
+        t = self.text
+        return t[-1] if t else None
+
+    @property
+    def size(self) -> float:
+        for s in self.spans:
+            if s.size:
+                return s.size
+        return 12.0
+
+
+# ---------------------------------------------------------------- 模板清空
 
 
 def _clear_body(doc: _Document) -> None:
@@ -47,17 +105,84 @@ def _clear_body(doc: _Document) -> None:
             parent.remove(el)
 
 
+# ---------------------------------------------------------------- 接续规则
+
+
+def _is_cjk(ch: Optional[str]) -> bool:
+    """判断字符是否为 CJK 或中文标点（接续规则用于决定补不补空格）。"""
+    if not ch:
+        return False
+    o = ord(ch)
+    return (
+        0x3000 <= o <= 0x303F  # CJK 符号与标点
+        or 0x3400 <= o <= 0x4DBF  # CJK 扩展 A
+        or 0x4E00 <= o <= 0x9FFF  # CJK 基本汉字
+        or 0xF900 <= o <= 0xFAFF  # CJK 兼容汉字
+        or 0xFF00 <= o <= 0xFFEF  # 全角字符（含全角标点）
+        or 0x3040 <= o <= 0x30FF  # 假名
+    )
+
+
+def _join_sep(end_char: Optional[str], start_char: Optional[str]) -> str:
+    """返回两行接续处应插入的分隔串：CJK 相关侧为空，拉丁-拉丁补一个空格。"""
+    if not end_char or not start_char:
+        return ""
+    if _is_cjk(end_char) or _is_cjk(start_char):
+        return ""  # 中文/中文标点任一侧 → 无词间空格
+    return " "  # 两侧皆拉丁字母/数字 → 补空格，修复英文跨行连写
+
+
+# ---------------------------------------------------------------- 合并判定
+
+
+def _should_merge(prev: List[_Line], nxt: List[_Line], median_h: float) -> bool:
+    """相邻候选段落是否应合并为同一语义段落。
+
+    条件（全部满足才合并）：
+      - 垂直间距（上一块末行底 → 下一块首行顶）≤ 1.3× 行高中位数；
+      - 无首行缩进跳变：下一块首行 x0 − 上一块首行 x0 < 0.5× 字号；
+      - 字号未显著突变（比值差 ≤ 25%），避免把标题并入正文。
+    """
+    prev_last = prev[-1]
+    prev_first = prev[0]
+    nxt_first = nxt[0]
+
+    gap = nxt_first.y0 - prev_last.y1
+    if gap < 0:
+        gap = 0
+    if gap > 1.3 * median_h:
+        return False
+
+    fontsize = max(nxt_first.size, 1.0)
+    indent = nxt_first.x0 - prev_first.x0
+    if indent >= 0.5 * fontsize:
+        return False
+
+    # 字号显著不同（如标题 vs 正文）则视为不同段落
+    bigger = max(prev_first.size, nxt_first.size)
+    if bigger > 0 and abs(prev_first.size - nxt_first.size) / bigger > 0.25:
+        return False
+
+    return True
+
+
+# ---------------------------------------------------------------- run 级格式
+
+
 def _set_run_format(
     run: Run,
-    raw_font: str | None,
+    raw_font: Optional[str],
     size: float,
-    color: int | None,
+    color: Optional[int],
     flags: int,
 ) -> None:
     """为一个 Word run 设置字体 / 字号 / 颜色 / 粗斜体。
 
     同时写入 ``w:rFonts`` 的 ``eastAsia``，确保中文按 PDF 所用中文字体渲染。
     """
+    from docx.dml.color import RGBColor
+    from docx.oxml.ns import qn
+
     name = clean_font(raw_font)
     run.font.name = name
     run.font.size = Pt(size)
@@ -71,8 +196,6 @@ def _set_run_format(
     rfonts.set(qn("w:hAnsi"), name)
     if color is not None:
         c = int(color) & 0xFFFFFF
-        from docx.dml.color import RGBColor
-
         run.font.color.rgb = RGBColor(  # type: ignore[no-untyped-call]
             (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF
         )
@@ -82,8 +205,33 @@ def _set_run_format(
         run.font.italic = True
 
 
+def _write_paragraph(doc: _Document, lines: List[_Line]) -> int:
+    """把一个语义段落（若干视觉行）写入 docx，返回写入的 run 数。"""
+    para = doc.add_paragraph()
+    runs = 0
+    prev: Optional[_Line] = None
+    for ln in lines:
+        if prev is not None:
+            sep = _join_sep(prev.end_char, ln.start_char)
+            if sep:
+                # 空格 run 借用下一行首个 span 的格式（空格本身不可见，仅占位）
+                fs = ln.spans[0]
+                run = para.add_run(sep)
+                _set_run_format(run, fs.font, fs.size, fs.color, fs.flags)
+                runs += 1
+        for sp in ln.spans:
+            run = para.add_run(sp.text)
+            _set_run_format(run, sp.font, sp.size, sp.color, sp.flags)
+            runs += 1
+        prev = ln
+    return runs
+
+
+# ---------------------------------------------------------------- 适配器
+
+
 class PdfWordConverterAdapter(PdfWordConverter):
-    """按阅读顺序把 PDF 文字逐页搬进 .docx 的可编辑段落。"""
+    """按阅读顺序把 PDF 文字逐页重建为 .docx 可编辑段落。"""
 
     def convert(
         self,
@@ -122,31 +270,61 @@ class PdfWordConverterAdapter(PdfWordConverter):
                 ]
                 blocks.sort(key=lambda b: (b["bbox"][1], b["bbox"][0]))
 
-                page_has_text = False
-                for block in blocks:
-                    lines = sorted(
-                        block.get("lines", []),
-                        key=lambda ln: ln["bbox"][1],
+                # 提取每块的视觉行，并收集行高用于中位数。
+                block_lines: List[List[_Line]] = []
+                all_heights: List[float] = []
+                for blk in blocks:
+                    raw_lines = sorted(
+                        blk.get("lines", []), key=lambda ln: ln["bbox"][1]
                     )
-                    for line in lines:
-                        spans = [s for s in line.get("spans", []) if s.get("text")]
+                    ls: List[_Line] = []
+                    for line in raw_lines:
+                        spans = [
+                            s for s in line.get("spans", []) if s.get("text")
+                        ]
                         if not spans:
                             continue
                         spans.sort(key=lambda s: s["bbox"][0])
+                        sl = _Line(
+                            y0=line["bbox"][1],
+                            y1=line["bbox"][3],
+                            x0=line["bbox"][0],
+                            spans=[
+                                _Span(
+                                    text=s["text"],
+                                    font=s.get("font"),
+                                    size=s.get("size") or 12,
+                                    color=s.get("color"),
+                                    flags=s.get("flags", 0),
+                                )
+                                for s in spans
+                            ],
+                        )
+                        ls.append(sl)
+                        all_heights.append(sl.y1 - sl.y0)
+                    if ls:
+                        block_lines.append(ls)
 
-                        para = doc.add_paragraph()
-                        for sp in spans:
-                            run = para.add_run(sp["text"])
-                            _set_run_format(
-                                run,
-                                sp.get("font"),
-                                sp.get("size") or 12,
-                                sp.get("color"),
-                                sp.get("flags", 0),
-                            )
-                            runs += 1
+                page_has_text = bool(block_lines)
+                if page_has_text:
+                    median_h = (
+                        statistics.median(all_heights)
+                        if all_heights
+                        else 12.0
+                    )
+                    # 每个块先作为独立候选段落。
+                    candidates: List[List[_Line]] = list(block_lines)
+                    # 跨块智能合并。
+                    merged: List[List[_Line]] = []
+                    for cand in candidates:
+                        if merged and _should_merge(merged[-1], cand, median_h):
+                            merged[-1].extend(cand)
+                        else:
+                            merged.append(cand)
+                    # 落盘。
+                    for para_lines in merged:
+                        runs += _write_paragraph(doc, para_lines)
                         paragraphs += 1
-                        page_has_text = True
 
                 if not page_has_text:
                     empty_pages.append(pi + 1)  # 纯图片页(如封面)，源 PDF 无文字
