@@ -8,6 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from shared.contracts import (
     ConvertPdfRequest, ConvertPdfResult,
+    ConvertPdfToWordRequest, ConvertPdfToWordResult,
     ExtractQuestionsRequest, ExtractQuestionsResult,
     GenerateExamRequest, GenerateExamResult,
     GeneratePptxRequest, GeneratePptxResult,
@@ -50,4 +51,12 @@ class ExamGeneratorService(Protocol):
     """JSON→Word 试卷生成服务（题本 + 解析）。"""
     def generate(self, request: GenerateExamRequest) -> GenerateExamResult:
         """同步生成题本与解析文档，返回输出路径；失败抛业务异常。"""
+        ...
+
+
+@runtime_checkable
+class PdfWordService(Protocol):
+    """PDF → Word 转换服务（保留可编辑文字，可选套用 Word 模板）。"""
+    def convert(self, request: ConvertPdfToWordRequest) -> ConvertPdfToWordResult:
+        """同步执行转换，返回统计结果；失败抛业务异常。"""
         ...

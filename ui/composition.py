@@ -12,6 +12,7 @@ from ui.infra.qt_event_emitter import QtEventEmitter
 from ui.infra.qt_task_runner import QtTaskRunner
 from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
 from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
+from ui.viewmodels.pdf_word_viewmodel import PdfWordViewModel
 from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
 from ui.viewmodels.slide_viewmodel import SlideViewModel
 
@@ -26,7 +27,7 @@ def build_container(
 def build_view_models(
     task_runner: QtTaskRunner, event_emitter: QtEventEmitter
 ):
-    """构造四个 ViewModel（持有 service + task_runner + event_emitter）。
+    """构造五个 ViewModel（持有 service + task_runner + event_emitter）。
 
     新增工具时，在此追加一行 VM 构造并并入返回元组即可。
     """
@@ -52,4 +53,9 @@ def build_view_models(
         task_runner,
         event_emitter,
     )
-    return slide_vm, sim_vm, exam_vm, pdf_vm
+    word_vm = PdfWordViewModel(
+        container.resolve("pdf_word"),
+        task_runner,
+        event_emitter,
+    )
+    return slide_vm, sim_vm, exam_vm, pdf_vm, word_vm

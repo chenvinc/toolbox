@@ -61,6 +61,9 @@ class EventType(str, Enum):
     PDF_PROGRESS = "pdf_progress"
     PDF_COMPLETED = "pdf_completed"
     PDF_FAILED = "pdf_failed"
+    WORD_PROGRESS = "word_progress"
+    WORD_COMPLETED = "word_completed"
+    WORD_FAILED = "word_failed"
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +233,36 @@ class ConvertPdfResult(BaseModel):
     )
 
 
+class ConvertPdfToWordRequest(BaseModel):
+    """将 PDF 文档转换为可编辑文字的 Word（.docx）。
+
+    转换策略（与 core/adapters/pdf_word_converter.py 一致）：
+    - 按阅读顺序（块按 y、行内按 x）把 PDF 文字重排为普通段落；
+    - 行内 run 保留字体/字号/颜色/粗斜体；
+    - 可选 .docx 模板作基底文档，复用其样式 / 版面定义；
+    - 首版纯文字，不提取图片（图片提取列为后续增强）。
+    """
+
+    pdf_path: str = Field(..., min_length=1, description="输入 PDF 文件路径")
+    template_path: str = Field(
+        "", description="可选 Word 模板路径（.docx）；为空则使用默认样式"
+    )
+    output_path: str = Field(..., min_length=1, description="输出 Word 文件路径（.docx）")
+
+
+class ConvertPdfToWordResult(BaseModel):
+    """PDF → Word 转换结果统计。"""
+
+    output_path: str
+    page_count: int = Field(ge=0, description="源 PDF 页数")
+    paragraph_count: int = Field(0, ge=0, description="生成的段落总数")
+    run_count: int = Field(0, ge=0, description="生成的文字 run 总数")
+    empty_pages: List[int] = Field(
+        default_factory=list,
+        description="源 PDF 中无文字的页码（1-based，如纯图片封面页）",
+    )
+
+
 # 查重结果联合类型（按 mode 判别）
 SimilarityResult = Annotated[
     Union[OneToManyResult, ManyToManyResult], Field(discriminator="mode")
@@ -249,6 +282,7 @@ class ProgressEvent(_BaseEvent):
     type: Literal[
         EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS,
         EventType.EXAM_PROGRESS, EventType.PDF_PROGRESS,
+        EventType.WORD_PROGRESS,
     ] = EventType.CHECK_PROGRESS
     message: str = ""
     current: int = 0
@@ -300,6 +334,18 @@ class PdfFailedEvent(_BaseEvent):
     message: str
 
 
+class WordCompletedEvent(_BaseEvent):
+    """PDF → Word 转换完成事件。"""
+    type: Literal[EventType.WORD_COMPLETED] = EventType.WORD_COMPLETED
+    result: ConvertPdfToWordResult
+
+
+class WordFailedEvent(_BaseEvent):
+    """PDF → Word 转换失败事件。"""
+    type: Literal[EventType.WORD_FAILED] = EventType.WORD_FAILED
+    message: str
+
+
 class ExamFailedEvent(_BaseEvent):
     """试卷生成失败事件。"""
     type: Literal[EventType.EXAM_FAILED] = EventType.EXAM_FAILED
@@ -312,6 +358,7 @@ DomainEvent = Annotated[
         CheckStartedEvent, CheckCompletedEvent, ExtractCompletedEvent,
         PptxCompletedEvent, ExamCompletedEvent, ExamFailedEvent,
         PdfCompletedEvent, PdfFailedEvent,
+        WordCompletedEvent, WordFailedEvent,
         ProgressEvent, FailedEvent,
     ],
     Field(discriminator="type"),

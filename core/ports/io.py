@@ -10,6 +10,7 @@ from typing import Callable, Dict, List, Optional, Protocol, TYPE_CHECKING, runt
 
 from shared.contracts import (
     ConvertPdfRequest, ConvertPdfResult,
+    ConvertPdfToWordRequest, ConvertPdfToWordResult,
     GenerateExamRequest, GenerateExamResult,
 )
 
@@ -74,5 +75,22 @@ class ExamDocxWriter(Protocol):
 
         ``image_cache`` 为服务层并发预下载好的 ``url -> bytes|None`` 缓存；
         传入时适配器直接使用（不重复下载），否则走惰性回退下载。
+        """
+        ...
+
+
+@runtime_checkable
+class PdfWordConverter(Protocol):
+    """PDF → Word 转换写操作封装（适配 PyMuPDF + python-docx）。"""
+
+    def convert(
+        self,
+        request: ConvertPdfToWordRequest,
+        on_progress: Callable[[int, int], None],
+    ) -> ConvertPdfToWordResult:
+        """按定版管线执行转换并保存 .docx，返回统计结果。
+
+        ``on_progress(current_page, total_pages)`` 每处理一页回调一次。
+        失败抛 ``PdfReadError`` / ``TemplateInvalidError`` 等业务异常。
         """
         ...

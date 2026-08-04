@@ -41,3 +41,9 @@ class PdfSlideKeys:
     """Pdf2Slide 工具（QSettings org/app = "Pdf2Slide"）。"""
 
     TEMPLATE_PATH = "template_path"
+
+
+class PdfWordKeys:
+    """Pdf2Word 工具（QSettings org/app = "Pdf2Word"）。"""
+
+    TEMPLATE_PATH = "template_path"

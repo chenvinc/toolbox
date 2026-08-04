@@ -18,6 +18,7 @@ from ui.views.slide_view import SlideView
 from ui.views.similarity_view import SimilarityView
 from ui.views.json_exam_view import JsonExamView
 from ui.views.pdf_slide_view import PdfSlideView
+from ui.views.pdf_word_view import PdfWordView
 
 
 class AppSmokeTests(unittest.TestCase):
@@ -29,12 +30,13 @@ class AppSmokeTests(unittest.TestCase):
         # 真实启动路径：构造完整应用即会把四个 View 全部建出来。
         cls.window = ToolboxApp()
 
-    def test_app_constructs_all_four_views(self):
-        self.assertEqual(len(self.window._tools), 4)
+    def test_app_constructs_all_five_views(self):
+        self.assertEqual(len(self.window._tools), 5)
         self.assertIsInstance(self.window._tools[0], SlideView)
         self.assertIsInstance(self.window._tools[1], SimilarityView)
         self.assertIsInstance(self.window._tools[2], JsonExamView)
         self.assertIsInstance(self.window._tools[3], PdfSlideView)
+        self.assertIsInstance(self.window._tools[4], PdfWordView)
 
     def test_slide_view_change_btn_bound(self):
         # 直接守卫本次回归：SlideView 必须把「更改」按钮存为 self.change_btn，

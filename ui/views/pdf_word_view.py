@@ -1,0 +1,372 @@
+"""Pdf2Word 视图 — 仅负责渲染与事件绑定（零业务规则）。
+
+持有 PdfWordViewModel（胶水层），把用户操作翻译成 Request 交给 ViewModel：
+- 「开始转换」→ 校验输入 → vm.convert(ConvertPdfToWordRequest) 后台转换
+进度/结果/失败均通过 vm 信号回流到本视图更新 UI。
+
+转换语义（见 core/adapters/pdf_word_converter.py）：
+以 PDF 文字按阅读顺序重排为可编辑段落（保留字体/字号/颜色/粗斜体），
+可选套用 Word 模板作样式底；首版纯文字、不提取图片。
+"""
+from __future__ import annotations
+
+import logging
+import os
+
+from PySide6.QtWidgets import (
+    QVBoxLayout, QHBoxLayout, QLabel, QFileDialog,
+    QSizePolicy, QFrame, QScrollArea, QApplication,
+)
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
+from PySide6.QtGui import QPalette
+
+from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone
+from shared.contracts import ConvertPdfToWordRequest
+from ui.viewmodels.pdf_word_viewmodel import PdfWordViewModel
+from ui.views.base_view import BaseView
+from ui.infra.open_folder import open_folder
+from ui.infra.settings_keys import PdfWordKeys
+from ui.infra.safe_settings import read_str
+
+logger = logging.getLogger(__name__)
+
+
+class PdfWordView(BaseView):
+    """PDF 文档 → 可编辑文字 Word 的视图。"""
+
+    def get_name(self) -> str:
+        return "Pdf2Word"
+
+    def get_nav_title(self) -> str:
+        return "📄 PDF转Word"
+
+    def get_description(self) -> str:
+        return "将 PDF 逐页转换为保留可编辑文字（流式段落）的 Word 文档，可选套用模板样式。"
+
+    def __init__(self, view_model: PdfWordViewModel):
+        super().__init__()
+        self._vm = view_model
+        self.setWindowTitle("Pdf2Word")
+
+        self._pdf_path = ""
+        self._tpl_path = ""
+        self._out_path = "output.docx"
+
+        self.settings = QSettings("Pdf2Word", "Pdf2Word")
+
+        self._setup_ui()
+        self._connect_view_model()
+        self._load_settings()
+        self.theme.theme_changed.connect(self._on_theme_changed)
+
+    # ── UI 构建 ──
+    def _setup_ui(self):
+        t = self.theme
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
+        root.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._scroll = scroll
+
+        content = QFrame()
+        content.setStyleSheet("background: transparent; border: none;")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(self.theme.spacing)
+
+        # ── 模块一：导入 PDF 文档 ──
+        card1, l1 = self._make_module_card("导入 PDF 文档")
+        self.pdf_drop_zone = DropZone(
+            "点击或拖拽 .pdf 文件", "PDF 文档 (*.pdf)", theme=t, variant="primary"
+        )
+        self.pdf_drop_zone.file_selected.connect(self._on_pdf_file)
+        self.pdf_drop_zone.file_cleared.connect(self._on_pdf_cleared)
+        self.pdf_drop_zone.invalid_file.connect(
+            lambda p: self.toast.show_message(
+                f"文件格式不支持：{os.path.basename(p)}", success=False)
+        )
+        l1.addWidget(self.pdf_drop_zone)
+        self._pdf_hint = QLabel(
+            "转换将按阅读顺序把 PDF 中的文字重排为可编辑段落"
+            "（保留字体 / 字号 / 颜色 / 粗斜体），纯图片页不含文字属正常现象。"
+        )
+        self._pdf_hint.setWordWrap(True)
+        self._field_labels.append(self._pdf_hint)
+        l1.addWidget(self._pdf_hint)
+        content_layout.addWidget(card1)
+
+        # ── 模块二：套用 Word 模板（可选） ──
+        card2, l2 = self._make_module_card("套用 Word 模板（可选）")
+        self.tpl_drop_zone = DropZone("点击或拖拽 .docx 模板", "Word 模板 (*.docx)", theme=t)
+        self.tpl_drop_zone.file_selected.connect(self._on_tpl_file)
+        self.tpl_drop_zone.file_cleared.connect(self._on_tpl_cleared)
+        self.tpl_drop_zone.invalid_file.connect(
+            lambda p: self.toast.show_message(
+                f"文件格式不支持：{os.path.basename(p)}", success=False)
+        )
+        l2.addWidget(self.tpl_drop_zone)
+        self._tpl_hint = QLabel(
+            "留空则使用 Word 默认样式；指定模板时以其为基底文档复用其样式定义"
+            "（清空模板原有正文后写入转换结果）。"
+        )
+        self._tpl_hint.setWordWrap(True)
+        self._field_labels.append(self._tpl_hint)
+        l2.addWidget(self._tpl_hint)
+        content_layout.addWidget(card2)
+
+        # ── 模块三：输出路径设置 ──
+        card3, l3 = self._make_module_card("输出路径设置")
+        save_row = QHBoxLayout()
+        save_row.setSpacing(self.theme.control_spacing)
+        self.out_path_label = QLabel()
+        self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self._save_to_label = QLabel("保存到:")
+        change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
+        change_btn.setFixedWidth(80)
+        change_btn.clicked.connect(lambda: self._on_browse_save())
+        open_btn = AppButton("打开文件夹", default_height=32, theme=self.theme, variant="secondary")
+        open_btn.setFixedWidth(104)
+        open_btn.clicked.connect(self._open_output_folder)
+        self._open_out_btn = open_btn
+        self._change_btn = change_btn
+        save_row.addWidget(self._save_to_label)
+        save_row.addWidget(self.out_path_label)
+        save_row.addStretch(1)
+        save_row.addWidget(change_btn)
+        save_row.addWidget(open_btn)
+        l3.addLayout(save_row)
+        content_layout.addWidget(card3)
+
+        content_layout.addStretch()
+        scroll.setWidget(content)
+        root.addWidget(scroll, 1)
+
+        self.error_label = QLabel("")
+        self.error_label.setWordWrap(True)
+        root.addWidget(self.error_label)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(0)
+        self.convert_btn = AnimatedButton(
+            "开始转换", default_height=40, theme=self.theme, loading_text="转换中..."
+        )
+        self.convert_btn.clicked.connect(self.on_convert)
+        btn_row.addWidget(self.convert_btn)
+        root.addLayout(btn_row)
+
+        self.progress_bar = AnimatedProgressBar()
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setVisible(False)
+        root.addWidget(self.progress_bar)
+
+        self.progress_label = QLabel("")
+        self.progress_label.setVisible(False)
+        self.progress_label.setTextFormat(Qt.RichText)
+        self.progress_label.linkActivated.connect(self._open_output_folder)
+        root.addWidget(self.progress_label)
+
+        self.toast = ToastNotification(self, theme=self.theme)
+        self._update_convert_state()
+        self._restyle_all()
+
+    # ── ViewModel 信号绑定（单向数据流：core → UI） ──
+    def _connect_view_model(self):
+        self._vm.progress.connect(self._on_progress)
+        self._vm.completed.connect(self._on_completed)
+        self._vm.failed.connect(self._on_failed)
+
+    # ── 命令转发（单向数据流：UI → core） ──
+    def on_convert(self):
+        self._clear_error()
+        self._save_settings()
+        if not self._validate():
+            return
+        self._set_loading(True)
+        self.progress_bar.setRange(0, 0)
+        self.progress_label.setVisible(True)
+        self.progress_label.setText("准备中...")
+        req = ConvertPdfToWordRequest(
+            pdf_path=self._pdf_path,
+            template_path=self._tpl_path,
+            output_path=self._out_path,
+        )
+        self._vm.convert(req)  # 后台执行，结果经 vm 信号回流
+
+    # ── ViewModel 回调 ──
+    def _on_progress(self, message: str, current: int, total: int):
+        self.progress_label.setText(message)
+        if total > 0:
+            self.progress_bar.setRange(0, total)
+            self.progress_bar.setValueAnimated(current)
+
+    def _on_completed(self, result):
+        self._set_loading(False)
+        self._update_convert_state()
+        self.progress_bar.setVisible(False)
+        self.toast.show_message(
+            f"转换成功，共 {result.page_count} 页 / {result.paragraph_count} 个段落",
+            success=True,
+        )
+        summary = f"转换成功：{result.page_count} 页 / {result.paragraph_count} 个段落"
+        if result.empty_pages:
+            pages = "、".join(str(p) for p in result.empty_pages[:8])
+            more = " 等" if len(result.empty_pages) > 8 else ""
+            summary += f"（第 {pages}{more} 页为纯图片页，无可提取文字）"
+        folder = os.path.dirname(self._out_path) or "."
+        self.progress_label.setText(
+            f"{summary}  <a href=\"folder:{folder}\" "
+            f"style=\"color: {self.theme.accent}; text-decoration: underline;\">打开文件夹</a>"
+        )
+        self.progress_label.setVisible(True)
+        logger.info("PDF 转换完成: %s", self._out_path)
+
+    def _on_failed(self, message: object):
+        self._set_loading(False)
+        self.progress_bar.setVisible(False)
+        self.progress_label.setVisible(False)
+        msg = message if isinstance(message, str) else str(message)
+        self.toast.show_message(msg, success=False)
+        logger.error("PDF 转换失败: %s", msg)
+
+    # ── UI 辅助 ──
+    def _set_loading(self, loading: bool):
+        self.progress_bar.setVisible(loading)
+        self.convert_btn.set_loading(loading)
+        if loading:
+            self.progress_label.setVisible(True)
+
+    def _on_pdf_file(self, path):
+        self._pdf_path = path
+        out_dir = os.path.dirname(path)
+        base = os.path.splitext(os.path.basename(path))[0]
+        self._set_out_path(os.path.join(out_dir, base + ".docx"))
+        self._update_convert_state()
+
+    def _on_pdf_cleared(self):
+        self._pdf_path = ""
+        self._set_out_path("output.docx")
+        self._update_convert_state()
+
+    def _on_tpl_file(self, path):
+        self._tpl_path = path
+        self._update_convert_state()
+
+    def _on_tpl_cleared(self):
+        self._tpl_path = ""
+        self._update_convert_state()
+
+    def _update_convert_state(self):
+        """依据是否已选 PDF（模板可选）启用/置灰「开始转换」与「打开文件夹」。"""
+        if self.convert_btn._loading:
+            return
+        has_pdf = bool(self._pdf_path)
+        if not has_pdf:
+            self.convert_btn.set_actionable(False, "请先选择 PDF 文档")
+        else:
+            self.convert_btn.set_actionable(True, "")
+        self._open_out_btn.set_actionable(has_pdf, "请先选择 PDF 文档")
+
+    def _on_browse_save(self):
+        start_dir = os.path.dirname(self._out_path) if self._out_path else ""
+        path, _ = QFileDialog.getSaveFileName(
+            self, "保存为", start_dir or "output.docx", "Word 文件 (*.docx)"
+        )
+        if path:
+            self._set_out_path(path)
+
+    def _set_out_path(self, path):
+        self._out_path = path
+        metrics = self.out_path_label.fontMetrics()
+        elided = metrics.elidedText(path, Qt.ElideMiddle, 200)
+        self.out_path_label.setText(elided)
+        self.out_path_label.setToolTip(path)
+
+    def _validate(self):
+        errors = []
+        if not self._pdf_path:
+            errors.append("请选择 PDF 文件")
+        if errors:
+            self._show_error("；".join(errors))
+            return False
+        return True
+
+    def _clear_error(self):
+        self.error_label.setText("")
+
+    def _show_error(self, msg):
+        self.error_label.setText(msg)
+
+    def _on_theme_changed(self):
+        self._restyle_all()
+
+    # ── QSettings 持久化（记住上次使用的模板路径） ──
+    def _load_settings(self):
+        # 加载期间不触发保存回写，避免半载状态覆盖已存值（见开发指南 Q2）。
+        tpl = read_str(self.settings, PdfWordKeys.TEMPLATE_PATH, "")
+        if tpl and os.path.exists(tpl):
+            self.tpl_drop_zone.blockSignals(True)
+            if self.tpl_drop_zone.set_file(tpl):
+                self._tpl_path = tpl
+            self.tpl_drop_zone.blockSignals(False)
+            self._update_convert_state()
+
+    def _save_settings(self):
+        self.settings.setValue(PdfWordKeys.TEMPLATE_PATH, self._tpl_path)
+
+    def _open_output_folder(self):
+        if not self._out_path:
+            return
+        folder_path = os.path.dirname(self._out_path)
+        open_folder(folder_path)
+
+    # ── 主题热切换重绘（复用 Theme 片段，禁止硬编码颜色） ──
+    def _restyle_all(self):
+        t = self.theme
+        pal = self.palette()
+        pal.setColor(QPalette.Window, t.window_solid_bg)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+        for card in self._module_cards:
+            card.setStyleSheet(t.qss_card())
+
+        label_s = f"font-size: 12px; color: {t.text_secondary}; margin-bottom: 2px;"
+        for lbl in self._field_labels:
+            lbl.setStyleSheet(label_s)
+        header_s = t.qss_section_header()
+        for lbl in self._section_labels:
+            lbl.setStyleSheet(header_s)
+        self._save_to_label.setStyleSheet(
+            f"color: {t.text_secondary}; font-size: 12px; background: transparent;"
+        )
+        self.out_path_label.setStyleSheet(
+            f"color: {t.text_secondary}; font-size: 12px; background: transparent;"
+        )
+        self.error_label.setStyleSheet(f"color: {t.error_color}; font-size: 12px;")
+        self.progress_label.setStyleSheet(f"color: {t.text_secondary}; font-size: 12px;")
+        self.progress_bar.setStyleSheet(t.qss_progress_bar())
+        self.convert_btn.set_theme(t)
+        self._open_out_btn.set_theme(t)
+        self._change_btn.set_theme(t)
+        self._scroll.setStyleSheet(t.qss_scrollbar())
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not hasattr(self, "_faded_in"):
+            self._faded_in = True
+            self.setWindowOpacity(0.0)
+            anim = QPropertyAnimation(self, b"windowOpacity")
+            anim.setDuration(250)
+            anim.setStartValue(0.0)
+            anim.setEndValue(1.0)
+            anim.setEasingCurve(QEasingCurve.OutCubic)
+            anim.start()
+
+    def stop_worker(self):
+        """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""
+        self._vm.cancel_current()

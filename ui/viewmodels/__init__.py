@@ -8,6 +8,7 @@ from .similarity_viewmodel import SimilarityViewModel
 from .slide_viewmodel import SlideViewModel
 from .json_exam_viewmodel import JsonExamViewModel
 from .pdf_slide_viewmodel import PdfSlideViewModel
+from .pdf_word_viewmodel import PdfWordViewModel
 
 __all__ = [
     "BaseViewModel",
@@ -15,4 +16,5 @@ __all__ = [
     "SlideViewModel",
     "JsonExamViewModel",
     "PdfSlideViewModel",
+    "PdfWordViewModel",
 ]

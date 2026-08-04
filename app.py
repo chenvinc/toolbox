@@ -31,6 +31,7 @@ from ui.views.slide_view import SlideView
 from ui.views.similarity_view import SimilarityView
 from ui.views.json_exam_view import JsonExamView
 from ui.views.pdf_slide_view import PdfSlideView
+from ui.views.pdf_word_view import PdfWordView
 from theme import Theme
 
 
@@ -47,7 +48,7 @@ class ToolboxApp(QMainWindow):
         # ── 依赖装配（DI / VM 构造已抽至 ui/composition.build_view_models） ──
         self._task_runner = QtTaskRunner()
         self._event_emitter = QtEventEmitter()
-        slide_vm, sim_vm, exam_vm, pdf_vm = build_view_models(
+        slide_vm, sim_vm, exam_vm, pdf_vm, word_vm = build_view_models(
             self._task_runner, self._event_emitter
         )
 
@@ -87,7 +88,7 @@ class ToolboxApp(QMainWindow):
         root.addWidget(self.sidebar)
         root.addWidget(self.stack, 1)
 
-        self._register_tools(slide_vm, sim_vm, exam_vm, pdf_vm)
+        self._register_tools(slide_vm, sim_vm, exam_vm, pdf_vm, word_vm)
         self.nav_list.setCurrentRow(0)
         self._restyle_all()
         QApplication.instance().styleHints().colorSchemeChanged.connect(
@@ -152,12 +153,13 @@ class ToolboxApp(QMainWindow):
             "QStackedWidget { background: transparent; border: none; border-radius: 12px; }"
         )
 
-    def _register_tools(self, slide_vm, sim_vm, exam_vm, pdf_vm):
+    def _register_tools(self, slide_vm, sim_vm, exam_vm, pdf_vm, word_vm):
         """注册工具箱中的所有视图（持有对应 ViewModel）。"""
         self._add_tool(SlideView(slide_vm))
         self._add_tool(SimilarityView(sim_vm))
         self._add_tool(JsonExamView(exam_vm))
         self._add_tool(PdfSlideView(pdf_vm))
+        self._add_tool(PdfWordView(word_vm))
 
     def _add_tool(self, tool):
         """将视图添加到导航栏和堆栈中。"""
