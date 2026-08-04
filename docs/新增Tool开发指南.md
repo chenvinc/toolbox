@@ -138,6 +138,9 @@ class DemoWriterAdapter:
         return DemoResult(output_path=request.output_path, item_count=0)
 ```
 
+> 📌 **实战要点：PDF 文本 → 流式文档（如 `Pdf2Word`）**
+> 若工具要把 PDF 文字还原成「可编辑段落」而非绝对定位文本框，**不能**逐视觉行建段落——中文段落会被版式换行切碎，且 CJK 无词间空格会导致英文跨行连写。应采用「块内合并 + 块间智能合并 + 接续规则」的段落重建算法，详见[架构书 §3.2.6](./architecture.md)。该算法验收用例见 `tests/unit/core/test_pdf_word_e2e.py`（中文多视觉行合并为单一段落、英文跨行补空格、粗体/红色/模板复用等）。
+
 ---
 
 ## 4. 服务（`core/services/demo_service.py`）
