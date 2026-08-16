@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Callable
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -25,7 +26,7 @@ from widgets import (
     DropZone, StepperInput, ErrorDialog,
 )
 from shared.contracts import (
-    ExamLineSpacingType, GenerateExamRequest,
+    ExamLineSpacingType, GenerateExamRequest, GenerateExamResult,
 )
 from shared.errors import DocumentReadError, OutputWriteError
 from core.services._exam_layout import WORD_FONT_SIZE_NAMES
@@ -65,8 +66,9 @@ class JsonExamView(BaseView):
     def get_description(self) -> str:
         return "将 JSON 题目数据转换为 Word 题本与解析文档，支持字体/字号/行距/首行缩进排版。"
 
-    def __init__(self, view_model: JsonExamViewModel):
+    def __init__(self, view_model: JsonExamViewModel) -> None:
         super().__init__()
+        self.toast: ToastNotification
         self._vm = view_model
         self._json_path = ""
         self._out_dir = ""
@@ -79,13 +81,13 @@ class JsonExamView(BaseView):
         self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
-    def _connect_view_model(self):
+    def _connect_view_model(self) -> None:
         self._vm.progress.connect(self._on_progress)
         self._vm.completed.connect(self._on_completed)
         self._vm.failed.connect(self._on_failed)
 
     # ── UI 构建 ──
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         t = self.theme
 
         root = QVBoxLayout(self)
@@ -94,8 +96,8 @@ class JsonExamView(BaseView):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll = scroll
 
         content = QWidget()
@@ -127,13 +129,13 @@ class JsonExamView(BaseView):
         self.font_name.setCurrentText("宋体/Times New Roman")
         self.font_name.setMinimumWidth(180)
         self.font_name.setFixedHeight(36)
-        self.font_name.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.font_name.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.font_size = QComboBox()
         self.font_size.addItems(FONT_SIZE_CHOICES)
         self.font_size.setCurrentText("五号")
         self.font_size.setMinimumWidth(100)
         self.font_size.setFixedHeight(36)
-        self.font_size.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.font_size.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         font_row.addWidget(self._make_labeled_field("字体", self.font_name))
         font_row.addWidget(self._make_labeled_field("字号", self.font_size))
         font_row.addStretch()
@@ -172,7 +174,7 @@ class JsonExamView(BaseView):
         self.first_line_indent = QCheckBox("启用首行缩进（2 字符）")
         self.first_line_indent.setChecked(True)
         self.first_line_indent.setFixedHeight(36)
-        spacing_row.addWidget(self.first_line_indent, alignment=Qt.AlignVCenter)
+        spacing_row.addWidget(self.first_line_indent, alignment=Qt.AlignmentFlag.AlignVCenter)
         spacing_row.addStretch()
         l2.addLayout(spacing_row)
         content_layout.addWidget(card2)
@@ -183,7 +185,7 @@ class JsonExamView(BaseView):
         save_row.setSpacing(self.theme.control_spacing)
         self._save_to_label = QLabel("保存到:")
         self.out_dir_label = QLabel("（默认：与输入 JSON 同目录）")
-        self.out_dir_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.out_dir_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._select_dir_btn = AppButton("选择目录", default_height=32, theme=self.theme, variant="secondary")
         self._select_dir_btn.setFixedWidth(96)
         self._select_dir_btn.clicked.connect(self._on_browse_dir)
@@ -223,7 +225,7 @@ class JsonExamView(BaseView):
 
         self.progress_label = QLabel("")
         self.progress_label.setVisible(False)
-        self.progress_label.setTextFormat(Qt.RichText)
+        self.progress_label.setTextFormat(Qt.TextFormat.RichText)
         self.progress_label.linkActivated.connect(self._open_output_folder)
         root.addWidget(self.progress_label)
 
@@ -232,7 +234,7 @@ class JsonExamView(BaseView):
         self._restyle_all()
 
     # ── 命令转发（单向数据流：UI → core） ──
-    def on_generate(self):
+    def on_generate(self) -> None:
         self._clear_error()
         self._save_settings()
         if not self._json_path:
@@ -253,13 +255,13 @@ class JsonExamView(BaseView):
         self._vm.generate(req)  # 后台执行，结果经 vm 信号回流
 
     # ── ViewModel 回调 ──
-    def _on_progress(self, message: str, current: int, total: int):
+    def _on_progress(self, message: str, current: int, total: int) -> None:
         self.progress_label.setText(message)
         if total > 0:
             self.progress_bar.setRange(0, total)
             self.progress_bar.setValueAnimated(current)
 
-    def _on_completed(self, result):
+    def _on_completed(self, result: GenerateExamResult) -> None:
         self._set_loading(False)
         self.progress_bar.setVisible(False)
         self.toast.show_message(
@@ -287,7 +289,7 @@ class JsonExamView(BaseView):
                 detail="\n".join(result.failed_images),
             )
 
-    def _on_failed(self, exc: object):
+    def _on_failed(self, exc: object) -> None:
         self._set_loading(False)
         self.progress_bar.setVisible(False)
         msg = str(exc)
@@ -313,7 +315,9 @@ class JsonExamView(BaseView):
         logger.error("试卷生成失败: %s", msg)
 
     # ── 全局错误弹窗（复用 widgets.ErrorDialog，样式与其他工具一致） ──
-    def _show_error_dialog(self, title, message, detail=None, extra_label=None, on_extra=None):
+    def _show_error_dialog(self, title: str, message: str, detail: str | None = None,
+                           extra_label: str | None = None,
+                           on_extra: Callable[[], None] | None = None) -> None:
         dlg = ErrorDialog(
             self, self.theme, title=title, message=message,
             detail=detail, extra_label=extra_label,
@@ -322,35 +326,35 @@ class JsonExamView(BaseView):
             dlg.extraClicked.connect(on_extra)
         dlg.exec()
 
-    def _reselect_and_retry(self):
+    def _reselect_and_retry(self) -> None:
         """权限错误弹窗中的「选择目录」：重新选目录后自动重试生成。"""
         self._on_browse_dir()
         if self._out_dir:
             self.on_generate()
 
     # ── UI 辅助 ──
-    def _set_loading(self, loading: bool):
+    def _set_loading(self, loading: bool) -> None:
         self.progress_bar.setVisible(loading)
         self.generate_btn.set_loading(loading)
         if loading:
             self.progress_label.setVisible(True)
 
-    def _on_json_file(self, path):
+    def _on_json_file(self, path: str) -> None:
         self._json_path = path
         self._update_generate_state()
 
-    def _on_json_cleared(self):
+    def _on_json_cleared(self) -> None:
         self._json_path = ""
         self._update_generate_state()
 
-    def _on_spacing_changed(self, text):
+    def _on_spacing_changed(self, text: str) -> None:
         """行间距下拉切换：仅当选中「自定义」时显示自定义数值输入框。
 
         交互逻辑与视觉样式与 SlideView 的「行间距」控件完全一致。
         """
         self.line_spacing_value_stepper.setVisible(text == "自定义")
 
-    def _on_browse_dir(self):
+    def _on_browse_dir(self) -> None:
         start_dir = self._out_dir or (os.path.dirname(self._json_path) if self._json_path else "")
         path = QFileDialog.getExistingDirectory(self, "选择输出目录", start_dir or "")
         if path:
@@ -358,7 +362,7 @@ class JsonExamView(BaseView):
             self.out_dir_label.setText(path)
             self._save_settings()
 
-    def _update_generate_state(self):
+    def _update_generate_state(self) -> None:
         """依据是否已选 JSON 文件，启用/置灰「开始生成」按钮。"""
         if self.generate_btn._loading:
             return
@@ -367,7 +371,7 @@ class JsonExamView(BaseView):
         else:
             self.generate_btn.set_actionable(True, "")
 
-    def _open_output_folder(self, link=None):
+    def _open_output_folder(self, link: object = None) -> None:
         folder = self._out_dir or (os.path.dirname(self._json_path) if self._json_path else "")
         if not folder:
             return
@@ -375,20 +379,20 @@ class JsonExamView(BaseView):
             folder = link[7:]
         open_folder(folder)
 
-    def _validate(self):
+    def _validate(self) -> bool:
         if not self._json_path:
             self._show_error("请先选择 JSON 题目文件")
             return False
         return True
 
-    def _clear_error(self):
+    def _clear_error(self) -> None:
         self.error_label.setText("")
 
-    def _show_error(self, msg):
+    def _show_error(self, msg: str) -> None:
         self.error_label.setText(msg)
 
     # ── QSettings 持久化 ──
-    def _load_settings(self):
+    def _load_settings(self) -> None:
         # 加载期间屏蔽 change 信号，避免部分字段尚未载入时触发 _save_settings
         # 把“半载状态”写回，覆盖已存值。
         self.font_name.blockSignals(True)
@@ -420,7 +424,7 @@ class JsonExamView(BaseView):
         if self._out_dir:
             self.out_dir_label.setText(self._out_dir)
 
-    def _save_settings(self):
+    def _save_settings(self) -> None:
         self.settings.setValue(JsonExamKeys.FONT_NAME, self.font_name.currentText())
         self.settings.setValue(JsonExamKeys.FONT_SIZE_NAME, self.font_size.currentText())
         self.settings.setValue(JsonExamKeys.LINE_SPACING_TYPE, self.line_spacing_type.currentText())
@@ -428,13 +432,13 @@ class JsonExamView(BaseView):
         self.settings.setValue(JsonExamKeys.FIRST_LINE_INDENT, self.first_line_indent.isChecked())
         self.settings.setValue(JsonExamKeys.OUTPUT_DIR, self._out_dir)
 
-    def _on_theme_changed(self):
+    def _on_theme_changed(self) -> None:
         self._restyle_all()
 
-    def _restyle_all(self):
+    def _restyle_all(self) -> None:
         t = self.theme
         pal = self.palette()
-        pal.setColor(QPalette.Window, t.window_solid_bg)
+        pal.setColor(QPalette.ColorRole.Window, t.window_solid_bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -488,6 +492,6 @@ class JsonExamView(BaseView):
         self._open_out_btn.set_theme(t)
         self._scroll.setStyleSheet(t.qss_scrollbar())
 
-    def stop_worker(self):
+    def stop_worker(self) -> None:
         """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""
         self._vm.cancel_current()

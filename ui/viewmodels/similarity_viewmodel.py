@@ -14,7 +14,8 @@ from core.ports.events import EventEmitter
 from core.ports.services import SimilarityService
 from core.ports.tasks import TaskRunner
 from shared.contracts import (
-    DomainEvent, EventType, SimilarityRequest,
+    CheckCompletedEvent, CheckStartedEvent, DomainEvent, EventType,
+    FailedEvent, ProgressEvent, SimilarityRequest,
 )
 from ui.infra.qt_task_runner import async_task
 from ui.viewmodels.base_viewmodel import BaseViewModel
@@ -53,14 +54,16 @@ class SimilarityViewModel(BaseViewModel):
 
     # ── 事件 → 信号桥接（单向数据流：core → UI） ──
     def _dispatch(self, event: DomainEvent) -> None:
-        etype = event.type
-        if etype == EventType.CHECK_STARTED:
+        # isinstance 窄化（而非按 event.type 比较）：让 mypy 能推出具体事件类，
+        # 避免对 DomainEvent Union 做属性访问报 union-attr。
+        # 各分支仅处理本 VM _WATCHED 的事件（_on_event 已过滤）。
+        if isinstance(event, CheckStartedEvent):
             self.started.emit(event.mode)
-        elif etype == EventType.CHECK_PROGRESS:
+        elif isinstance(event, ProgressEvent):  # CHECK_PROGRESS
             self.progress.emit(event.message, event.current, event.total)
-        elif etype == EventType.CHECK_COMPLETED:
+        elif isinstance(event, CheckCompletedEvent):
             self.completed.emit(event.result)
-        elif etype == EventType.CHECK_FAILED:
+        elif isinstance(event, FailedEvent):  # CHECK_FAILED
             self.failed.emit(event.message)
 
     # ── 命令转发（单向数据流：UI → core） ──

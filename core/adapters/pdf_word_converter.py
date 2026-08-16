@@ -180,7 +180,7 @@ def _set_run_format(
 
     同时写入 ``w:rFonts`` 的 ``eastAsia``，确保中文按 PDF 所用中文字体渲染。
     """
-    from docx.dml.color import RGBColor
+    from docx.shared import RGBColor  # docx.dml.color 不显式导出 RGBColor（mypy no_implicit_reexport）
     from docx.oxml.ns import qn
 
     name = clean_font(raw_font)

@@ -145,6 +145,21 @@ class EventContractTests(unittest.TestCase):
             "各 VM 的 _WATCHED 并集与 EventType 全集不一致",
         )
 
+    def test_multivalue_type_literal_has_no_default(self):
+        """P1a：``type`` 允许多个 EventType 的事件类（ProgressEvent / FailedEvent）
+        不得带默认值——否则漏传 ``type`` 会静默落到第一个枚举值（CHECK_PROGRESS /
+        CHECK_FAILED），被 ``_WATCHED`` 过滤后事件无声丢失（串台/丢事件）。
+        单值 Literal（如 ``PptxCompletedEvent.type``）允许默认，因其默认即唯一合法值。"""
+        for cls in _union_event_classes():
+            field = cls.model_fields["type"]
+            values = _flatten_literal(field.annotation)
+            if len(values) > 1:
+                self.assertTrue(
+                    field.is_required(),
+                    f"{cls.__name__}.type 允许多个 EventType（{values}）却带默认值 "
+                    f"{field.default!r}：漏传 type 会静默串台，应去掉默认值强制显式传入",
+                )
+
     def test_every_baseview_subclass_registered_in_app(self):
         """M-07：每个具体 ``BaseView`` 子类必须出现在 ``ToolboxApp._register_tools``，
         否则新增工具虽写了 View 却不会出现在导航中。"""

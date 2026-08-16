@@ -19,14 +19,15 @@ from PySide6.QtWidgets import (
     QTextBrowser, QApplication,
 )
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
-from PySide6.QtGui import QPalette, QDoubleValidator
+from PySide6.QtGui import QPalette, QDoubleValidator, QShowEvent
 
 from theme import _get_system_fonts
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, StepperInput
 from shared.contracts import (
-    ExtractQuestionsRequest, GeneratePptxRequest, LineSpacingType,
+    ExtractQuestionsRequest, ExtractQuestionsResult, GeneratePptxRequest,
+    GeneratePptxResult, LineSpacingType,
 )
-from core.adapters.pptx_writer import _resolve_line_spacing
+from core.services._path_guard import resolve_line_spacing
 from ui.infra.preview_escape import escape_preview_line, sanitize_font_name
 from ui.infra.open_folder import open_folder
 from ui.infra.settings_keys import SlideKeys
@@ -49,8 +50,9 @@ class SlideView(BaseView):
     def get_description(self) -> str:
         return "将 Word 题目文档转换为可直接使用的 PowerPoint 幻灯片。"
 
-    def __init__(self, view_model: SlideViewModel):
+    def __init__(self, view_model: SlideViewModel) -> None:
         super().__init__()
+        self.toast: ToastNotification
         self._vm = view_model
         self.setWindowTitle("Quiz2Slide")
         self.resize(700, 700)
@@ -70,7 +72,7 @@ class SlideView(BaseView):
         self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── QtSettings helper（避免与 typing 冲突） ──
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         t = self.theme
 
         root = QVBoxLayout(self)
@@ -79,8 +81,8 @@ class SlideView(BaseView):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll = scroll
 
         content = QWidget()
@@ -124,7 +126,7 @@ class SlideView(BaseView):
         self.font_name.setCurrentText(system_fonts[0] if system_fonts else "Arial")
         self.font_name.setMinimumWidth(160)
         self.font_name.setFixedHeight(36)
-        self.font_name.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.font_name.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.font_size = QSpinBox()
         self.font_size.setRange(9, 72)
         self.font_size.setValue(18)
@@ -167,7 +169,7 @@ class SlideView(BaseView):
         self.first_line_indent = QCheckBox("启用首行缩进")
         self.first_line_indent.setChecked(True)
         self.first_line_indent.setFixedHeight(36)
-        spacing_row.addWidget(self.first_line_indent, alignment=Qt.AlignVCenter)
+        spacing_row.addWidget(self.first_line_indent, alignment=Qt.AlignmentFlag.AlignVCenter)
         spacing_row.addStretch()
         l2.addLayout(spacing_row)
         content_layout.addWidget(card2)
@@ -189,7 +191,7 @@ class SlideView(BaseView):
         save_row = QHBoxLayout()
         save_row.setSpacing(self.theme.control_spacing)
         self.out_path_label = QLabel()
-        self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.out_path_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._save_to_label = QLabel("保存到:")
         self.change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
         self.change_btn.setFixedWidth(80)
@@ -235,7 +237,7 @@ class SlideView(BaseView):
 
         self.progress_label = QLabel("")
         self.progress_label.setVisible(False)
-        self.progress_label.setTextFormat(Qt.RichText)
+        self.progress_label.setTextFormat(Qt.TextFormat.RichText)
         self.progress_label.linkActivated.connect(self._open_output_folder)
         root.addWidget(self.progress_label)
 
@@ -244,7 +246,7 @@ class SlideView(BaseView):
         self._restyle_all()
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
-    def _connect_view_model(self):
+    def _connect_view_model(self) -> None:
         self._vm.extracted.connect(self._on_extracted)
         self._vm.extract_failed.connect(self._on_extract_failed)
         self._vm.pptx_progress.connect(self._on_pptx_progress)
@@ -252,7 +254,7 @@ class SlideView(BaseView):
         self._vm.pptx_failed.connect(self._on_pptx_failed)
 
     # ── 命令转发（单向数据流：UI → core） ──
-    def on_convert(self):
+    def on_convert(self) -> None:
         self._clear_error()
         self._save_settings()
         if not self._validate():
@@ -268,7 +270,7 @@ class SlideView(BaseView):
         self._vm.extract(req)  # 后台执行，结果经 vm.extracted 信号回流
 
     # ── ViewModel 回调 ──
-    def _on_extracted(self, result):
+    def _on_extracted(self, result: ExtractQuestionsResult) -> None:
         self._set_loading(False)
         self._extracted = result.questions
         if not self._extracted:
@@ -276,19 +278,19 @@ class SlideView(BaseView):
             return
         self._prompt_and_convert(self._extracted)
 
-    def _on_extract_failed(self, message: object):
+    def _on_extract_failed(self, message: object) -> None:
         self._set_loading(False)
         msg = message if isinstance(message, str) else str(message)
         self._show_error(f"题目识别失败：{msg}")
         logger.error("题目识别失败: %s", msg)
 
-    def _on_pptx_progress(self, message: str, current: int, total: int):
+    def _on_pptx_progress(self, message: str, current: int, total: int) -> None:
         self.progress_label.setText(message)
         if total > 0:
             self.progress_bar.setRange(0, total)
             self.progress_bar.setValueAnimated(current)
 
-    def _on_pptx_completed(self, result):
+    def _on_pptx_completed(self, result: GeneratePptxResult) -> None:
         self._set_loading(False)
         self._update_convert_state()
         self.progress_bar.setVisible(False)
@@ -301,7 +303,7 @@ class SlideView(BaseView):
         self.progress_label.setVisible(True)
         logger.info("转换完成: %s", self._out_path)
 
-    def _on_pptx_failed(self, message: object):
+    def _on_pptx_failed(self, message: object) -> None:
         self._set_loading(False)
         self.progress_bar.setVisible(False)
         msg = message if isinstance(message, str) else str(message)
@@ -309,7 +311,7 @@ class SlideView(BaseView):
         logger.error("转换失败: %s", msg)
 
     # ── 预览确认对话框（UI 交互，控制权在 UI 层） ──
-    def _prompt_and_convert(self, questions):
+    def _prompt_and_convert(self, questions: list[list[str]]) -> None:
         dlg = QDialog(self)
         dlg.setWindowTitle(f"识别结果 — 共 {len(questions)} 道题")
         dlg.setMinimumSize(620, 450)
@@ -317,7 +319,7 @@ class SlideView(BaseView):
 
         font_name = self.font_name.currentText()
         font_size = self.font_size.value()
-        line_height = _resolve_line_spacing(
+        line_height = resolve_line_spacing(
             self.line_spacing_type.currentText(), self.line_spacing_value_stepper.value()
         )
         indent_px = round(font_size * 1.333 * 2)
@@ -351,7 +353,7 @@ class SlideView(BaseView):
         preview.setHtml(html)
 
         btn_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, dlg
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, Qt.Orientation.Horizontal, dlg
         )
         btn_box.accepted.connect(dlg.accept)
         btn_box.rejected.connect(dlg.reject)
@@ -360,7 +362,7 @@ class SlideView(BaseView):
         dlg_layout.addWidget(preview)
         dlg_layout.addWidget(btn_box)
 
-        if dlg.exec() != QDialog.Accepted:
+        if dlg.exec() != QDialog.DialogCode.Accepted:
             return
 
         req = GeneratePptxRequest(
@@ -381,33 +383,33 @@ class SlideView(BaseView):
         self._vm.generate(req)  # 后台执行，结果经 vm.pptx_* 信号回流
 
     # ── UI 辅助 ──
-    def _set_loading(self, loading: bool):
+    def _set_loading(self, loading: bool) -> None:
         self.spinner.setVisible(loading)
         self.progress_bar.setVisible(loading)
         self.convert_btn.set_loading(loading)
         if loading:
             self.progress_label.setVisible(True)
 
-    def _on_word_file(self, path):
+    def _on_word_file(self, path: str) -> None:
         self._word_path = path
         out_dir = os.path.dirname(path)
         self._set_out_path(os.path.join(out_dir, "output.pptx"))
         self._update_convert_state()
 
-    def _on_ppt_file(self, path):
+    def _on_ppt_file(self, path: str) -> None:
         self._ppt_path = path
         self._update_convert_state()
 
-    def _on_word_cleared(self):
+    def _on_word_cleared(self) -> None:
         self._word_path = ""
         self._set_out_path("output.pptx")
         self._update_convert_state()
 
-    def _on_ppt_cleared(self):
+    def _on_ppt_cleared(self) -> None:
         self._ppt_path = ""
         self._update_convert_state()
 
-    def _update_convert_state(self):
+    def _update_convert_state(self) -> None:
         """依据是否已选 Word 文档与 PPT 模板，启用/置灰「开始转换」与「打开文件夹」。"""
         if self.convert_btn._loading:
             return
@@ -423,10 +425,10 @@ class SlideView(BaseView):
             self.convert_btn.set_actionable(True, "")
         self._open_out_btn.set_actionable(has_word, "请先选择 Word 文档")
 
-    def _on_spacing_changed(self, text):
+    def _on_spacing_changed(self, text: str) -> None:
         self.line_spacing_value_stepper.setVisible(text == "自定义")
 
-    def _on_browse_save(self):
+    def _on_browse_save(self) -> None:
         start_dir = os.path.dirname(self._out_path) if self._out_path else ""
         path, _ = QFileDialog.getSaveFileName(
             self, "保存为", start_dir or "output.pptx", "PPTX 文件 (*.pptx)"
@@ -434,14 +436,14 @@ class SlideView(BaseView):
         if path:
             self._set_out_path(path)
 
-    def _set_out_path(self, path):
+    def _set_out_path(self, path: str) -> None:
         self._out_path = path
         metrics = self.out_path_label.fontMetrics()
-        elided = metrics.elidedText(path, Qt.ElideMiddle, 200)
+        elided = metrics.elidedText(path, Qt.TextElideMode.ElideMiddle, 200)
         self.out_path_label.setText(elided)
         self.out_path_label.setToolTip(path)
 
-    def _validate(self):
+    def _validate(self) -> bool:
         errors = []
         if not self._word_path:
             errors.append("请选择 Word 文件")
@@ -454,21 +456,21 @@ class SlideView(BaseView):
             return False
         return True
 
-    def _clear_error(self):
+    def _clear_error(self) -> None:
         self.error_label.setText("")
 
-    def _show_error(self, msg):
+    def _show_error(self, msg: str) -> None:
         self.error_label.setText(msg)
 
-    def _center_on_screen(self):
+    def _center_on_screen(self) -> None:
         screen = QApplication.primaryScreen().availableGeometry()
         self.move((screen.width() - self.width()) // 2, (screen.height() - self.height()) // 2)
 
-    def _on_theme_changed(self):
+    def _on_theme_changed(self) -> None:
         self._restyle_all()
 
     # ── QSettings 持久化（阈值/格式/字体） ──
-    def _load_settings(self):
+    def _load_settings(self) -> None:
         # 加载期间屏蔽 change 信号，避免部分字段尚未载入时触发 _save_settings
         # 把“半载状态”写回，覆盖已存值。
         self.question_num_fmt.blockSignals(True)
@@ -481,21 +483,21 @@ class SlideView(BaseView):
         self.option_prefix.blockSignals(False)
         self.font_name.blockSignals(False)
 
-    def _save_settings(self):
+    def _save_settings(self) -> None:
         self.settings.setValue(SlideKeys.QUESTION_NUM_FMT, self.question_num_fmt.text())
         self.settings.setValue(SlideKeys.OPT_PREFIX, self.option_prefix.text())
         self.settings.setValue(SlideKeys.FONT_NAME, self.font_name.currentText())
 
-    def _open_output_folder(self):
+    def _open_output_folder(self) -> None:
         if not self._out_path:
             return
         folder_path = os.path.dirname(self._out_path)
         open_folder(folder_path)
 
-    def _restyle_all(self):
+    def _restyle_all(self) -> None:
         t = self.theme
         pal = self.palette()
-        pal.setColor(QPalette.Window, t.window_solid_bg)
+        pal.setColor(QPalette.ColorRole.Window, t.window_solid_bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -553,7 +555,7 @@ class SlideView(BaseView):
             dz._apply_style()
         self._scroll.setStyleSheet(t.qss_scrollbar())
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         if not hasattr(self, "_faded_in"):
             self._faded_in = True
@@ -562,9 +564,9 @@ class SlideView(BaseView):
             anim.setDuration(250)
             anim.setStartValue(0.0)
             anim.setEndValue(1.0)
-            anim.setEasingCurve(QEasingCurve.OutCubic)
+            anim.setEasingCurve(QEasingCurve.Type.OutCubic)
             anim.start()
 
-    def stop_worker(self):
+    def stop_worker(self) -> None:
         """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""
         self._vm.cancel_current()

@@ -25,6 +25,8 @@ def read_float(
     hi: Optional[float] = None,
 ) -> float:
     raw = settings.value(key, default)
+    if not isinstance(raw, (int, float, str)):
+        return default
     try:
         v = float(raw)  # float() 对 None / 非法字符串抛出 TypeError / ValueError
     except (TypeError, ValueError):

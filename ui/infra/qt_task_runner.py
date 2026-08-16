@@ -114,7 +114,9 @@ def async_task(method: Callable) -> Callable:
     ``super().__init__(task_runner=...)``，装饰器在调用时抛出 RuntimeError。
     """
     @functools.wraps(method)
-    def wrapper(self, *args, **kwargs):
+    # self 是任意 ViewModel 实例（@async_task 是通用装饰器），以 Any 标注避免
+    # 引入 viewmodels → infra 的反向依赖。
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> TaskHandle:
         # 不再用 getattr 静默回退：task_runner 必须由 BaseViewModel 构造注入。
         # 若子类忘记调用 super().__init__()，这里给出明确、可操作的报错。
         try:
@@ -126,15 +128,15 @@ def async_task(method: Callable) -> Callable:
                 f"Did you forget to call super().__init__(task_runner=...)?"
             ) from None
 
-        def _run():
+        def _run() -> Any:
             return method(self, *args, **kwargs)
 
-        def _err(exc: Exception):
+        def _err(exc: Exception) -> None:
             hook = getattr(self, "on_async_error", None)
             if callable(hook):
                 hook(exc)
 
-        handle = runner.submit(_run, on_error=_err)
+        handle: TaskHandle = runner.submit(_run, on_error=_err)
         # 记录最近一次任务句柄，供 stop_worker / 取消使用
         self._current_task = handle
         return handle

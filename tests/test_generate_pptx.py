@@ -24,8 +24,9 @@ sys.path.insert(0, str(ROOT))
 
 from core.adapters.docx_loader import DocxLoaderAdapter
 from core.adapters.pptx_writer import (
-    PptxWriterAdapter, _remove_first_slide, _resolve_line_spacing, _same_path,
+    PptxWriterAdapter, _remove_first_slide,
 )
+from core.services._path_guard import resolve_line_spacing, same_path
 from core.services.slide_builder import PptxServiceImpl
 from core.services._question_parser import parse_questions
 from shared.contracts import GeneratePptxRequest, LineSpacingType
@@ -164,13 +165,13 @@ class GeneratePptxP0Tests(unittest.TestCase):
 
     # ── 辅助函数 ──
     def test_same_path_helper(self):
-        self.assertTrue(_same_path("/a/b.pptx", "/a/b.pptx"))
-        self.assertFalse(_same_path("/a/b.pptx", "/a/c.pptx"))
+        self.assertTrue(same_path("/a/b.pptx", "/a/b.pptx"))
+        self.assertFalse(same_path("/a/b.pptx", "/a/c.pptx"))
 
     def test_resolve_line_spacing_helper(self):
-        self.assertEqual(_resolve_line_spacing("1 倍", 2.0), 1.0)
-        self.assertEqual(_resolve_line_spacing("1.5 倍", 2.0), 1.5)
-        self.assertEqual(_resolve_line_spacing("自定义", 2.0), 2.0)
+        self.assertEqual(resolve_line_spacing("1 倍", 2.0), 1.0)
+        self.assertEqual(resolve_line_spacing("1.5 倍", 2.0), 1.5)
+        self.assertEqual(resolve_line_spacing("自定义", 2.0), 2.0)
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ class BaseView(QWidget):
 
     # ── 公共 UI 构造器（R-9 上提，4 视图逐字相同） ──
 
-    def _make_module_card(self, title: str):
+    def _make_module_card(self, title: str) -> tuple[QFrame, QVBoxLayout]:
         """创建带加粗小标题的浅灰圆角模块卡片，返回 ``(卡片, 内容布局)``。
 
         卡片加入 ``_module_cards``、标题 ``QLabel`` 加入 ``_section_labels``，
@@ -78,7 +78,7 @@ class BaseView(QWidget):
         self._module_cards.append(card)
         return card, layout
 
-    def _make_labeled_field(self, label_text, widget):
+    def _make_labeled_field(self, label_text: str, widget: QWidget) -> QWidget:
         """透明 ``QWidget`` + 垂直布局 + 标签（入 ``_field_labels``）+ 控件，返回包裹件。
 
         标签供 ``_restyle_all`` 在主题切换时统一刷新字号/颜色。

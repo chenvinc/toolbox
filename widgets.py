@@ -1,5 +1,7 @@
 """自定义 UI 控件 — 动画按钮、进度条、Toast 通知和文件拖放区。"""
 
+from __future__ import annotations
+
 import os
 import re
 
@@ -12,6 +14,7 @@ from PySide6.QtCore import (
     Qt, Signal, QTimer, QEvent,
     QPropertyAnimation, QEasingCurve, QVariantAnimation, QPoint,
 )
+from PySide6.QtGui import QMouseEvent, QDragEnterEvent, QDragLeaveEvent, QDropEvent
 
 from theme import Theme
 
@@ -19,8 +22,8 @@ from theme import Theme
 class AppButton(QPushButton):
     """统一按钮样式：圆角矩形、可用/不可用、提示原因和主题驱动。"""
 
-    def __init__(self, text, default_height=44, theme=None, loading_text="转换中...",
-                 variant="primary"):
+    def __init__(self, text: str, default_height: int = 44, theme: Theme | None = None,
+                 loading_text: str = "转换中...", variant: str = "primary") -> None:
         """初始化按钮，设定默认高度、主题和默认交互状态。
 
         loading_text：进入加载态时显示的文案，默认“转换中...”（Word→PPT 场景）。
@@ -44,11 +47,11 @@ class AppButton(QPushButton):
         self._update_cursor()
         self.update_style()
 
-    def set_theme(self, theme):
+    def set_theme(self, theme: Theme) -> None:
         self._theme = theme
         self.update_style()
 
-    def set_actionable(self, actionable, reason=""):
+    def set_actionable(self, actionable: bool, reason: str = "") -> None:
         """设置按钮是否可操作，并在不可操作时给出提示原因。
 
         reason 会同步为 tooltip：Qt **不向 disabled 控件派发鼠标事件**，
@@ -62,7 +65,7 @@ class AppButton(QPushButton):
         else:
             self.setEnabled(actionable)  # 经 changeEvent 统一同步
 
-    def _sync_enabled_state(self):
+    def _sync_enabled_state(self) -> None:
         """把 Qt 原生 enabled 状态同步到内部视觉状态（光标 / 样式 / 禁用原因提示）。
 
         设计约定：``setEnabled(False)`` 只翻转可用态、**不改动** ``_disabled_reason``；
@@ -78,22 +81,22 @@ class AppButton(QPushButton):
         self._update_cursor()
         self.update_style()
 
-    def changeEvent(self, event):
+    def changeEvent(self, event: QEvent) -> None:
         """响应 Qt 原生 enabled 变化，保持视觉状态与 enabled 一致。
 
         取代此前对 ``setEnabled`` 的重写——那会把调用方的禁用原因静默清空，
         且违反 Qt API 契约（``setEnabled`` 非虚函数语义被改写）。改用本钩子
         被动同步后，任何调用方（含 Qt 内部、QWidget 级联禁用）都能正确生效。
         """
-        if event.type() == QEvent.EnabledChange and getattr(self, "_style_ready", False):
+        if event.type() == QEvent.Type.EnabledChange and getattr(self, "_style_ready", False):
             self._sync_enabled_state()
         super().changeEvent(event)
 
-    def _update_cursor(self):
-        self.setCursor(Qt.PointingHandCursor if self._can_click else Qt.ArrowCursor)
-        self.setFocusPolicy(Qt.StrongFocus if self._can_click else Qt.NoFocus)
+    def _update_cursor(self) -> None:
+        self.setCursor(Qt.CursorShape.PointingHandCursor if self._can_click else Qt.CursorShape.ArrowCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus if self._can_click else Qt.FocusPolicy.NoFocus)
 
-    def update_style(self):
+    def update_style(self) -> None:
         t = self._theme
         if self._can_click and not self._loading:
             if self._variant == "secondary":
@@ -123,7 +126,7 @@ class AppButton(QPushButton):
             f"QPushButton:pressed {{ background: {pressed}; }}"
         )
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if not self._can_click or self._loading:
             if self._disabled_reason:
                 QToolTip.showText(
@@ -135,7 +138,7 @@ class AppButton(QPushButton):
             return
         super().mousePressEvent(event)
 
-    def set_loading(self, loading, reason="正在处理中..."):
+    def set_loading(self, loading: bool, reason: str = "正在处理中...") -> None:
         # 幂等保护：仅在“非加载态 → 加载态”的首次跃迁时保存原始文案，
         # 避免重复 set_loading(True)（如 _on_check 与 _on_started 各调一次）
         # 把已切换为加载文案的文本误存为 _original_text，导致恢复时回不到初始文案。
@@ -153,8 +156,8 @@ class AppButton(QPushButton):
 class AnimatedButton(AppButton):
     """带有按压高度动画和加载状态的主操作按钮。"""
 
-    def __init__(self, text, default_height=50, theme=None, loading_text="转换中...",
-                 variant="primary"):
+    def __init__(self, text: str, default_height: int = 50, theme: Theme | None = None,
+                 loading_text: str = "转换中...", variant: str = "primary") -> None:
         """初始化按钮，设定默认高度和文本。
 
         loading_text 透传至 AppButton，决定加载态显示的文案。
@@ -163,34 +166,34 @@ class AnimatedButton(AppButton):
         super().__init__(text, default_height=default_height, theme=theme,
                          loading_text=loading_text, variant=variant)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if not self._can_click or self._loading:
             super().mousePressEvent(event)
             return
         super().mousePressEvent(event)
         self._animate_height(int(self._default_height * 0.92), 100)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if not self._loading:
             super().mouseReleaseEvent(event)
             self._animate_height(self._default_height, 200)
 
-    def _animate_height(self, target, duration):
+    def _animate_height(self, target: int, duration: int) -> None:
         """同时动画 minimumHeight 和 maximumHeight 实现高度变化。"""
         self._height_anim = QPropertyAnimation(self, b"minimumHeight")
         self._height_anim.setDuration(duration)
         self._height_anim.setStartValue(self.height())
         self._height_anim.setEndValue(target)
-        self._height_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._height_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._height_anim.start()
         self._height_anim2 = QPropertyAnimation(self, b"maximumHeight")
         self._height_anim2.setDuration(duration)
         self._height_anim2.setStartValue(self.height())
         self._height_anim2.setEndValue(target)
-        self._height_anim2.setEasingCurve(QEasingCurve.OutCubic)
+        self._height_anim2.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._height_anim2.start()
 
-    def set_loading(self, loading, reason="正在处理中..."):
+    def set_loading(self, loading: bool, reason: str = "正在处理中...") -> None:
         """切换按钮的加载状态。"""
         super().set_loading(loading, reason)
 
@@ -198,22 +201,22 @@ class AnimatedButton(AppButton):
 class AnimatedProgressBar(QProgressBar):
     """带有平滑过渡动画的进度条。"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """初始化进度条及其内部的值变化动画。"""
         super().__init__()
         self._anim = QVariantAnimation()
         self._anim.valueChanged.connect(self._on_anim_value)
 
-    def setValueAnimated(self, val):
+    def setValueAnimated(self, val: int) -> None:
         """以动画方式过渡到目标进度值。"""
         self._anim.stop()
         self._anim.setDuration(300)
         self._anim.setStartValue(self.value())
         self._anim.setEndValue(val)
-        self._anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.start()
 
-    def _on_anim_value(self, val):
+    def _on_anim_value(self, val: float) -> None:
         """动画值变化回调，将浮点值转为整数后设置到进度条。"""
         self.setValue(int(val))
 
@@ -232,8 +235,10 @@ class StepperInput(QWidget):
 
     valueChanged = Signal(float)
 
-    def __init__(self, spin=None, theme=None, minus_text="−", plus_text="+",
-                 min_val=None, max_val=None, step=1.0, decimals=1, default_value=0.0):
+    def __init__(self, spin: QDoubleSpinBox | QSpinBox | QLineEdit | None = None,
+                 theme: Theme | None = None, minus_text: str = "−", plus_text: str = "+",
+                 min_val: float | None = None, max_val: float | None = None,
+                 step: float = 1.0, decimals: int = 1, default_value: float = 0.0) -> None:
         super().__init__()
         self._theme = theme if theme is not None else Theme()
         self._min_val = min_val
@@ -245,7 +250,7 @@ class StepperInput(QWidget):
         if spin is None:
             spin = QDoubleSpinBox()
         self._spin = spin
-        self._spin.setFocusPolicy(Qt.StrongFocus)
+        self._spin.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         # SpinBox 模式下 ± 按钮走 stepUp/stepDown，只会触发内部控件的信号；
         # 若不桥接，外层 valueChanged 永不发射（键盘输入同理），监听方收不到任何回调。
         # 桥接后两种模式（SpinBox / QLineEdit）对外行为一致，调用方无需感知内部实现。
@@ -253,7 +258,9 @@ class StepperInput(QWidget):
             # 以 self 作为 context 连接：StepperInput 销毁时连接自动断开，
             # 规避 lambda 隐式持有 self 在半销毁态被信号触发的风险
             # （PySide6 的 lambda 连接不随 receiver 销毁自动断开）。
-            self._spin.valueChanged.connect(self._relay_value, self)
+            # PySide6 支持把 QObject 作为 context 传 connect（随接收者销毁自动断开）；
+            # mypy 桩只声明 ConnectionType，故忽略。
+            self._spin.valueChanged.connect(self._relay_value, self)  # type: ignore[arg-type]
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -263,7 +270,7 @@ class StepperInput(QWidget):
         self.plus_button = QPushButton(plus_text)
         for b in (self.minus_button, self.plus_button):
             b.setFixedSize(28, 36)
-            b.setCursor(Qt.PointingHandCursor)
+            b.setCursor(Qt.CursorShape.PointingHandCursor)
         self.minus_button.clicked.connect(self._step_down)
         self.plus_button.clicked.connect(self._step_up)
 
@@ -273,13 +280,13 @@ class StepperInput(QWidget):
 
         self.set_theme(self._theme)
 
-    def _relay_value(self, v):
+    def _relay_value(self, v: float) -> None:
         # QDoubleSpinBox 发射 float、QSpinBox 发射 int，统一转 float 对外，
         # 使 valueChanged 契约（Signal(float)）在两种模式下一致。
         self.valueChanged.emit(float(v))
 
     # ── 主题 ──
-    def set_theme(self, theme):
+    def set_theme(self, theme: Theme) -> None:
         """重新应用中间输入框与两侧按钮的全局规范样式（含隐藏原生箭头）。"""
         self._theme = theme
         self._spin.setStyleSheet(self._middle_style())
@@ -287,7 +294,7 @@ class StepperInput(QWidget):
         self.minus_button.setStyleSheet(btn)
         self.plus_button.setStyleSheet(btn)
 
-    def _middle_style(self):
+    def _middle_style(self) -> str:
         t = self._theme
         return (
             "QLineEdit, QDoubleSpinBox, QSpinBox {"
@@ -305,7 +312,7 @@ class StepperInput(QWidget):
             f" border: 1px solid {t.accent}; background: {t.card_bg}; }}"
         )
 
-    def _btn_style(self):
+    def _btn_style(self) -> str:
         t = self._theme
         return (
             f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_primary};"
@@ -317,7 +324,7 @@ class StepperInput(QWidget):
         )
 
     # ── 取值 ──
-    def value(self):
+    def value(self) -> float:
         """返回当前数值：SpinBox 直接透传，QLineEdit 解析文本并 clamp。"""
         if isinstance(self._spin, (QDoubleSpinBox, QSpinBox)):
             return self._spin.value()
@@ -332,13 +339,13 @@ class StepperInput(QWidget):
         return val
 
     # ── 步进 ──
-    def _step_up(self):
+    def _step_up(self) -> None:
         self._step(1)
 
-    def _step_down(self):
+    def _step_down(self) -> None:
         self._step(-1)
 
-    def _step(self, direction):
+    def _step(self, direction: int) -> None:
         if isinstance(self._spin, (QDoubleSpinBox, QSpinBox)):
             if direction > 0:
                 self._spin.stepUp()
@@ -363,12 +370,12 @@ class StepperInput(QWidget):
 class ToastNotification(QFrame):
     """从窗口顶部滑入的短暂提示消息框（设计为全局固定风格，不随主题变化）。"""
 
-    def __init__(self, parent, theme=None):
+    def __init__(self, parent: QWidget, theme: Theme | None = None) -> None:
         """初始化 Toast 组件，预设显示和隐藏的位移动画。"""
         super().__init__(parent)
         self._theme = theme
         self._label = QLabel()
-        self._label.setAlignment(Qt.AlignCenter)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._apply_label_style()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -376,14 +383,14 @@ class ToastNotification(QFrame):
         self._apply_frame_style(True)
         self._show_anim = QPropertyAnimation(self, b"pos")
         self._show_anim.setDuration(200)
-        self._show_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._show_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._hide_anim = QPropertyAnimation(self, b"pos")
         self._hide_anim.setDuration(200)
-        self._hide_anim.setEasingCurve(QEasingCurve.InCubic)
+        self._hide_anim.setEasingCurve(QEasingCurve.Type.InCubic)
         self._hide_anim.finished.connect(self.hide)
         self.hide()
 
-    def _apply_label_style(self):
+    def _apply_label_style(self) -> None:
         if self._theme:
             color = self._theme.toast_text
         else:
@@ -393,7 +400,7 @@ class ToastNotification(QFrame):
             "background: transparent;"
         )
 
-    def _apply_frame_style(self, success=True):
+    def _apply_frame_style(self, success: bool = True) -> None:
         if self._theme:
             bg = self._theme.danger if not success else self._theme.toast_bg
             radius = self._theme.radius
@@ -404,7 +411,7 @@ class ToastNotification(QFrame):
             f"QFrame {{ background: {bg}; border-radius: {radius}px; }}"
         )
 
-    def show_message(self, text, success=True, duration=3000):
+    def show_message(self, text: str, success: bool = True, duration: int = 3000) -> None:
         """显示一条 Toast 消息。
 
         消息从窗口顶部滑入，停留指定时间后自动滑出隐藏。
@@ -413,8 +420,12 @@ class ToastNotification(QFrame):
         self._label.setText(prefix + text)
         self._apply_frame_style(success)
         self.adjustSize()
-        self.setFixedWidth(min(self.width() + 20, self.parent().width() - 40))
-        x = (self.parent().width() - self.width()) // 2
+        parent = self.parentWidget()
+        if parent is not None:
+            self.setFixedWidth(min(self.width() + 20, parent.width() - 40))
+            x = (parent.width() - self.width()) // 2
+        else:
+            x = 0
         self.move(x, -self.height())
         self.show()
         self.raise_()
@@ -424,7 +435,7 @@ class ToastNotification(QFrame):
         self._show_anim.start()
         QTimer.singleShot(duration, self._start_hide)
 
-    def _start_hide(self):
+    def _start_hide(self) -> None:
         """启动隐藏动画，将 Toast 从窗口顶部滑出。"""
         x = self.x()
         self._hide_anim.stop()
@@ -444,8 +455,8 @@ class DropZone(QFrame):
     file_cleared = Signal()
     invalid_file = Signal(str)
 
-    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None,
-                 variant="secondary"):
+    def __init__(self, placeholder_text: str, file_filter: str = "", compact: bool = False,
+                 theme: Theme | None = None, variant: str = "secondary") -> None:
         """初始化单文件拖放区域。
 
         variant：视觉层级变体。
@@ -475,34 +486,34 @@ class DropZone(QFrame):
         layout.setSpacing(8)
 
         self._text_label = QLabel(placeholder_text)
-        self._text_label.setAlignment(Qt.AlignVCenter)
-        self._text_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self._text_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self._text_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout.addWidget(self._text_label, 1)
 
         self._del_btn = QPushButton("✕")
         self._del_btn.setFixedSize(20, 20)
-        self._del_btn.setCursor(Qt.PointingHandCursor)
+        self._del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._del_btn.clicked.connect(self.clear)
         self._del_btn.setVisible(False)
         layout.addWidget(self._del_btn)
 
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._apply_style()
 
     @staticmethod
-    def _parse_exts(file_filter):
+    def _parse_exts(file_filter: str) -> list[str]:
         """从 'Word 文档 (*.docx)' 形式解析出允许的后缀列表（小写）。"""
         if not file_filter:
             return []
         return [e.lower() for e in re.findall(r"\*\.(\w+)", file_filter)]
 
-    def _is_allowed(self, path):
+    def _is_allowed(self, path: str) -> bool:
         if not self._allowed_exts:
             return True
         low = path.lower()
         return any(low.endswith("." + e) for e in self._allowed_exts)
 
-    def _del_btn_style(self):
+    def _del_btn_style(self) -> str:
         t = self._theme
         return (
             f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_secondary}; "
@@ -510,7 +521,7 @@ class DropZone(QFrame):
             f"QPushButton:hover {{ color: white; background: {t.danger}; }}"
         )
 
-    def _apply_style(self):
+    def _apply_style(self) -> None:
         """根据当前主题与 variant 应用正常/拖拽样式，同时更新标签与删除按钮。"""
         t = self._theme
         if self._variant == "primary":
@@ -543,15 +554,15 @@ class DropZone(QFrame):
                 "background: transparent; border: none;"
             )
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """左键点击空白处打开文件选择对话框；点击删除按钮不触发。"""
         child = self.childAt(event.pos())
         if isinstance(child, QPushButton):
             return
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._open_dialog()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """拖拽进入时检查是否包含文件 URL，若是则接受并切换拖拽样式。"""
         if event.mimeData().hasUrls():
             event.accept()
@@ -559,11 +570,11 @@ class DropZone(QFrame):
         else:
             event.ignore()
 
-    def dragLeaveEvent(self, event):
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         """拖拽离开时恢复正常样式。"""
         self.setStyleSheet(self._normal_style)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """处理文件放下事件，取第一个文件路径并设置。"""
         self.setStyleSheet(self._normal_style)
         urls = event.mimeData().urls()
@@ -572,7 +583,7 @@ class DropZone(QFrame):
             if self.set_file(path):
                 self.file_selected.emit(path)
 
-    def set_file(self, path):
+    def set_file(self, path: str) -> bool:
         """校验通过后设置文件，更新标签/工具提示并暴露完整路径。返回是否成功。"""
         if not self._is_allowed(path):
             self.invalid_file.emit(path)
@@ -580,14 +591,14 @@ class DropZone(QFrame):
         self._file_path = path
         base = os.path.basename(path)
         fm = self._text_label.fontMetrics()
-        elided = fm.elidedText(base, Qt.ElideMiddle, 280)
+        elided = fm.elidedText(base, Qt.TextElideMode.ElideMiddle, 280)
         self._text_label.setText(elided)
         self._text_label.setToolTip(path)
         self._del_btn.setVisible(True)
         self._apply_style()
         return True
 
-    def clear(self):
+    def clear(self) -> None:
         """清空已选文件，恢复占位态，并广播 file_cleared。"""
         if not self._file_path:
             return
@@ -598,10 +609,10 @@ class DropZone(QFrame):
         self._apply_style()
         self.file_cleared.emit()
 
-    def get_path(self):
+    def get_path(self) -> str:
         return self._file_path
 
-    def _open_dialog(self):
+    def _open_dialog(self) -> None:
         """打开单文件选择对话框，选择后校验、设置并发射 file_selected。"""
         path, _ = QFileDialog.getOpenFileName(
             self, "选择文件", "", self._file_filter
@@ -625,8 +636,8 @@ class MultiDropZone(QFrame):
     files_selected = Signal(list)
     invalid_file = Signal(str)
 
-    def __init__(self, placeholder_text, file_filter="", compact=False, theme=None,
-                 variant="secondary"):
+    def __init__(self, placeholder_text: str, file_filter: str = "", compact: bool = False,
+                 theme: Theme | None = None, variant: str = "secondary") -> None:
         super().__init__()
         # 同 DropZone：theme 省略时回退全局单例，保证签名与实现一致。
         self._theme = theme if theme is not None else Theme()
@@ -635,7 +646,7 @@ class MultiDropZone(QFrame):
         self._file_filter = file_filter
         self._variant = variant
         self._placeholder = placeholder_text
-        self._paths = []
+        self._paths: list[str] = []
         self._allowed_exts = self._parse_exts(file_filter)
 
         layout = QVBoxLayout(self)
@@ -648,7 +659,7 @@ class MultiDropZone(QFrame):
         layout.setSpacing(8)
 
         self._placeholder_label = QLabel(placeholder_text)
-        self._placeholder_label.setAlignment(Qt.AlignCenter)
+        self._placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._placeholder_label)
 
         self._list_widget = QWidget()
@@ -662,25 +673,25 @@ class MultiDropZone(QFrame):
         )
         self._clear_btn.setFixedWidth(96)
         self._clear_btn.clicked.connect(self.clear_all)
-        layout.addWidget(self._clear_btn, alignment=Qt.AlignRight)
+        layout.addWidget(self._clear_btn, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._apply_style()
         self._refresh()
 
     @staticmethod
-    def _parse_exts(file_filter):
+    def _parse_exts(file_filter: str) -> list[str]:
         if not file_filter:
             return []
         return [e.lower() for e in re.findall(r"\*\.(\w+)", file_filter)]
 
-    def _is_allowed(self, path):
+    def _is_allowed(self, path: str) -> bool:
         if not self._allowed_exts:
             return True
         low = path.lower()
         return any(low.endswith("." + e) for e in self._allowed_exts)
 
-    def _apply_style(self):
+    def _apply_style(self) -> None:
         t = self._theme
         if self._variant == "primary":
             normal_border = f"2px dashed {t.accent}"
@@ -701,7 +712,7 @@ class MultiDropZone(QFrame):
             "background: transparent; border: none;"
         )
 
-    def _row_style(self):
+    def _row_style(self) -> str:
         t = self._theme
         return (
             f"QFrame {{ background: {t.secondary_bg}; "
@@ -710,7 +721,7 @@ class MultiDropZone(QFrame):
             f"font-size: 13px; background: transparent; border: none; }}"
         )
 
-    def _del_btn_style(self):
+    def _del_btn_style(self) -> str:
         t = self._theme
         return (
             f"QPushButton {{ background: {t.secondary_bg}; color: {t.text_secondary}; "
@@ -718,10 +729,12 @@ class MultiDropZone(QFrame):
             f"QPushButton:hover {{ color: white; background: {t.danger}; }}"
         )
 
-    def _refresh(self):
+    def _refresh(self) -> None:
         """重建文件列表行（含省略名 + 完整路径 tooltip + 单删按钮），并按有无文件切换占位/清空。"""
         while self._list_layout.count():
             item = self._list_layout.takeAt(0)
+            if item is None:
+                continue
             w = item.widget()
             if w is not None:
                 w.setParent(None)
@@ -744,36 +757,36 @@ class MultiDropZone(QFrame):
             rl.setSpacing(8)
             base = os.path.basename(path)
             fm = row.fontMetrics()
-            elided = fm.elidedText(base, Qt.ElideMiddle, 240)
+            elided = fm.elidedText(base, Qt.TextElideMode.ElideMiddle, 240)
             name = QLabel(elided)
             name.setToolTip(path)
-            name.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+            name.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
             rl.addWidget(name, 1)
             del_btn = QPushButton("✕")
             del_btn.setFixedSize(20, 20)
-            del_btn.setCursor(Qt.PointingHandCursor)
+            del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             del_btn.setStyleSheet(del_style)
             del_btn.clicked.connect(lambda _=False, p=path: self._remove_path(p))
             rl.addWidget(del_btn)
             self._list_layout.addWidget(row)
 
-    def _remove_path(self, path):
+    def _remove_path(self, path: str) -> None:
         if path in self._paths:
             self._paths.remove(path)
             self._refresh()
             self.files_selected.emit(list(self._paths))
 
-    def clear_all(self):
+    def clear_all(self) -> None:
         if not self._paths:
             return
         self._paths = []
         self._refresh()
         self.files_selected.emit([])
 
-    def get_paths(self):
+    def get_paths(self) -> list[str]:
         return list(self._paths)
 
-    def _add_files(self, paths):
+    def _add_files(self, paths: list[str]) -> None:
         changed = False
         for p in paths:
             if not self._is_allowed(p):
@@ -785,32 +798,32 @@ class MultiDropZone(QFrame):
             self._refresh()
             self.files_selected.emit(list(self._paths))
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """点击空白处（非按钮）打开文件选择对话框，便于继续追加文件。"""
         child = self.childAt(event.pos())
         if isinstance(child, QPushButton):
             return
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self._open_dialog()
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
             event.accept()
             self.setStyleSheet(self._drag_style)
         else:
             event.ignore()
 
-    def dragLeaveEvent(self, event):
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
         self.setStyleSheet(self._normal_style)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         self.setStyleSheet(self._normal_style)
         urls = event.mimeData().urls()
         if urls:
             paths = [url.toLocalFile() for url in urls]
             self._add_files(paths)
 
-    def _open_dialog(self):
+    def _open_dialog(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(
             self, "选择文件", "", self._file_filter,
         )
@@ -831,8 +844,9 @@ class ErrorDialog(QDialog):
 
     extraClicked = Signal()
 
-    def __init__(self, parent, theme, *, title, message, detail=None,
-                 confirm_label="知道了", extra_label=None):
+    def __init__(self, parent: QWidget, theme: Theme, *, title: str, message: str,
+                 detail: str | None = None, confirm_label: str = "知道了",
+                 extra_label: str | None = None) -> None:
         """初始化错误弹窗。
 
         Args:
@@ -875,7 +889,7 @@ class ErrorDialog(QDialog):
         # 主要说明
         msg_label = QLabel(message)
         msg_label.setWordWrap(True)
-        msg_label.setTextFormat(Qt.PlainText)
+        msg_label.setTextFormat(Qt.TextFormat.PlainText)
         msg_label.setStyleSheet(
             f"color: {theme.text_primary}; font-size: 13px; background: transparent;"
         )
@@ -910,6 +924,6 @@ class ErrorDialog(QDialog):
         btn_row.addWidget(self._confirm_btn)
         root.addLayout(btn_row)
 
-    def _on_extra(self):
+    def _on_extra(self) -> None:
         self.extraClicked.emit()
         self.accept()

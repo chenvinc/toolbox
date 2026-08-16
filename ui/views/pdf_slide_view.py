@@ -18,10 +18,10 @@ from PySide6.QtWidgets import (
     QSizePolicy, QFrame, QScrollArea, QApplication,
 )
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSettings
-from PySide6.QtGui import QPalette
+from PySide6.QtGui import QPalette, QShowEvent
 
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone
-from shared.contracts import ConvertPdfRequest
+from shared.contracts import ConvertPdfRequest, ConvertPdfResult
 from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
 from ui.views.base_view import BaseView
 from ui.infra.open_folder import open_folder
@@ -43,8 +43,9 @@ class PdfSlideView(BaseView):
     def get_description(self) -> str:
         return "将 PDF 逐页转换为保留可编辑文字的 PowerPoint 幻灯片（套用模板母版背景）。"
 
-    def __init__(self, view_model: PdfSlideViewModel):
+    def __init__(self, view_model: PdfSlideViewModel) -> None:
         super().__init__()
+        self.toast: ToastNotification
         self._vm = view_model
         self.setWindowTitle("Pdf2Slide")
 
@@ -60,7 +61,7 @@ class PdfSlideView(BaseView):
         self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── UI 构建 ──
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         t = self.theme
 
         root = QVBoxLayout(self)
@@ -69,8 +70,8 @@ class PdfSlideView(BaseView):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll = scroll
 
         content = QFrame()
@@ -123,7 +124,7 @@ class PdfSlideView(BaseView):
         save_row = QHBoxLayout()
         save_row.setSpacing(self.theme.control_spacing)
         self.out_path_label = QLabel()
-        self.out_path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.out_path_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._save_to_label = QLabel("保存到:")
         change_btn = AppButton("更改", default_height=32, theme=self.theme, variant="secondary")
         change_btn.setFixedWidth(80)
@@ -165,7 +166,7 @@ class PdfSlideView(BaseView):
 
         self.progress_label = QLabel("")
         self.progress_label.setVisible(False)
-        self.progress_label.setTextFormat(Qt.RichText)
+        self.progress_label.setTextFormat(Qt.TextFormat.RichText)
         self.progress_label.linkActivated.connect(self._open_output_folder)
         root.addWidget(self.progress_label)
 
@@ -174,13 +175,13 @@ class PdfSlideView(BaseView):
         self._restyle_all()
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
-    def _connect_view_model(self):
+    def _connect_view_model(self) -> None:
         self._vm.progress.connect(self._on_progress)
         self._vm.completed.connect(self._on_completed)
         self._vm.failed.connect(self._on_failed)
 
     # ── 命令转发（单向数据流：UI → core） ──
-    def on_convert(self):
+    def on_convert(self) -> None:
         self._clear_error()
         self._save_settings()
         if not self._validate():
@@ -197,13 +198,13 @@ class PdfSlideView(BaseView):
         self._vm.convert(req)  # 后台执行，结果经 vm 信号回流
 
     # ── ViewModel 回调 ──
-    def _on_progress(self, message: str, current: int, total: int):
+    def _on_progress(self, message: str, current: int, total: int) -> None:
         self.progress_label.setText(message)
         if total > 0:
             self.progress_bar.setRange(0, total)
             self.progress_bar.setValueAnimated(current)
 
-    def _on_completed(self, result):
+    def _on_completed(self, result: ConvertPdfResult) -> None:
         self._set_loading(False)
         self._update_convert_state()
         self.progress_bar.setVisible(False)
@@ -224,7 +225,7 @@ class PdfSlideView(BaseView):
         self.progress_label.setVisible(True)
         logger.info("PDF 转换完成: %s", self._out_path)
 
-    def _on_failed(self, message: object):
+    def _on_failed(self, message: object) -> None:
         self._set_loading(False)
         self.progress_bar.setVisible(False)
         self.progress_label.setVisible(False)
@@ -233,33 +234,33 @@ class PdfSlideView(BaseView):
         logger.error("PDF 转换失败: %s", msg)
 
     # ── UI 辅助 ──
-    def _set_loading(self, loading: bool):
+    def _set_loading(self, loading: bool) -> None:
         self.progress_bar.setVisible(loading)
         self.convert_btn.set_loading(loading)
         if loading:
             self.progress_label.setVisible(True)
 
-    def _on_pdf_file(self, path):
+    def _on_pdf_file(self, path: str) -> None:
         self._pdf_path = path
         out_dir = os.path.dirname(path)
         base = os.path.splitext(os.path.basename(path))[0]
         self._set_out_path(os.path.join(out_dir, base + ".pptx"))
         self._update_convert_state()
 
-    def _on_pdf_cleared(self):
+    def _on_pdf_cleared(self) -> None:
         self._pdf_path = ""
         self._set_out_path("output.pptx")
         self._update_convert_state()
 
-    def _on_tpl_file(self, path):
+    def _on_tpl_file(self, path: str) -> None:
         self._tpl_path = path
         self._update_convert_state()
 
-    def _on_tpl_cleared(self):
+    def _on_tpl_cleared(self) -> None:
         self._tpl_path = ""
         self._update_convert_state()
 
-    def _update_convert_state(self):
+    def _update_convert_state(self) -> None:
         """依据是否已选 PDF 与 PPT 模板，启用/置灰「开始转换」与「打开文件夹」。"""
         if self.convert_btn._loading:
             return
@@ -275,7 +276,7 @@ class PdfSlideView(BaseView):
             self.convert_btn.set_actionable(True, "")
         self._open_out_btn.set_actionable(has_pdf, "请先选择 PDF 文档")
 
-    def _on_browse_save(self):
+    def _on_browse_save(self) -> None:
         start_dir = os.path.dirname(self._out_path) if self._out_path else ""
         path, _ = QFileDialog.getSaveFileName(
             self, "保存为", start_dir or "output.pptx", "PPTX 文件 (*.pptx)"
@@ -283,14 +284,14 @@ class PdfSlideView(BaseView):
         if path:
             self._set_out_path(path)
 
-    def _set_out_path(self, path):
+    def _set_out_path(self, path: str) -> None:
         self._out_path = path
         metrics = self.out_path_label.fontMetrics()
-        elided = metrics.elidedText(path, Qt.ElideMiddle, 200)
+        elided = metrics.elidedText(path, Qt.TextElideMode.ElideMiddle, 200)
         self.out_path_label.setText(elided)
         self.out_path_label.setToolTip(path)
 
-    def _validate(self):
+    def _validate(self) -> bool:
         errors = []
         if not self._pdf_path:
             errors.append("请选择 PDF 文件")
@@ -301,17 +302,17 @@ class PdfSlideView(BaseView):
             return False
         return True
 
-    def _clear_error(self):
+    def _clear_error(self) -> None:
         self.error_label.setText("")
 
-    def _show_error(self, msg):
+    def _show_error(self, msg: str) -> None:
         self.error_label.setText(msg)
 
-    def _on_theme_changed(self):
+    def _on_theme_changed(self) -> None:
         self._restyle_all()
 
     # ── QSettings 持久化（记住上次使用的模板路径） ──
-    def _load_settings(self):
+    def _load_settings(self) -> None:
         # 加载期间不触发保存回写，避免半载状态覆盖已存值（见开发指南 Q2）。
         tpl = read_str(self.settings, PdfSlideKeys.TEMPLATE_PATH, "")
         if tpl and os.path.exists(tpl):
@@ -321,20 +322,20 @@ class PdfSlideView(BaseView):
             self.ppt_drop_zone.blockSignals(False)
             self._update_convert_state()
 
-    def _save_settings(self):
+    def _save_settings(self) -> None:
         self.settings.setValue(PdfSlideKeys.TEMPLATE_PATH, self._tpl_path)
 
-    def _open_output_folder(self):
+    def _open_output_folder(self) -> None:
         if not self._out_path:
             return
         folder_path = os.path.dirname(self._out_path)
         open_folder(folder_path)
 
     # ── 主题热切换重绘（复用 Theme 片段，禁止硬编码颜色） ──
-    def _restyle_all(self):
+    def _restyle_all(self) -> None:
         t = self.theme
         pal = self.palette()
-        pal.setColor(QPalette.Window, t.window_solid_bg)
+        pal.setColor(QPalette.ColorRole.Window, t.window_solid_bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -361,7 +362,7 @@ class PdfSlideView(BaseView):
         self._change_btn.set_theme(t)
         self._scroll.setStyleSheet(t.qss_scrollbar())
 
-    def showEvent(self, event):
+    def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         if not hasattr(self, "_faded_in"):
             self._faded_in = True
@@ -370,9 +371,9 @@ class PdfSlideView(BaseView):
             anim.setDuration(250)
             anim.setStartValue(0.0)
             anim.setEndValue(1.0)
-            anim.setEasingCurve(QEasingCurve.OutCubic)
+            anim.setEasingCurve(QEasingCurve.Type.OutCubic)
             anim.start()
 
-    def stop_worker(self):
+    def stop_worker(self) -> None:
         """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""
         self._vm.cancel_current()

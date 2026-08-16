@@ -23,7 +23,9 @@ class QtEventEmitter(QObject):
 
     _signal = Signal(object)
 
-    def emit(self, event: DomainEvent) -> None:
+    def emit(self, event: DomainEvent) -> None:  # type: ignore[override]
+        # QObject.emit 是 PySide6 的旧式特殊方法；此处是 EventEmitter 端口方法，
+        # mypy 桩签名不兼容，加 ignore（运行时行为不受影响）。
         self._signal.emit(event)
 
     def on_event(self, handler: Callable[[DomainEvent], None]) -> None:

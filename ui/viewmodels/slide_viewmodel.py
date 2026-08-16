@@ -15,8 +15,9 @@ from core.ports.services import ExtractionService, PptxService
 from core.ports.tasks import TaskRunner
 from shared.contracts import (
     DomainEvent, EventType,
-    ExtractQuestionsRequest, GeneratePptxRequest,
-    ExtractQuestionsResult, GeneratePptxResult,
+    ExtractCompletedEvent, ExtractQuestionsRequest, ExtractQuestionsResult,
+    FailedEvent, GeneratePptxRequest, GeneratePptxResult,
+    PptxCompletedEvent, ProgressEvent,
 )
 from ui.infra.qt_task_runner import async_task
 from ui.viewmodels.base_viewmodel import BaseViewModel
@@ -62,17 +63,19 @@ class SlideViewModel(BaseViewModel):
 
     # ── 事件 → 信号桥接（单向数据流：core → UI） ──
     def _dispatch(self, event: DomainEvent) -> None:
-        etype = event.type
-        if etype == EventType.EXTRACT_COMPLETED:
+        # isinstance 窄化（而非按 event.type 比较）：让 mypy 能推出具体事件类，
+        # 避免对 DomainEvent Union 做属性访问报 union-attr。
+        if isinstance(event, ExtractCompletedEvent):
             self.extracted.emit(event.result)
-        elif etype == EventType.PPTX_PROGRESS:
-            self.pptx_progress.emit(event.message, event.current, event.total)
-        elif etype == EventType.PPTX_COMPLETED:
+        elif isinstance(event, PptxCompletedEvent):
             self.pptx_completed.emit(event.result)
-        elif etype == EventType.EXTRACT_FAILED:
-            self.extract_failed.emit(event.message)
-        elif etype == EventType.PPTX_FAILED:
-            self.pptx_failed.emit(event.message)
+        elif isinstance(event, ProgressEvent):  # PPTX_PROGRESS
+            self.pptx_progress.emit(event.message, event.current, event.total)
+        elif isinstance(event, FailedEvent):  # EXTRACT_FAILED / PPTX_FAILED
+            if event.type == EventType.EXTRACT_FAILED:
+                self.extract_failed.emit(event.message)
+            else:
+                self.pptx_failed.emit(event.message)
 
     # ── 命令转发（单向数据流：UI → core） ──
     @async_task

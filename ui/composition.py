@@ -26,7 +26,10 @@ def build_container(
 
 def build_view_models(
     task_runner: QtTaskRunner, event_emitter: QtEventEmitter
-):
+) -> tuple[
+    SlideViewModel, SimilarityViewModel, JsonExamViewModel,
+    PdfSlideViewModel, PdfWordViewModel,
+]:
     """构造五个 ViewModel（持有 service + task_runner + event_emitter）。
 
     新增工具时，在此追加一行 VM 构造并并入返回元组即可。

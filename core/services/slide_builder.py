@@ -20,7 +20,7 @@ from shared.errors import OutputOverwriteError
 from core.ports.events import EventEmitter
 from core.ports.io import DocumentLoader, PptxWriter
 from core.services._question_parser import parse_questions
-from core.adapters.pptx_writer import _resolve_line_spacing, _same_path
+from core.services._path_guard import resolve_line_spacing, same_path
 
 if TYPE_CHECKING:
     pass
@@ -51,7 +51,7 @@ class PptxServiceImpl:
 
     def generate(self, request: GeneratePptxRequest) -> GeneratePptxResult:
         logger.info("开始生成 PPTX：%s → %s", request.template_path, request.output_path)
-        if _same_path(request.template_path, request.output_path):
+        if same_path(request.template_path, request.output_path):
             raise OutputOverwriteError(
                 f"输出路径不能与模板路径相同，否则会覆盖并损坏模板文件：{request.output_path}"
             )
@@ -66,7 +66,7 @@ class PptxServiceImpl:
             )
         )
 
-        line_spacing = _resolve_line_spacing(
+        line_spacing = resolve_line_spacing(
             request.line_spacing_type.value, request.line_spacing_value
         )
 

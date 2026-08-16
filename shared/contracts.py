@@ -278,12 +278,17 @@ class _BaseEvent(BaseModel):
 
 
 class ProgressEvent(_BaseEvent):
-    """通用进度事件（查重/提取/PPT生成/试卷生成复用）。"""
+    """通用进度事件（查重/提取/PPT生成/试卷生成复用）。
+
+    ``type`` 为**必填**（无默认值）：本字段允许 5 个取值，若带默认值，
+    漏传 ``type`` 会静默落到 ``CHECK_PROGRESS``，被 ViewModel 的 ``_WATCHED``
+    过滤后事件无声丢失（串台/丢事件，见 tests/test_event_contract.py）。
+    """
     type: Literal[
         EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS,
         EventType.EXAM_PROGRESS, EventType.PDF_PROGRESS,
         EventType.WORD_PROGRESS,
-    ] = EventType.CHECK_PROGRESS
+    ]
     message: str = ""
     current: int = 0
     total: int = 0
@@ -305,9 +310,10 @@ class ExtractCompletedEvent(_BaseEvent):
 
 
 class FailedEvent(_BaseEvent):
+    """查重/提取/PPT 生成失败事件（与 ProgressEvent 同理，type 必填无默认）。"""
     type: Literal[
         EventType.CHECK_FAILED, EventType.EXTRACT_FAILED, EventType.PPTX_FAILED
-    ] = EventType.CHECK_FAILED
+    ]
     message: str
 
 

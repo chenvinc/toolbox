@@ -86,11 +86,13 @@ DomainEvent = Annotated[
 
 ```python
 class ProgressEvent(_BaseEvent):
+    # ⚠️ 多值 Literal 严禁带默认值（漏传 type 会静默落到 CHECK_PROGRESS，
+    # 被 _WATCHED 过滤后事件无声丢失；tests/test_event_contract.py 已强制）。
     type: Literal[
         EventType.CHECK_PROGRESS, EventType.PPTX_PROGRESS,
         EventType.EXAM_PROGRESS, EventType.PDF_PROGRESS,
         EventType.DEMO_PROGRESS,
-    ] = EventType.CHECK_PROGRESS
+    ]
 ```
 
 > 若需 UI 按异常类型分流，在 `shared/errors.py` 新增继承 `ToolboxError` 的异常（如 `DemoReadError`）。
@@ -177,7 +179,7 @@ class DemoServiceImpl:
 ```
 
 > 失败以业务异常形式抛出（由 VM 的 `on_async_error` 桥接为失败信号），不要在服务里吞异常或重复发失败事件。
-> 路径保护类服务请校验「输出 ≠ 模板/源」，抛 `OutputOverwriteError`。
+> 路径保护类服务请校验「输出 ≠ 模板/源」，抛 `OutputOverwriteError`；校验函数统一取 `core/services/_path_guard.py` 的 `same_path`（勿再 import 适配器私有符号）。
 
 ### 4.1 补齐导出
 `core/services/__init__.py` **务必补导出**（现存两个服务已遗漏，别再漏）：

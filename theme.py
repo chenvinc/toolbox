@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QObject, Signal
-from PySide6.QtGui import QColor, QFontDatabase
+from PySide6.QtGui import QColor, QFontDatabase, QGuiApplication
 
 # 与 theme.qss 保持一致的兜底模板（当主题文件缺失时使用，确保不崩溃）
 _EMBEDDED_QSS = """\
@@ -42,7 +42,7 @@ def get_theme() -> "Theme":
     return Theme()
 
 
-def _get_system_fonts():
+def _get_system_fonts() -> list[str]:
     """获取系统可用字体列表，优先返回平台相关的推荐字体。
 
     根据操作系统（macOS/其他）预定义一组优先字体，
@@ -72,7 +72,7 @@ class Theme(QObject):
 
     theme_changed = Signal()
 
-    def __new__(cls):
+    def __new__(cls) -> "Theme":
         global _INSTANCE
         if _INSTANCE is None:
             _INSTANCE = super().__new__(cls)
@@ -88,7 +88,7 @@ class Theme(QObject):
         self.refresh()
         self._set_tokens()
 
-    def _set_tokens(self):
+    def _set_tokens(self) -> None:
         """跨深浅色统一的几何与排版令牌，作为设计规范的单一来源。
 
         这些值与主题无关（浅色/深色共用），初始化时设定一次，后续
@@ -106,19 +106,19 @@ class Theme(QObject):
         self.font_body = 12
         self.font_hint = 12
 
-    def refresh(self):
+    def refresh(self) -> None:
         """检测系统当前配色方案（深色/浅色）并更新主题颜色。
 
         更新后通过 `theme_changed` 广播，供订阅者统一重绘（集中刷新）。
         """
         app = QApplication.instance()
-        if app:
+        if isinstance(app, QGuiApplication):
             scheme = app.styleHints().colorScheme()
             self._is_dark = (scheme == Qt.ColorScheme.Dark)
         self._set_colors()
         self.theme_changed.emit()
 
-    def _set_colors(self):
+    def _set_colors(self) -> None:
         """根据 _is_dark 标志设置深色或浅色模式下的全部颜色属性。
 
         色彩严格遵循全局 UI 双模式规范（同一套设计令牌，浅/深一一对应）：

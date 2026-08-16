@@ -12,7 +12,7 @@ import os
 
 from docx import Document
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QDoubleSpinBox,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QDoubleSpinBox, QLayout,
     QLineEdit, QFrame, QTextBrowser, QButtonGroup, QRadioButton,
     QFileDialog, QApplication, QPushButton, QSizePolicy, QScrollArea,
 )
@@ -21,7 +21,8 @@ from PySide6.QtGui import QPalette
 
 from widgets import AppButton, AnimatedButton, AnimatedProgressBar, ToastNotification, DropZone, MultiDropZone, StepperInput
 from shared.contracts import (
-    SimilarityMode, SimilarityRequest, OneToManyResult, ManyToManyResult,
+    ManyToManyResult, OneToManyResult, SimilarityMode, SimilarityRequest,
+    SimilarityResult,
 )
 from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
 from ui.views.base_view import BaseView
@@ -44,14 +45,14 @@ class SimilarityView(BaseView):
     def get_description(self) -> str:
         return "检测主文档与多个副文档之间的题目重复率，支持精确/模糊匹配，导出查重报告。"
 
-    def __init__(self, view_model: SimilarityViewModel):
+    def __init__(self, view_model: SimilarityViewModel) -> None:
         super().__init__()
         self._vm = view_model
         self._main_path = ""
         self._secondary_paths: list = []
         self._all_paths: list = []
         self._mode = SimilarityMode.ONE_TO_MANY
-        self._last_result = None
+        self._last_result: SimilarityResult | None = None
 
         self.settings = QSettings("SimilarityChecker", "SimilarityChecker")
 
@@ -61,14 +62,14 @@ class SimilarityView(BaseView):
         self.theme.theme_changed.connect(self._on_theme_changed)
 
     # ── ViewModel 信号绑定（单向数据流：core → UI） ──
-    def _connect_view_model(self):
+    def _connect_view_model(self) -> None:
         self._vm.started.connect(self._on_started)
         self._vm.progress.connect(self._on_progress)
         self._vm.completed.connect(self._on_completed)
         self._vm.failed.connect(self._on_failed)
 
     # ── 命令转发（单向数据流：UI → core） ──
-    def _on_check(self):
+    def _on_check(self) -> None:
         self._log_browser.clear()
         self._show_result_placeholder()
         self._check_btn.set_loading(True)
@@ -105,7 +106,9 @@ class SimilarityView(BaseView):
                 )
                 self._finish_check_ui()
                 return
-            req = SimilarityRequest(
+            # mypy 2.3 原生 pydantic 支持把 Field("默认值") 误判为必填（main_path 等），
+            # 运行时 pydantic 会正常填充默认值，故忽略该误报。
+            req = SimilarityRequest(  # type: ignore[call-arg]
                 mode=SimilarityMode.MANY_TO_MANY,
                 all_paths=list(self._all_paths),
                 threshold=self._threshold_spin.value(),
@@ -115,17 +118,17 @@ class SimilarityView(BaseView):
         self._vm.check(req)  # 后台执行，结果经 vm 信号回流
 
     # ── ViewModel 回调 ──
-    def _on_started(self, mode):
+    def _on_started(self, mode: object) -> None:
         self._log_browser.clear()
         self._check_btn.set_loading(True)
 
-    def _on_progress(self, message: str, current: int, total: int):
+    def _on_progress(self, message: str, current: int, total: int) -> None:
         if total > 0:
             self._progress_bar.setRange(0, total)
             self._progress_bar.setValueAnimated(current)
         self._log_browser.append(message)
 
-    def _on_completed(self, result):
+    def _on_completed(self, result: SimilarityResult) -> None:
         self._finish_check_ui()
         self._last_result = result
         self._render_result(result)
@@ -133,18 +136,18 @@ class SimilarityView(BaseView):
         # 一次干净的查重（0 重复）同样产生有效报告，应允许导出。
         self._export_btn.set_actionable(self._last_result is not None, "")
 
-    def _on_failed(self, message: object):
+    def _on_failed(self, message: object) -> None:
         self._finish_check_ui()
         msg = message if isinstance(message, str) else str(message)
         self._log_browser.append(f"\n错误：{msg}")
 
-    def _finish_check_ui(self):
+    def _finish_check_ui(self) -> None:
         self._check_btn.set_loading(False)
         self._update_check_state()
         self._progress_bar.setVisible(False)
 
     # ── 结果展示（结构化卡片，高亮核心数据） ──
-    def _render_result(self, result):
+    def _render_result(self, result: SimilarityResult) -> None:
         """以结构化卡片渲染检测结果，高亮重复率 / 重复题目数。"""
         self._clear_layout(self._result_layout)
         if isinstance(result, ManyToManyResult):
@@ -152,9 +155,11 @@ class SimilarityView(BaseView):
         else:
             self._build_one_to_many_cards(result)
 
-    def _clear_layout(self, layout):
+    def _clear_layout(self, layout: QLayout) -> None:
         while layout.count():
             item = layout.takeAt(0)
+            if item is None:
+                continue
             w = item.widget()
             if w is not None:
                 w.setParent(None)
@@ -164,7 +169,7 @@ class SimilarityView(BaseView):
                 if sub is not None:
                     self._clear_layout(sub)
 
-    def _show_result_placeholder(self):
+    def _show_result_placeholder(self) -> None:
         self._clear_layout(self._result_layout)
         self._result_placeholder = QLabel(
             "完成检测后，将在此以结构化卡片展示重复率与重复题目。"
@@ -172,7 +177,7 @@ class SimilarityView(BaseView):
         self._result_placeholder.setWordWrap(True)
         self._result_layout.addWidget(self._result_placeholder)
 
-    def _build_one_to_many_cards(self, result: OneToManyResult):
+    def _build_one_to_many_cards(self, result: OneToManyResult) -> None:
         t = self.theme
         total = result.main_count
         dup = result.duplicate_count
@@ -230,7 +235,7 @@ class SimilarityView(BaseView):
                 dl.addWidget(s)
             self._result_layout.addWidget(dc)
 
-    def _build_many_to_many_cards(self, result: ManyToManyResult):
+    def _build_many_to_many_cards(self, result: ManyToManyResult) -> None:
         t = self.theme
         internal = sum(1 for p in result.duplicate_pairs if p.pair_type == "internal")
         cross = sum(1 for p in result.duplicate_pairs if p.pair_type == "cross")
@@ -297,13 +302,13 @@ class SimilarityView(BaseView):
             pl.addWidget(pv)
             self._result_layout.addWidget(pc)
 
-    def _card(self):
+    def _card(self) -> QFrame:
         card = QFrame()
         card.setStyleSheet(self.theme.qss_card())
         return card
 
     # ── 报告导出（展示层职责） ──
-    def _on_export(self):
+    def _on_export(self) -> None:
         if self._last_result is None:
             return
         start_dir = os.path.dirname(self._main_path or (self._all_paths[0] if self._all_paths else ""))
@@ -327,7 +332,7 @@ class SimilarityView(BaseView):
         self._export_status.setVisible(True)
         self.toast.show_message("查重报告已导出", success=True)
 
-    def _export_one_to_many(self, result: OneToManyResult, path: str):
+    def _export_one_to_many(self, result: OneToManyResult, path: str) -> None:
         doc = Document()
         doc.add_heading("题目查重报告（1对多模式）", 0)
         doc.add_paragraph(
@@ -347,7 +352,7 @@ class SimilarityView(BaseView):
             )
         doc.save(path)
 
-    def _export_many_to_many(self, result: ManyToManyResult, path: str):
+    def _export_many_to_many(self, result: ManyToManyResult, path: str) -> None:
         doc = Document()
         internal = sum(1 for p in result.duplicate_pairs if p.pair_type == "internal")
         cross = sum(1 for p in result.duplicate_pairs if p.pair_type == "cross")
@@ -380,7 +385,7 @@ class SimilarityView(BaseView):
         doc.save(path)
 
     # ── UI 构建 ──
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         t = self.theme
         root = QVBoxLayout(self)
         root.setContentsMargins(self.theme.page_pad_x, self.theme.page_pad_y, self.theme.page_pad_x, self.theme.page_pad_y)
@@ -388,8 +393,8 @@ class SimilarityView(BaseView):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._scroll = scroll
 
         content = QWidget()
@@ -494,7 +499,7 @@ class SimilarityView(BaseView):
             "重置", default_height=32, theme=self.theme, variant="secondary"
         )
         self._reset_btn.clicked.connect(self._on_reset_settings)
-        params_row.addWidget(self._reset_btn, alignment=Qt.AlignVCenter)
+        params_row.addWidget(self._reset_btn, alignment=Qt.AlignmentFlag.AlignVCenter)
         content_layout.addLayout(params_row)
 
         # 连 StepperInput 对外信号而非内部 QDoubleSpinBox：
@@ -531,7 +536,7 @@ class SimilarityView(BaseView):
         self._log_browser = QTextBrowser()
         self._log_browser.setOpenExternalLinks(False)
         self._log_browser.setMinimumHeight(90)
-        self._log_browser.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self._log_browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         content_layout.addWidget(self._log_browser)
 
         # 检测结果（结构化卡片，替代纯文本展示）
@@ -546,7 +551,7 @@ class SimilarityView(BaseView):
         # 导出后状态：可点击「打开文件夹」链接
         self._export_status = QLabel("")
         self._export_status.setVisible(False)
-        self._export_status.setTextFormat(Qt.RichText)
+        self._export_status.setTextFormat(Qt.TextFormat.RichText)
         self._export_status.linkActivated.connect(self._open_folder_link)
         content_layout.addWidget(self._export_status)
 
@@ -556,7 +561,7 @@ class SimilarityView(BaseView):
         self._update_check_state()
         self._restyle_all()
 
-    def _on_mode_changed(self, button):
+    def _on_mode_changed(self, button: object) -> None:
         if button == self._radio_1toN:
             self._mode = SimilarityMode.ONE_TO_MANY
             for w in self._one_to_many_widgets:
@@ -572,29 +577,29 @@ class SimilarityView(BaseView):
         self._log_browser.clear()
         self._update_check_state()
 
-    def _on_main_file(self, path):
+    def _on_main_file(self, path: str) -> None:
         self._main_path = path
         self._log_browser.clear()
         self._update_check_state()
 
-    def _on_main_cleared(self):
+    def _on_main_cleared(self) -> None:
         self._main_path = ""
         self._update_check_state()
 
-    def _on_secondary_files(self, paths):
+    def _on_secondary_files(self, paths: list) -> None:
         self._secondary_paths = paths
         self._log_browser.clear()
         self._update_check_state()
 
-    def _on_all_files(self, paths):
+    def _on_all_files(self, paths: list) -> None:
         self._all_paths = paths
         self._log_browser.clear()
         self._update_check_state()
 
-    def _on_invalid_file(self, path):
+    def _on_invalid_file(self, path: str) -> None:
         self.toast.show_message(f"文件格式不支持：{os.path.basename(path)}", success=False)
 
-    def _update_check_state(self):
+    def _update_check_state(self) -> None:
         """依据模式与已选文件，启用/置灰「开始检测」按钮。"""
         if self._check_btn._loading:
             return
@@ -613,12 +618,12 @@ class SimilarityView(BaseView):
             else:
                 self._check_btn.set_actionable(True, "")
 
-    def _open_folder_link(self, link):
+    def _open_folder_link(self, link: str) -> None:
         if link.startswith("folder:"):
             self._open_folder(link[7:])
 
     # ── QSettings 持久化（P1 #4） ──
-    def _load_settings(self):
+    def _load_settings(self) -> None:
         # 加载期间屏蔽 textChanged/valueChanged，避免部分字段尚未载入时就触发
         # _save_settings 把“半载状态”（如仍为默认的 opt_edit）写回，覆盖已存值。
         self._num_edit.blockSignals(True)
@@ -631,28 +636,28 @@ class SimilarityView(BaseView):
         self._opt_edit.blockSignals(False)
         self._threshold_spin.blockSignals(False)
 
-    def _save_settings(self):
+    def _save_settings(self) -> None:
         self.settings.setValue(SimilarityKeys.THRESHOLD, self._threshold_spin.value())
         self.settings.setValue(SimilarityKeys.NUM_PATTERN, self._num_edit.text())
         self.settings.setValue(SimilarityKeys.OPT_PREFIX, self._opt_edit.text())
 
-    def _on_reset_settings(self):
+    def _on_reset_settings(self) -> None:
         self._threshold_spin.setValue(0.8)
         self._num_edit.setText("1.")
         self._opt_edit.setText("A.")
         self._save_settings()
 
-    def _on_theme_changed(self):
+    def _on_theme_changed(self) -> None:
         self._restyle_all()
 
-    def _open_folder(self, path):
+    def _open_folder(self, path: str) -> None:
         folder = os.path.dirname(path) or "."
         open_folder(folder)
 
-    def _restyle_all(self):
+    def _restyle_all(self) -> None:
         t = self.theme
         pal = self.palette()
-        pal.setColor(QPalette.Window, t.window_solid_bg)
+        pal.setColor(QPalette.ColorRole.Window, t.window_solid_bg)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -715,6 +720,6 @@ class SimilarityView(BaseView):
 
         self._scroll.setStyleSheet(t.qss_scrollbar())
 
-    def stop_worker(self):
+    def stop_worker(self) -> None:
         """供主窗口 closeEvent 调用，取消正在运行的后台任务。"""
         self._vm.cancel_current()

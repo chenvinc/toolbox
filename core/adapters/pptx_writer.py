@@ -5,7 +5,6 @@
 """
 from __future__ import annotations
 
-import os
 from typing import Callable, List, TYPE_CHECKING
 
 from pptx import Presentation
@@ -29,20 +28,6 @@ def _set_font(run: "Run", font_name: str, font_size: int) -> None:
     ea = rPr.makeelement(qn("a:ea"), {})
     ea.set("typeface", font_name)
     rPr.append(ea)
-
-
-def _resolve_line_spacing(line_spacing_type: str, line_spacing_value: float) -> float:
-    """根据行间距类型解析为实际的行间距数值。"""
-    if line_spacing_type == "1.5 倍":
-        return 1.5
-    if line_spacing_type == "自定义":
-        return line_spacing_value
-    return 1.0
-
-
-def _same_path(a: str, b: str) -> bool:
-    """判断两个路径是否指向同一文件（规范化大小写与绝对路径后比较）。"""
-    return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
 
 
 def _remove_first_slide(prs: "PptxPresentation") -> "SlideLayout":

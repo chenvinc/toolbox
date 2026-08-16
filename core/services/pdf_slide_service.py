@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 logger = logging.getLogger(__name__)
 
-from core.adapters.pptx_writer import _same_path
+from core.services._path_guard import same_path
 from core.ports.events import EventEmitter
 from core.ports.io import PdfSlideConverter
 from shared.contracts import (
@@ -33,11 +33,11 @@ class PdfSlideServiceImpl:
 
     def convert(self, request: ConvertPdfRequest) -> ConvertPdfResult:
         logger.info("开始转换 PDF：%s → %s", request.pdf_path, request.output_path)
-        if _same_path(request.template_path, request.output_path):
+        if same_path(request.template_path, request.output_path):
             raise OutputOverwriteError(
                 f"输出路径不能与模板路径相同，否则会覆盖并损坏模板文件：{request.output_path}"
             )
-        if _same_path(request.pdf_path, request.output_path):
+        if same_path(request.pdf_path, request.output_path):
             raise OutputOverwriteError(
                 f"输出路径不能与源 PDF 路径相同：{request.output_path}"
             )

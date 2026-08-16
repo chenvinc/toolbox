@@ -14,7 +14,8 @@ from core.ports.events import EventEmitter
 from core.ports.services import ExamGeneratorService
 from core.ports.tasks import TaskRunner
 from shared.contracts import (
-    DomainEvent, EventType, GenerateExamRequest,
+    DomainEvent, EventType, ExamCompletedEvent, ExamFailedEvent,
+    GenerateExamRequest, ProgressEvent,
 )
 from ui.infra.qt_task_runner import async_task
 from ui.viewmodels.base_viewmodel import BaseViewModel
@@ -51,12 +52,13 @@ class JsonExamViewModel(BaseViewModel):
 
     # ── 事件 → 信号桥接（单向数据流：core → UI） ──
     def _dispatch(self, event: DomainEvent) -> None:
-        etype = event.type
-        if etype == EventType.EXAM_PROGRESS:
+        # isinstance 窄化（而非按 event.type 比较）：让 mypy 能推出具体事件类，
+        # 避免对 DomainEvent Union 做属性访问报 union-attr。
+        if isinstance(event, ProgressEvent):  # EXAM_PROGRESS
             self.progress.emit(event.message, event.current, event.total)
-        elif etype == EventType.EXAM_COMPLETED:
+        elif isinstance(event, ExamCompletedEvent):
             self.completed.emit(event.result)
-        elif etype == EventType.EXAM_FAILED:
+        elif isinstance(event, ExamFailedEvent):
             self.failed.emit(event.message)
 
     # ── 命令转发（单向数据流：UI → core） ──

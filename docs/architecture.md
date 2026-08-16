@@ -116,6 +116,7 @@ toolbox/
   `PDF_*`(PROGRESS/COMPLETED/FAILED)、`WORD_*`(PROGRESS/COMPLETED/FAILED)。
 - **事件模型**：`_BaseEvent(type)` → 各具体事件（`ProgressEvent` / `CheckStartedEvent` / `CheckCompletedEvent` / `ExtractCompletedEvent` / `PptxCompletedEvent` / `ExamCompletedEvent` / `PdfCompletedEvent` / `FailedEvent` / `ExamFailedEvent` / `PdfFailedEvent`）。
   - `ProgressEvent` 被 5 个工具复用（其 `type` 为 `Literal[CHECK_PROGRESS, PPTX_PROGRESS, EXAM_PROGRESS, PDF_PROGRESS, WORD_PROGRESS]`）。
+    - ✅ **`type` 必填（P1a）**：多值 Literal **不带默认值**——漏传 `type` 会静默落到 `CHECK_PROGRESS`、被 `_WATCHED` 过滤后事件无声丢失；现缺省即 `ValidationError`，由 `test_multivalue_type_literal_has_no_default` 元测试强制。`FailedEvent`（3 值 Literal）同样处理。
   - `DomainEvent` 是上述事件的 `Union`（以 `type` 作判别字段），供 `EventEmitter.emit` 统一推送。
 - ⚠️ **不对称点**：`CHECK_/EXTRACT_/PPTX_FAILED` 共用 `FailedEvent`；而 `EXAM_FAILED`、`PDF_FAILED` 各自有 `ExamFailedEvent`/`PdfFailedEvent`。新增工具时建议为失败事件单独建类，避免与既有判别冲突。
 
@@ -152,7 +153,7 @@ toolbox/
 | 服务 | 文件 | 端口 | 关键行为 |
 | --- | --- | --- | --- |
 | `ExtractionServiceImpl` | `slide_builder.py` | `ExtractionService` | `loader.load_paragraphs → parse_questions → emit(ExtractCompletedEvent)` |
-| `PptxServiceImpl` | `slide_builder.py` | `PptxService` | 校验（输出≠模板）→ 进度事件 → `writer.build` → `PptxCompletedEvent`；`_same_path` 防覆盖 |
+| `PptxServiceImpl` | `slide_builder.py` | `PptxService` | 校验（输出≠模板）→ 进度事件 → `writer.build` → `PptxCompletedEvent`；`same_path`（`core/services/_path_guard.py`）防覆盖 |
 | `SimilarityServiceImpl` | `similarity_service.py` | `SimilarityService` | 1对多 / 多对多查重；`score_questions` 打分；失败抛 `NoQuestionsExtracted` |
 | `JsonToWordServiceImpl` | `json_to_word_service.py` | `ExamGeneratorService` | 解析→并发预下载图片（有限并发）→生成题本+解析；图片失败不中断，汇总 `failed_images` |
 | `PdfSlideServiceImpl` | `pdf_slide_service.py` | `PdfSlideService` | 校验（输出≠模板/源）→ `converter.convert` → `PdfCompletedEvent` |
@@ -325,6 +326,9 @@ PyMuPDF 的 `block`（`type==0`）本身是连贯文本区，块内多行只是�
 | 9 | `first_line_indent` 以字符串存布尔 | ✅ **已修复（v4.0，Phase 3）**：`json_exam_view` 改为真布尔存储；读取兼容旧 `"true"/"false"` 字符串值（`raw if isinstance(raw, bool) else str(raw) == "true"`） |
 | 10 | 视图 `_restyle_all` 覆盖不一致 | 以 SimilarityView 为准统一 |
 | 11 | 四处「打开文件夹」实现不统一（subprocess / os.system / `folder:` 前缀） | ✅ **已修复（v4.0，Phase 2）**：抽 `ui/infra/open_folder.py` 的 `open_folder()`，四个 View 统一调用，自动剥离 `folder:` 前缀、跨平台派发 |
+| 12 | 服务层 / UI 视图直接 import 适配器私有函数（`_same_path`、`_resolve_line_spacing`） | ✅ **已修复（P0）**：下沉为 `core/services/_path_guard.py` 纯函数（`same_path` / `resolve_line_spacing`，零 Qt 零三方依赖），3 个服务 + `SlideView` + 测试统一从新模块导入；`core/adapters/pptx_writer.py` 不再承担共享工具库角色 |
+| 13 | `ProgressEvent` / `FailedEvent` 多值 `type` Literal 带默认值（漏传静默串台 / 丢事件） | ✅ **已修复（P1a）**：两事件 `type` 改为必填无默认；元测试新增 `test_multivalue_type_literal_has_no_default` 强制「多值 Literal 必无默认」，单值 Literal 允许默认（默认即唯一合法值） |
+| 14 | UI 层在 strict mypy 下实际未受类型检查（550 错误：215 缺注解 / 241 union-attr / 83 Qt 扁平枚举） | ✅ **已修复（P1b）**：Qt 扁平枚举（`Qt.AlignCenter` → `Qt.AlignmentFlag.AlignCenter` 等 25 类）全部改作用域枚举，与 PySide6 6.11 官方桩一致；5 个 VM `_dispatch` 改 `isinstance` 窄化替代 `event.type` 比较；5 个 View/VM、`widgets.py`、`app.py`、`theme.py` 补全注解；`mypy` 全仓 **57 文件 0 错误**（core/shared 的 `RGBColor` 误报改从 `docx.shared` 导入修复） |
 
 ---
 

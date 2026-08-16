@@ -13,6 +13,7 @@ import sys
 import logging
 import threading
 import faulthandler
+from types import TracebackType
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QStackedWidget,
@@ -20,7 +21,7 @@ from PySide6.QtWidgets import (
     QLabel, QWidget,
 )
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QPalette, QIcon, QFont
+from PySide6.QtGui import QPalette, QIcon, QFont, QGuiApplication, QCloseEvent
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -33,10 +34,16 @@ from ui.views.json_exam_view import JsonExamView
 from ui.views.pdf_slide_view import PdfSlideView
 from ui.views.pdf_word_view import PdfWordView
 from theme import Theme
+from ui.viewmodels.slide_viewmodel import SlideViewModel
+from ui.viewmodels.similarity_viewmodel import SimilarityViewModel
+from ui.viewmodels.json_exam_viewmodel import JsonExamViewModel
+from ui.viewmodels.pdf_slide_viewmodel import PdfSlideViewModel
+from ui.viewmodels.pdf_word_viewmodel import PdfWordViewModel
+from ui.views.base_view import BaseView
 
 
 class ToolboxApp(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.theme = Theme()
         self._apply_global_font()  # 仅字体
@@ -53,7 +60,7 @@ class ToolboxApp(QMainWindow):
         )
 
         # ── 窗口布局（导航 + 堆栈） ──
-        self._tools = []
+        self._tools: list = []
 
         central = QWidget()
         central.setAutoFillBackground(True)
@@ -72,7 +79,7 @@ class ToolboxApp(QMainWindow):
         sidebar_layout.setSpacing(0)
 
         self.sidebar_title = QLabel("\u5de5\u5177\u7bb1")
-        self.sidebar_title.setAlignment(Qt.AlignCenter)
+        self.sidebar_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(self.sidebar_title)
 
         self.nav_list = QListWidget()
@@ -91,12 +98,12 @@ class ToolboxApp(QMainWindow):
         self._register_tools(slide_vm, sim_vm, exam_vm, pdf_vm, word_vm)
         self.nav_list.setCurrentRow(0)
         self._restyle_all()
-        QApplication.instance().styleHints().colorSchemeChanged.connect(
-            self._on_theme_changed
-        )
+        app = QApplication.instance()
+        if isinstance(app, QGuiApplication):
+            app.styleHints().colorSchemeChanged.connect(self._on_theme_changed)
         self._on_theme_changed()
 
-    def _apply_global_font(self):
+    def _apply_global_font(self) -> None:
         """全局统一字体：微软雅黑（含跨平台回退），基准 12px。
 
         仅负责字体；依赖装配与窗口布局见 ``__init__`` / ``ui/composition``（N-01 根因）。
@@ -108,17 +115,17 @@ class ToolboxApp(QMainWindow):
         ])
         font.setPointSize(12)
         app = QApplication.instance()
-        if app is not None:
+        if isinstance(app, QGuiApplication):
             app.setFont(font)
 
-    def _on_theme_changed(self):
+    def _on_theme_changed(self) -> None:
         self.theme.refresh()
         self._restyle_all()
 
-    def _restyle_all(self):
+    def _restyle_all(self) -> None:
         t = self.theme
         pal = self.palette()
-        pal.setColor(QPalette.Window, t.window_solid_bg)
+        pal.setColor(QPalette.ColorRole.Window, t.window_solid_bg)
         self.setPalette(pal)
 
         self.centralWidget().setStyleSheet(
@@ -153,7 +160,9 @@ class ToolboxApp(QMainWindow):
             "QStackedWidget { background: transparent; border: none; border-radius: 12px; }"
         )
 
-    def _register_tools(self, slide_vm, sim_vm, exam_vm, pdf_vm, word_vm):
+    def _register_tools(self, slide_vm: SlideViewModel, sim_vm: SimilarityViewModel,
+                        exam_vm: JsonExamViewModel, pdf_vm: PdfSlideViewModel,
+                        word_vm: PdfWordViewModel) -> None:
         """注册工具箱中的所有视图（持有对应 ViewModel）。"""
         self._add_tool(SlideView(slide_vm))
         self._add_tool(SimilarityView(sim_vm))
@@ -161,7 +170,7 @@ class ToolboxApp(QMainWindow):
         self._add_tool(PdfSlideView(pdf_vm))
         self._add_tool(PdfWordView(word_vm))
 
-    def _add_tool(self, tool):
+    def _add_tool(self, tool: BaseView) -> None:
         """将视图添加到导航栏和堆栈中。"""
         self._tools.append(tool)
 
@@ -171,13 +180,13 @@ class ToolboxApp(QMainWindow):
 
         self.stack.addWidget(tool)
 
-    def _on_nav_changed(self, index):
+    def _on_nav_changed(self, index: int) -> None:
         """导航栏切换时激活对应视图。"""
         if 0 <= index < len(self._tools):
             self.stack.setCurrentIndex(index)
             self._tools[index].on_activate()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
         """窗口关闭时统一取消所有视图的后台任务，避免孤儿线程/资源泄漏。"""
         for tool in self._tools:
             stop = getattr(tool, 'stop_worker', None)
@@ -202,9 +211,9 @@ def configure_logging() -> str:
     """
     import logging.handlers
 
-    from PySide6.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType
+    from PySide6.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType, QMessageLogContext
 
-    _log_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+    _log_dir = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)
     if not _log_dir:
         _log_dir = os.path.dirname(os.path.abspath(__file__))
     _log_dir = os.path.join(_log_dir, "logs")
@@ -223,7 +232,8 @@ def configure_logging() -> str:
     _sh.setFormatter(_fmt)
     _root.addHandler(_sh)
 
-    def _excepthook(exc_type, exc_value, exc_tb):
+    def _excepthook(exc_type: type[BaseException], exc_value: BaseException,
+                    exc_tb: TracebackType | None) -> None:
         """记录未捕获异常到日志，避免崩溃后无迹可寻。"""
         logging.getLogger("uncaught").critical(
             "未捕获异常", exc_info=(exc_type, exc_value, exc_tb)
@@ -236,7 +246,7 @@ def configure_logging() -> str:
     # stderr 闪现、打包为 GUI 后被丢弃（R-5 补充：sys.excepthook 仅覆盖主线程）。
     # 加重入保护：若日志轮转/写入过程中再次触发 Qt 消息，直接丢弃，避免
     # 「Qt 警告 → logging → RotatingFileHandler 轮转 → 又触发 Qt 警告」的死循环。
-    def _qt_message_handler(mode, context, message):
+    def _qt_message_handler(mode: QtMsgType, context: QMessageLogContext, message: str) -> None:
         if getattr(_qt_handler_guard, "active", False):
             return
         _qt_handler_guard.active = True
