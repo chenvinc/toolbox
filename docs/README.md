@@ -14,7 +14,7 @@
 | --- | --- | --- | --- | --- |
 | 📑 题库转PPT（Quiz2Slide） | Word 题目文档 → 可编辑 PPT | 1 个 `.docx` 题库 | `.pptx` | 导入题库 → 预览/确认解析出的题目 →（可选）选 PPT 模板 → 生成 |
 | 🔍 试题查重（SimilarityChecker） | 题目相似度比对，导出报告 | 主文档 `.docx` + 副文档（可多选 `.docx`），或切「多对多」拖入多份 | 查重报告 `.docx` | 选主文档与副文档（或多对多模式拖入多份）→ 设阈值 → 开始查重 → 导出报告 |
-| 📝 试卷生成（JsonExam） | JSON 题目数据 → Word 题本 + 解析 | 1 个 `.json` | 题本 `.docx` + 解析 `.docx` | 导入 JSON → 设题号格式 / 首行缩进等 → 生成题本与解析 |
+| 📝 试卷生成（JsonExam） | JSON 题目数据（需配合fbdll插件使用） → Word 题本 + 解析 | 1 个 `.json` | 题本 `.docx` + 解析 `.docx` | 导入 JSON → 设题号格式 / 首行缩进等 → 生成题本与解析 |
 | 📄 PDF转PPT（Pdf2Slide） | PDF 每页 → 保留可编辑文字的 PPT | 1 个 `.pdf`（可选 `.pptx` 模板） | `.pptx` | 导入 PDF →（可选）套 PPT 模板 → 设输出路径 → 转换 |
 | 📄 PDF转Word（Pdf2Word） | PDF → 保留可编辑文字（流式段落）的 Word | 1 个 `.pdf`（可选 `.docx` 模板） | `.docx` | 导入 PDF →（可选）套 Word 模板 → 设输出路径 → 转换 |
 

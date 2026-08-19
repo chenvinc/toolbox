@@ -123,6 +123,36 @@ class OneToManyTests(unittest.TestCase):
         self.assertIn(EventType.CHECK_PROGRESS, types)
         self.assertIn(EventType.CHECK_COMPLETED, types)
 
+    def test_internal_check_when_no_secondary(self):
+        """未传入副文档 → 默认对主文档内部查重，识别文档内重复。"""
+        svc = self._svc({"main.docx": SIM_PARA})
+        res = svc.check(SimilarityRequest(
+            mode=SimilarityMode.ONE_TO_MANY,
+            main_path="main.docx", secondary_paths=[],  # 关键：无副文档
+            threshold=0.8,
+        ))
+        self.assertIsInstance(res, OneToManyResult)
+        self.assertTrue(res.internal, "应标记为内部查重")
+        self.assertEqual(res.main_count, 2)
+        self.assertEqual(res.duplicate_count, 1)
+        self.assertEqual(res.details[0].index, 1)
+        # 命中来源应指向文档内第 2 题
+        self.assertEqual(res.details[0].sources[0].index, 2)
+        self.assertGreaterEqual(res.details[0].sources[0].score, 0.8)
+
+    def test_internal_check_no_duplicates(self):
+        """主文档内无重复题时，内部查重返回 0 重复且仍标记 internal。"""
+        svc = self._svc({"main.docx": MAIN_PARA + OTHER_PARA})
+        res = svc.check(SimilarityRequest(
+            mode=SimilarityMode.ONE_TO_MANY,
+            main_path="main.docx", secondary_paths=[],
+            threshold=0.8,
+        ))
+        self.assertTrue(res.internal)
+        self.assertEqual(res.main_count, 2)
+        self.assertEqual(res.duplicate_count, 0)
+        self.assertEqual(res.details, [])
+
 
 class ManyToManyTests(unittest.TestCase):
     def _svc(self, mapping):

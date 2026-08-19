@@ -59,6 +59,10 @@ class SimilarityServiceImpl:
             for i, q in enumerate(main_lines)
         ]
 
+        # 未传入副文档 → 默认对主文档内部试题查重，而非报错
+        if not request.secondary_paths:
+            return self._check_internal(request, main_qs)
+
         secondary: Dict[str, List[Question]] = {}
         for path in request.secondary_paths:
             fname = _basename(path)
@@ -102,6 +106,57 @@ class SimilarityServiceImpl:
         ))
         result = OneToManyResult(
             main_count=total, duplicate_count=len(details), details=details,
+        )
+        self._emitter.emit(CheckCompletedEvent(result=result))
+        return result
+
+    # ── 1对多·内部查重：副文档未传入时，主文档试题两两比对 ──
+
+    def _check_internal(
+        self, request: SimilarityRequest, main_qs: List[Question]
+    ) -> OneToManyResult:
+        """主文档内部查重：将主文档试题两两比对，识别文档内重复题。
+
+        与多对多的 internal 对等价，但复用 1对多 的结果结构（details + sources），
+        凡命中的内部题以 ``SimilaritySource(index=题号)`` 表示，``result.internal=True``。
+        """
+        total = len(main_qs)
+        details: List[SimilarityDetail] = []
+        for i, qi in enumerate(main_qs):
+            idx = i + 1
+            if idx % 5 == 0:
+                self._emitter.emit(ProgressEvent(
+                    type=EventType.CHECK_PROGRESS,
+                    message=f"比对进度：{idx}/{total}",
+                    current=idx,
+                    total=total,
+                ))
+            sources: List[SimilaritySource] = []
+            for j in range(i + 1, total):
+                sc = score_questions(qi, main_qs[j])
+                if sc.score >= request.threshold:
+                    sources.append(SimilaritySource(
+                        file=qi.source_file,
+                        score=sc.score,
+                        reason=sc.reason,
+                        index=j + 1,
+                    ))
+            if sources:
+                details.append(SimilarityDetail(
+                    index=idx, text=qi.lines, sources=sources,
+                ))
+
+        self._emitter.emit(ProgressEvent(
+            type=EventType.CHECK_PROGRESS,
+            message=f"检测完成：主文档 {total} 道题目中，{len(details)} 道存在内部重复",
+            current=total,
+            total=total,
+        ))
+        result = OneToManyResult(
+            main_count=total,
+            duplicate_count=len(details),
+            details=details,
+            internal=True,
         )
         self._emitter.emit(CheckCompletedEvent(result=result))
         return result

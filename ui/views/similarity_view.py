@@ -43,7 +43,7 @@ class SimilarityView(BaseView):
         return "🔍 试题查重"
 
     def get_description(self) -> str:
-        return "检测主文档与多个副文档之间的题目重复率，支持精确/模糊匹配，导出查重报告。"
+        return "检测主文档与多个副文档之间的题目重复率，支持精确/模糊匹配，导出查重报告；未传入副文档时默认对主文档内部试题查重。"
 
     def __init__(self, view_model: SimilarityViewModel) -> None:
         super().__init__()
@@ -85,12 +85,11 @@ class SimilarityView(BaseView):
                 )
                 self._finish_check_ui()
                 return
+            # 副文档可选：未传入时由 core 默认对主文档内部查重
             if not self._secondary_paths:
-                self._log_browser.setHtml(
-                    f"<p style='color:{self.theme.error_color};'>请先选择至少一个副文档</p>"
+                self._log_browser.append(
+                    "未选择副文档，将对主文档内部试题进行查重。"
                 )
-                self._finish_check_ui()
-                return
             req = SimilarityRequest(
                 mode=SimilarityMode.ONE_TO_MANY,
                 main_path=self._main_path,
@@ -188,13 +187,21 @@ class SimilarityView(BaseView):
         sl = QVBoxLayout(summary)
         sl.setContentsMargins(self.theme.page_pad_y, self.theme.spacing, self.theme.page_pad_y, self.theme.spacing)
         sl.setSpacing(self.theme.control_spacing)
-        title = QLabel("检测摘要")
+        title = QLabel("检测摘要" + ("（主文档内部查重）" if result.internal else ""))
         title.setStyleSheet(t.qss_section_header())
         rate_lbl = QLabel(f"{rate:.1f}%")
         rate_lbl.setStyleSheet(
             f"font-size: 28px; font-weight: bold; color: {rate_color};"
         )
-        sub_lbl = QLabel(f"重复题目 {dup} 道 / 总题目 {total} 道")
+        if result.internal:
+            sub_text = (
+                f"重复题目 {dup} 道 / 总题目 {total} 道"
+                f"（未传入副文档，按主文档内部查重）"
+            )
+        else:
+            sub_text = f"重复题目 {dup} 道 / 总题目 {total} 道"
+        sub_lbl = QLabel(sub_text)
+        sub_lbl.setWordWrap(True)
         sub_lbl.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
         sl.addWidget(title)
         sl.addWidget(rate_lbl)
@@ -202,7 +209,10 @@ class SimilarityView(BaseView):
         self._result_layout.addWidget(summary)
 
         if not result.details:
-            empty = QLabel("未检测到重复题目，题库质量良好。")
+            empty = QLabel(
+                "主文档内部未检测到重复试题。" if result.internal
+                else "未检测到重复题目，题库质量良好。"
+            )
             empty.setWordWrap(True)
             empty.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
             self._result_layout.addWidget(empty)
@@ -225,9 +235,17 @@ class SimilarityView(BaseView):
             pv.setStyleSheet(f"font-size: 12px; color: {t.text_secondary};")
             dl.addWidget(pv)
             for item in d.sources:
-                s = QLabel(
-                    f"重复来源：{item.file}（相似度 {item.score:.2f}，{item.reason}）"
-                )
+                if result.internal and item.index is not None:
+                    src_text = (
+                        f"文档内重复：第 {item.index} 题"
+                        f"（相似度 {item.score:.2f}，{item.reason}）"
+                    )
+                else:
+                    src_text = (
+                        f"重复来源：{item.file}"
+                        f"（相似度 {item.score:.2f}，{item.reason}）"
+                    )
+                s = QLabel(src_text)
                 s.setWordWrap(True)
                 s.setStyleSheet(
                     f"font-size: 12px; color: {t.text_secondary}; padding-left: 12px;"
@@ -334,7 +352,10 @@ class SimilarityView(BaseView):
 
     def _export_one_to_many(self, result: OneToManyResult, path: str) -> None:
         doc = Document()
-        doc.add_heading("题目查重报告（1对多模式）", 0)
+        doc.add_heading(
+            "题目查重报告（主文档内部查重）" if result.internal
+            else "题目查重报告（1对多模式）", 0
+        )
         doc.add_paragraph(
             f"主文档题目数：{result.main_count}，"
             f"重复题目数：{result.duplicate_count}，"
@@ -346,7 +367,9 @@ class SimilarityView(BaseView):
                 doc.add_paragraph(line, style="List Bullet")
             doc.add_paragraph(
                 "重复来源：" + "; ".join(
-                    f"{item.file} ({item.score:.2f}, {item.reason})"
+                    (f"文档内第{item.index}题 ({item.score:.2f}, {item.reason})"
+                     if result.internal and item.index is not None
+                     else f"{item.file} ({item.score:.2f}, {item.reason})")
                     for item in d.sources
                 )
             )
@@ -444,6 +467,13 @@ class SimilarityView(BaseView):
 
         # 副文档（模块卡片，中性边框）
         card_sec, ls = self._make_module_card("副文档（对比库，可多选）")
+        self._secondary_hint = QLabel(
+            "副文档作为对比库，可多选。未传入副文档时，"
+            "将自动对主文档内部试题查重。"
+        )
+        self._secondary_hint.setWordWrap(True)
+        self._field_labels.append(self._secondary_hint)
+        ls.addWidget(self._secondary_hint)
         self._secondary_drop_zone = MultiDropZone(
             "点击或拖拽 .docx 文件（可多选）", "Word 文档 (*.docx)",
             theme=t, variant="secondary"
@@ -604,13 +634,10 @@ class SimilarityView(BaseView):
         if self._check_btn._loading:
             return
         if self._mode == SimilarityMode.ONE_TO_MANY:
-            if not self._main_path and not self._secondary_paths:
-                self._check_btn.set_actionable(False, "请先选择主文档与至少一个副文档")
-            elif not self._main_path:
+            if not self._main_path:
                 self._check_btn.set_actionable(False, "请先选择主文档")
-            elif not self._secondary_paths:
-                self._check_btn.set_actionable(False, "请先选择至少一个副文档")
             else:
+                # 副文档可选：未传入时默认对主文档内部查重
                 self._check_btn.set_actionable(True, "")
         else:
             if len(self._all_paths) < 2:

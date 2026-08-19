@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Dict, List, Literal, Union
+from typing import Annotated, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -116,10 +116,18 @@ class QuestionScore(BaseModel):
 
 
 class SimilaritySource(BaseModel):
-    """1对多模式下，某题命中的副文档来源。"""
+    """1对多模式下，某题命中的副文档来源。
+
+    ``index`` 仅用于主文档内部查重（internal=True）场景，指向与之重复的
+    文档内第 N 题；常规 1对多（主文档 vs 副文档）下为 None。
+    """
     file: str
     score: float
     reason: str
+    index: Optional[int] = Field(
+        default=None,
+        description="命中题在源文档中的题号（主文档内部查重时指向文档内第 N 题）",
+    )
 
 
 class SimilarityDetail(BaseModel):
@@ -135,6 +143,10 @@ class OneToManyResult(BaseModel):
     main_count: int
     duplicate_count: int
     details: List[SimilarityDetail]
+    internal: bool = Field(
+        default=False,
+        description="是否为主文档内部查重（副文档未传入时触发，details 的 source.index 指向文档内题号）",
+    )
 
 
 class SimilarityPair(BaseModel):
