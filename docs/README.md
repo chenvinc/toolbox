@@ -1,9 +1,11 @@
-# docs/ 文档索引（v4.0）
+> 📥 **下载最新版 (v4.1)：[toolbox_AllInOne_v4.1.exe](https://github.com/chenvinc/toolbox/releases/download/v4.1/toolbox_AllInOne_v4.1.exe)** ｜ [全部 Release](https://github.com/chenvinc/toolbox/releases)
+
+# docs/ 文档索引（v4.1）
 
 | 文件 | 说明 |
 | --- | --- |
-| [architecture.md](./architecture.md) | **项目架构书 v4.0** — 分层、端口与适配器、数据流、五大工具、UI 规范、主题系统、技术债 |
-| [新增Tool开发指南.md](./新增Tool开发指南.md) | **新增 Tool 开发指南 v4.0** — 从契约到注册的端到端步骤、可复制模板与避坑清单 |
+| [architecture.md](./architecture.md) | **项目架构书 v4.1** — 分层、端口与适配器、数据流、五大工具、UI 规范、主题系统、技术债 |
+| [新增Tool开发指南.md](./新增Tool开发指南.md) | **新增 Tool 开发指南 v4.1** — 从契约到注册的端到端步骤、可复制模板与避坑清单 |
 | [archive/](./archive/) | 历史整改/阶段报告与早期原型（仅供追溯，不参与当前架构） |
 
 ## 功能使用说明
