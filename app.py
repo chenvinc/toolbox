@@ -25,6 +25,14 @@ from PySide6.QtGui import QPalette, QIcon, QFont, QGuiApplication, QCloseEvent
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+
+def _base_dir() -> str:
+    """资源基准目录：开发时为脚本所在目录，打包后为 PyInstaller 解压目录。"""
+    if getattr(sys, "frozen", False):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 from ui.infra.qt_task_runner import QtTaskRunner
 from ui.infra.qt_event_emitter import QtEventEmitter
 from ui.composition import build_view_models
@@ -47,7 +55,7 @@ class ToolboxApp(QMainWindow):
         super().__init__()
         self.theme = Theme()
         self._apply_global_font()  # 仅字体
-        QApplication.setWindowIcon(QIcon("./assets/images/logo.png"))
+        QApplication.setWindowIcon(QIcon(os.path.join(_base_dir(), "assets/images/logo.png")))
         self.setWindowTitle("ALL IN ONE TOOLBOX")
         self.resize(960, 660)
         self.setMinimumSize(800, 550)
@@ -78,17 +86,21 @@ class ToolboxApp(QMainWindow):
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(0)
 
-        self.sidebar_title = QLabel("\u5de5\u5177\u7bb1")
+        self.sidebar_title: QLabel = QLabel("\u5de5\u5177\u7bb1")
         self.sidebar_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sidebar_layout.addWidget(self.sidebar_title)
+
+        self.sidebar_subtitle: QLabel = QLabel("POWERED BY SWIPER")
+        self.sidebar_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        sidebar_layout.addWidget(self.sidebar_subtitle)
 
         self.nav_list = QListWidget()
         self.nav_list.setIconSize(QSize(24, 24))
         self.nav_list.setSpacing(2)
         self.nav_list.currentRowChanged.connect(self._on_nav_changed)
-        sidebar_layout.addWidget(self.nav_list)
-
-        sidebar_layout.addStretch()
+        self.nav_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # 列表随侧边栏高度拉伸，占据标题下方所有剩余空间
+        sidebar_layout.addWidget(self.nav_list, 1)
 
         self.stack = QStackedWidget()
 
@@ -139,8 +151,13 @@ class ToolboxApp(QMainWindow):
 
         self.sidebar_title.setStyleSheet(
             f"font-size: 16px; font-weight: bold; color: {t.text_primary}; "
-            f"padding: 24px 0 16px; background: transparent; "
+            f"padding: 18px 0 4px; background: transparent; "
             f"border: none; border-bottom: 1px solid {t.sidebar_border};"
+        )
+
+        self.sidebar_subtitle.setStyleSheet(
+            f"font-size: 10px; font-weight: normal; color: {t.text_secondary}; "
+            f"padding: 4px 0 8px; background: transparent; border: none;"
         )
 
         self.nav_list.setStyleSheet(
@@ -154,6 +171,7 @@ class ToolboxApp(QMainWindow):
             f"QListWidget::item:hover:!selected {{ background: "
             f"qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 {t.hover_blue}, "
             f"stop:1 rgba(0,0,0,0)); }}"
+            f"{t.qss_scrollbar()}"
         )
 
         self.stack.setStyleSheet(

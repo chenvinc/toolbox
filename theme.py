@@ -30,7 +30,14 @@ QScrollBar::handle:vertical { background: $scrollbar_handle; border-radius: 3px;
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 """
 
-_QSS_PATH = Path(__file__).with_name("theme.qss")
+def _base_dir() -> Path:
+    """返回资源基准目录：开发时为脚本所在目录，打包后指向 PyInstaller 解压目录。"""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parent
+
+
+_QSS_PATH = _base_dir() / "theme.qss"
 
 # 全局唯一的 Theme 实例（单例）。所有 `Theme()` / `get_theme()` 调用返回同一对象，
 # 避免 ≥5 处各自创建实例、各自刷新导致的冗余与潜在不一致。
