@@ -18,10 +18,11 @@ from types import TracebackType
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QListWidget, QStackedWidget,
     QHBoxLayout, QListWidgetItem, QFrame, QVBoxLayout,
-    QLabel, QWidget,
+    QLabel, QWidget, QSplashScreen,
 )
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QPalette, QIcon, QFont, QGuiApplication, QCloseEvent
+from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -56,7 +57,7 @@ class ToolboxApp(QMainWindow):
         self.theme = Theme()
         self._apply_global_font()  # 仅字体
         QApplication.setWindowIcon(QIcon(os.path.join(_base_dir(), "assets/images/logo.png")))
-        self.setWindowTitle("ALL IN ONE TOOLBOX")
+        self.setWindowTitle("toolbox")
         self.resize(960, 660)
         self.setMinimumSize(800, 550)
 
@@ -213,6 +214,15 @@ class ToolboxApp(QMainWindow):
         shutdown_logging()
         super().closeEvent(event)
 
+    def changeEvent(self, event: QEvent) -> None:
+        """macOS 下点击 Dock / 切回应用时把窗口重新置顶（绕过 App Nap / 启动未激活）。"""
+        if event.type() == QEvent.Type.ApplicationActivate:
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
+            _bring_to_front_macos()
+        super().changeEvent(event)
+
 
 # 模块级句柄/守卫：configure_logging 持有 crash.log 文件对象，正常退出由
 # shutdown_logging 关闭；_qt_handler_guard 防止 Qt 消息处理器重入死循环。
@@ -319,10 +329,108 @@ def shutdown_logging() -> None:
         _crash_log_fh = None
 
 
+# ── 单实例守卫 + macOS 前台激活（避免反复双击产生多实例 / 竞争崩溃 / 窗口不置顶）──
+_INSTANCE_SERVER_NAME = "com.swiper.toolbox.single-instance"
+_instance_server = None
+_primary_window = None
+
+
+def _bring_to_front_macos() -> None:
+    """macOS 下强制把应用提到前台（首次启动 / 点击 Dock 时窗口不被压在后台）。
+
+    通过 Objective-C runtime 调用 ``[NSApplication activateIgnoringOtherApps:YES]``。
+    任何异常均静默忽略，不影响其他平台与正常流程。
+    """
+    if sys.platform != "darwin":
+        return
+    try:
+        from ctypes import cdll, c_void_p, c_int
+
+        objc = cdll.LoadLibrary("/usr/lib/libobjc.A.dylib")
+        objc.objc_getClass.restype = c_void_p
+        objc.objc_getClass.argtypes = [c_void_p]
+        objc.sel_registerName.restype = c_void_p
+        objc.sel_registerName.argtypes = [c_void_p]
+        objc.objc_msgSend.restype = c_void_p
+        objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+
+        nsapp = objc.objc_msgSend(
+            objc.objc_getClass(b"NSApplication"),
+            objc.sel_registerName(b"sharedApplication"),
+        )
+        objc.objc_msgSend(
+            nsapp,
+            objc.sel_registerName(b"activateIgnoringOtherApps:"),
+            c_int(1),
+        )
+    except Exception:
+        pass
+
+
+def _signal_existing_instance(server_name: str) -> bool:
+    """若已有主实例在监听单实例服务，连上去请它置顶；返回 True 表示本进程应退出。"""
+    sock = QLocalSocket()
+    sock.connectToServer(server_name)
+    if sock.waitForConnected(300):
+        sock.write(b"show")
+        sock.waitForBytesWritten(300)
+        sock.disconnectFromServer()
+        return True
+    return False
+
+
+def _raise_primary_window() -> None:
+    """主实例收到次实例连接时，把窗口提到前台并消化掉这次连接。"""
+    global _instance_server, _primary_window
+    if _instance_server is not None:
+        conn = _instance_server.nextPendingConnection()
+        if conn is not None:
+            conn.readAll()
+            conn.disconnectFromServer()
+    w = _primary_window
+    if w is not None:
+        w.showNormal()
+        w.raise_()
+        w.activateWindow()
+        _bring_to_front_macos()
+
+
 if __name__ == "__main__":
     log_path = configure_logging()
     logging.getLogger("toolbox").info("应用启动，日志写入 %s", log_path)
     app = QApplication(sys.argv)
+    app.setApplicationName("toolbox")
+
+    # 单实例守卫：已有实例在跑则请其置顶，并直接退出本进程（不再启动第二个 GUI）。
+    if _signal_existing_instance(_INSTANCE_SERVER_NAME):
+        logging.getLogger("toolbox").info("检测到已运行实例，转交并退出")
+        sys.exit(0)
+
+    # 启动闪屏：在重初始化前立即给用户反馈，避免误以为崩溃而反复双击。
+    splash = QSplashScreen()
+    splash.setWindowFlags(splash.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+    splash.showMessage(
+        "toolbox 启动中…",
+        Qt.AlignmentFlag.AlignCenter,
+        Qt.GlobalColor.gray,
+    )
+    splash.show()
+    app.processEvents()
+
     window = ToolboxApp()
+    _primary_window = window
     window.show()
+    window.raise_()
+    window.activateWindow()
+    _bring_to_front_macos()
+    splash.finish(window)
+
+    # 建立单实例服务，接收后续双击以置顶本窗口（主实例常驻）。
+    _instance_server = QLocalServer()
+    if not _instance_server.listen(_INSTANCE_SERVER_NAME):
+        # listen 失败多半是上一次崩溃留下的失效 socket 文件，清理后重试。
+        QLocalServer.removeServer(_INSTANCE_SERVER_NAME)
+        _instance_server.listen(_INSTANCE_SERVER_NAME)
+    _instance_server.newConnection.connect(_raise_primary_window)
+
     sys.exit(app.exec())

@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller 打包配置 — 生成单文件式 ALL IN ONE TOOLBOX 可执行程序。
+"""PyInstaller 打包配置 — 生成单文件式 toolbox 可执行程序。
 
 运行：.\\.venv\\Scripts\\pyinstaller.exe toolbox.spec
-输出目录：dist\\ALL IN ONE TOOLBOX.exe
+输出目录：dist\\toolbox.exe
 """
 import os
 
@@ -70,7 +70,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="ALL IN ONE TOOLBOX",
+    name="toolbox",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

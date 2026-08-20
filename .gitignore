@@ -25,6 +25,15 @@ dist/
 *.egg-info/
 *.egg
 
+# ---- macOS packaging artifacts (not for VCS) ----
+# DMG / .app / icns 生成产物（仅 dist/ 下为最终产物，此处覆盖其他位置）
+*.dmg
+*.app
+# iconutil 生成的临时 iconset 目录
+*.iconset/
+# PyInstaller 运行时临时解压目录（/var/folders/.../_MEI*）
+# （已在系统 temp 下，此处仅防御性声明）
+
 # ---- IDE / editor ----
 .idea/
 .vscode/

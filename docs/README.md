@@ -1,4 +1,11 @@
-> 📥 **下载最新版 (v4.1)：[toolbox_AllInOne_v4.1.exe](https://github.com/chenvinc/toolbox/releases/download/v4.1/toolbox_AllInOne_v4.1.exe)** ｜ [全部 Release](https://github.com/chenvinc/toolbox/releases)
+> 📥 **下载最新版 (v4.1)：**
+>
+> | 平台 | 下载链接 | 说明 |
+> | --- | --- | --- |
+> | 🪟 Windows | [toolbox_AllInOne_v4.1.exe](https://github.com/chenvinc/toolbox/releases/download/v4.1/toolbox_AllInOne_v4.1.exe) | 单文件可执行程序，下载后直接运行 |
+> | 🍎 macOS | [toolbox-4.1-macos.dmg](https://github.com/chenvinc/toolbox/releases/download/v4.1/toolbox-4.1-macos.dmg) | DMG 安装包，双击打开后将 toolbox 拖入 Applications 文件夹 |
+>
+> [全部 Release](https://github.com/chenvinc/toolbox/releases)
 
 # docs/ 文档索引（v4.1）
 

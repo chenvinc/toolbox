@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 允许 PyInstaller 启动器在运行时 dlopen 临时目录中的 libpython（绕过库校验） -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <!-- Python / Qt 运行时需要 JIT -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <!-- Python / Qt 需要可执行的内存页 -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+</dict>
+</plist>
